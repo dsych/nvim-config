@@ -6,7 +6,7 @@ configDir=$HOME/.config/nvim
 mkdir -p $configDir
 
 # if there any existing configs, save them
-mv $configDir/init.nvim $configDir/init.nvim.old
+mv $configDir/init.vim $configDir/init.vim.old
 mv $configDir/coc-settings.json $configDir/coc-settings.json.old
 
 # copy over the new configs
