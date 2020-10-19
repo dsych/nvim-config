@@ -1,0 +1,4 @@
+{
+  "explorer.icon.enableVimDevicons": true,
+  "coc.preferences.formatOnSaveFiletypes": ["javascript", "typescript", "json"]
+}
