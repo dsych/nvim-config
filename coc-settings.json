@@ -13,5 +13,21 @@
     }
   ],
   "cSpell.userWords": ["Autowired", "Coid", "openjdk"],
-  "java.home": "/usr/lib/jvm/java-14-openjdk-amd64"
+  "java.home": "/usr/lib/jvm/java-14-openjdk-amd64",
+  "tsserver.npm": "/usr/bin/npm",
+  "languageserver": {
+    "ccls": {
+      "command": "ccls",
+      "filetypes": ["c", "cpp", "cuda", "objc", "objcpp"],
+      "rootPatterns": [".ccls-root", "compile_commands.json"],
+      "initializationOptions": {
+        "cache": {
+          "directory": ".ccls-cache"
+        },
+        "client": {
+          "snippetSupport": true
+        }
+      }
+    }
+  }
 }
