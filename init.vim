@@ -314,7 +314,7 @@ Plug 'tpope/vim-sleuth'
 
 call plug#end()
 let g:airline_powerline_fonts = 1
-let g:airline_section_b = '%{getcwd()}' " in section B of the status line display the CWD
+" let g:airline_section_b = '%{getcwd()}' " in section B of the status line display the CWD
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Tabline
@@ -326,11 +326,14 @@ let g:airline#extensions#tabline#buffers_label = ''    " can put text here like 
 let g:airline#extensions#tabline#fnamemod = ':t'       " disable file paths in the tab
 let g:airline#extensions#tabline#show_tab_count = 0    " dont show tab numbers on the right
 let g:airline#extensions#tabline#show_buffers = 0      " dont show buffers in the tabline
-let g:airline#extensions#tabline#tab_min_count = 2     " minimum of 2 tabs needed to display the tabline
 let g:airline#extensions#tabline#show_splits = 0       " disables the buffer name that displays on the right of the tabline
-let g:airline#extensions#tabline#show_tab_nr = 0       " disable tab numbers
+let g:airline#extensions#tabline#show_tab_nr = 0       " disables tab numbers
 let g:airline#extensions#tabline#show_tab_type = 0     " disables the weird ornage arrow on the tabline
-
+let g:airline#extensions#tabline#buffer_idx_mode = 1
+let g:airline#extensions#tabline#tab_min_count = 0
+" do not show warnings
+let g:airline_section_warning = ''
+let g:airline_skip_empty_sections = 1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Colors and Fonts
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
