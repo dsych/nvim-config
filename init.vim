@@ -1,19 +1,23 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => General
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" remap leader to space
+nnoremap <space> <Nop>
+let mapleader=" "
+
 " Sets how many lines of history VIM has to remember
 set history=500
 
-" escape insert mode with jk 
+" escape insert mode with jk
 imap <silent> jk <esc>
 
 " copy and paste from/to the system clipboard
 map <silent> <leader><c-p> "*p<cr>
 map <silent> <leader><c-y> "*y<cr>
 
-" quickly saving with <space>
-map <silent> <space>w :write<cr>
-map <silent> <space>q :quit<cr>
+" quickly saving with <leader>
+map <silent> <leader>w :write<cr>
+map <silent> <leader>q :quit<cr>
 
 " Necessary  for lots of cool vim things
 set nocompatible
@@ -23,10 +27,13 @@ set showcmd
 
 " automatically reload the current buffer if an external program modified it
 set autoread
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => VIM user interface
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" display tabs as vertical bars
+:set list
+:set lcs=tab:\|\  " the last character is space!
+
 " Set 7 lines to the cursor - when moving vertically using j/k
 set so=7
 
@@ -51,23 +58,23 @@ set whichwrap+=<,>,h,l
 " Ignore case when searching
 set ignorecase
 
-" When searching try to be smart about cases 
+" When searching try to be smart about cases
 set smartcase
 
 " Highlight search results
 set hlsearch
 
 " Makes search act like search in modern browsers
-set incsearch 
+set incsearch
 
 " Don't redraw while executing macros (good performance config)
-set lazyredraw 
+" set lazyredraw
 
 " For regular expressions turn magic on
 set magic
 
 " Show matching brackets when text indicator is over them
-set showmatch 
+set showmatch
 " How many tenths of a second to blink when matching brackets
 set mat=2
 
@@ -110,6 +117,48 @@ vnoremap <silent> # :<C-u>call VisualSelection('', '')<CR>?<C-R>=@/<CR><CR>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Moving around, tabs, windows and buffers
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" Disable highlight when <leader><cr> is pressed
+map <silent> <leader><cr> :noh<cr>
+
+" Smart way to move between windows
+map <C-j> <C-W>j
+map <C-k> <C-W>k
+map <C-h> <C-W>h
+map <C-l> <C-W>l
+
+" Display all buffers
+map <silent> <leader>bb :buffers<cr>
+
+" Close the current buffer
+map <silent> <leader>bd :tabclose<cr>gT
+
+" Close all the buffers
+map <silent> <leader>ba :bufdo bd<cr>
+
+map <silent> <leader>l :bnext<cr>
+map <silent> <leader>h :bprevious<cr>
+
+" Useful mappings for managing tabs
+map <silent> <leader>tn :tabnew<cr>
+map <silent> <leader>to :tabonly<cr>
+map <silent> <leader>tc :tabclose<cr>
+map <silent> <leader>tm :tabmove
+map <silent> <leader>t<leader> :tabnext<cr>
+
+" Let 'tl' toggle between this and the last accessed tab
+let g:lasttab = 1
+nmap <Leader>tl :exe "tabn ".g:lasttab<CR>
+au TabLeave * let g:lasttab = tabpagenr()
+
+
+" Opens a new tab with the current buffer's path
+" Super useful when editing files in the same directory
+map <leader>te :tabedit <C-r>=expand("%:p:h")<cr>/
+
+" Switch CWD to the directory of the open buffer
+map <leader>cd :cd %:p:h<cr>:pwd<cr>
+
 " Return to last edit position when opening files (You want this!)
 au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 
@@ -144,7 +193,7 @@ fun! CleanExtraSpaces()
 endfun
 
 if has("autocmd")
-    autocmd BufWritePre *.txt,*.js,*.py,*.wiki,*.sh,*.coffee :call CleanExtraSpaces()
+    autocmd BufWritePre * :call CleanExtraSpaces()
 endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -159,9 +208,9 @@ cnoremap <C-P> <Up>
 cnoremap <C-N> <Down>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Nerd commenter config 
+" => Nerd commenter config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map <silent> <space>c <plug>NERDCommenterToggle
+map <silent> <leader>c <plug>NERDCommenterToggle
 " Add spaces after comment delimiters by default
 let g:NERDSpaceDelims = 1
 " Allow commenting and inverting empty lines (useful when commenting a region)
@@ -177,7 +226,7 @@ let g:NERDTreeGitStatusUseNerdFonts = 1
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Terminal toggle config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map <space>j <Plug>(coc-terminal-toggle)
+map <leader>j <Plug>(coc-terminal-toggle)
 
 " turn terminal to normal mode with escape
 tnoremap <Esc> <C-\><C-n>
@@ -187,7 +236,7 @@ au BufEnter * if &buftype == 'terminal' | :startinsert | endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Explorer config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map <silent> <space>e :NERDTreeToggle<cr>
+map <silent> <leader>e :NERDTreeToggle<cr>
 autocmd StdinReadPre * let s:std_in=1
 " show nerd tree automatically, if no file buffer is open on startup
 " autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
@@ -202,7 +251,7 @@ autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in
 " map  <leader>p :call fzf#run(fzf#wrap({'sink': 'e'}))<cr>
 " let g:fzf_layout = { 'down': '20%' }
 let g:fzf_layout = { 'window': '10new' }
-nmap <space>p :Files<cr>
+nmap <leader>p :Files<cr>
 " requires silversearcher-ag
 " used to ignore gitignore files
 let $FZF_DEFAULT_COMMAND = 'ag -g ""'
@@ -227,7 +276,7 @@ call plug#begin('~/.vim/plugged')
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 " all the extensions for coc-nvim
 let g:coc_global_extensions=[ 'coc-actions', 'coc-explorer', 'coc-java', 'coc-java-debug', 'coc-json', 'coc-marketplace', 'coc-pairs', 'coc-prettier', 'coc-spell-checker', 'coc-terminal', 'coc-tsserver']
-    
+
 " status line
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
@@ -260,17 +309,37 @@ Plug 'Xuyuanp/nerdtree-git-plugin'
 Plug 'ryanoasis/vim-devicons'
 " end order matters here
 
+" file indentation detection
+Plug 'tpope/vim-sleuth'
+
 call plug#end()
+let g:airline_powerline_fonts = 1
+let g:airline_section_b = '%{getcwd()}' " in section B of the status line display the CWD
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Tabline
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:airline#extensions#tabline#enabled = 1           " enable airline tabline
+let g:airline#extensions#tabline#show_close_button = 0 " remove 'X' at the end of the tabline
+let g:airline#extensions#tabline#tabs_label = ''       " can put text here like BUFFERS to denote buffers (I clear it so nothing is shown)
+let g:airline#extensions#tabline#buffers_label = ''    " can put text here like TABS to denote tabs (I clear it so nothing is shown)
+let g:airline#extensions#tabline#fnamemod = ':t'       " disable file paths in the tab
+let g:airline#extensions#tabline#show_tab_count = 0    " dont show tab numbers on the right
+let g:airline#extensions#tabline#show_buffers = 0      " dont show buffers in the tabline
+let g:airline#extensions#tabline#tab_min_count = 2     " minimum of 2 tabs needed to display the tabline
+let g:airline#extensions#tabline#show_splits = 0       " disables the buffer name that displays on the right of the tabline
+let g:airline#extensions#tabline#show_tab_nr = 0       " disable tab numbers
+let g:airline#extensions#tabline#show_tab_type = 0     " disables the weird ornage arrow on the tabline
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Colors and Fonts
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Enable syntax highlighting
-syntax enable 
-
-colorscheme gruvbox
-
+set termguicolors
 let g:gruvbox_italic=1
+colorscheme gruvbox
+syntax enable
+
 set background=dark
 
 let g:airline_theme='gruvbox'
@@ -279,6 +348,20 @@ let g:airline_theme='gruvbox'
 if $COLORTERM == 'gnome-terminal'
     set t_Co=256
 endif
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" =>  Sessions
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" Having longer updatetime (default is 4000 ms = 4 s) leads to noticeable
+" delays and poor user experience.
+set updatetime=300
+
+" save current layout into session
+nmap <leader>ss :SSave!<cr>
+
+" save session on exit
+autocmd VimLeave * SSave
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " =>  COC.NVIM config
@@ -293,12 +376,12 @@ set nowritebackup
 " Give more space for displaying messages.
 " set cmdheight=2
 
-" Having longer updatetime (default is 4000 ms = 4 s) leads to noticeable
-" delays and poor user experience.
-set updatetime=300
-
 " Don't pass messages to |ins-completion-menu|.
 set shortmess+=c
+
+" persist global variables inside session, so that workspace folders are saved
+" between sessions
+set sessionoptions+=globals
 
 " Always show the signcolumn, otherwise it would shift the text each time
 " diagnostics appear/become resolved.
@@ -425,21 +508,21 @@ set statusline^=%{coc#status()}%{get(b:,'coc_current_function','')}
 
 " Mappings for CoCList
 " Show all diagnostics.
-nnoremap <silent><nowait> <space>la  :<C-u>CocList diagnostics<cr>
+nnoremap <silent><nowait> <leader>la  :<C-u>CocList diagnostics<cr>
 " Manage extensions.
-nnoremap <silent><nowait> <space>le  :<C-u>CocList extensions<cr>
+nnoremap <silent><nowait> <leader>le  :<C-u>CocList extensions<cr>
 " Show commands.
 nnoremap <silent><nowait> <f1>  :<C-u>CocList commands<cr>
 " Find symbol of current document.
-nnoremap <silent><nowait> <space>lo  :<C-u>CocList outline<cr>
+nnoremap <silent><nowait> <leader>lo  :<C-u>CocList outline<cr>
 " Search workspace symbols.
-nnoremap <silent><nowait> <space>ls  :<C-u>CocList -I symbols<cr>
+nnoremap <silent><nowait> <leader>ls  :<C-u>CocList -I symbols<cr>
 " Do default action for next item.
-nnoremap <silent><nowait> <space>lj  :<C-u>CocNext<CR>
+nnoremap <silent><nowait> <leader>lj  :<C-u>CocNext<CR>
 " Do default action for previous item.
-nnoremap <silent><nowait> <space>lk  :<C-u>CocPrev<CR>
+nnoremap <silent><nowait> <leader>lk  :<C-u>CocPrev<CR>
 " Resume latest coc list.
-nnoremap <silent><nowait> <space>lp  :<C-u>CocListResume<CR>
+nnoremap <silent><nowait> <leader>lp  :<C-u>CocListResume<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Helper functions
@@ -454,7 +537,7 @@ endfunction
 
 function! CmdLine(str)
     call feedkeys(":" . a:str)
-endfunction 
+endfunction
 
 function! VisualSelection(direction, extra_filter) range
     let l:saved_reg = @"
@@ -471,4 +554,47 @@ function! VisualSelection(direction, extra_filter) range
 
     let @/ = l:pattern
     let @" = l:saved_reg
+endfunction
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Git fugivite split diff
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+command! DiffHistory call s:view_git_history()
+
+function! s:view_git_history() abort
+  Git difftool --name-only ! !^@
+  call s:diff_current_quickfix_entry()
+  " Bind <CR> for current quickfix window to properly set up diff split layout after selecting an item
+  " There's probably a better way to map this without changing the window
+  copen
+  nnoremap <buffer> <CR> <CR><BAR>:call <sid>diff_current_quickfix_entry()<CR>
+  wincmd p
+endfunction
+
+function s:diff_current_quickfix_entry() abort
+  " Cleanup windows
+  for window in getwininfo()
+    if window.winnr !=? winnr() && bufname(window.bufnr) =~? '^fugitive:'
+      exe 'bdelete' window.bufnr
+    endif
+  endfor
+  cc
+  call s:add_mappings()
+  let qf = getqflist({'context': 0, 'idx': 0})
+  if get(qf, 'idx') && type(get(qf, 'context')) == type({}) && type(get(qf.context, 'items')) == type([])
+    let diff = get(qf.context.items[qf.idx - 1], 'diff', [])
+    echom string(reverse(range(len(diff))))
+    for i in reverse(range(len(diff)))
+      exe (i ? 'leftabove' : 'rightbelow') 'vert diffsplit' fnameescape(diff[i].filename)
+      call s:add_mappings()
+    endfor
+  endif
+endfunction
+
+function! s:add_mappings() abort
+  nnoremap <buffer>]q :cnext <BAR> :call <sid>diff_current_quickfix_entry()<CR>
+  nnoremap <buffer>[q :cprevious <BAR> :call <sid>diff_current_quickfix_entry()<CR>
+  " Reset quickfix height. Sometimes it messes up after selecting another item
+  11copen
+  wincmd p
 endfunction

@@ -1,4 +1,21 @@
 {
   "explorer.icon.enableVimDevicons": true,
-  "coc.preferences.formatOnSaveFiletypes": ["javascript", "typescript", "json"]
+  "coc.preferences.formatOnSaveFiletypes": ["javascript", "typescript", "json"],
+  "java.configuration.runtimes": [
+    {
+      "name": "JavaSE-1.8",
+      "path": "/usr/lib/jvm/java-8-openjdk-amd64",
+      "default": true
+    },
+    {
+      "name": "JavaSE-14",
+      "path": "/usr/lib/jvm/java-14-openjdk-amd64"
+    }
+  ],
+  "cSpell.userWords": [
+    "Autowired",
+    "Coid",
+    "openjdk"
+  ],
+  "java.home": "/usr/lib/jvm/java-14-openjdk-amd64"
 }
