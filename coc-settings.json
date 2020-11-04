@@ -12,7 +12,12 @@
       "path": "/usr/lib/jvm/java-14-openjdk-amd64"
     }
   ],
-  "cSpell.userWords": ["Autowired", "Coid", "openjdk"],
+  "cSpell.userWords": [
+    "Autowired",
+    "Coid",
+    "openjdk",
+    "rederer"
+  ],
   "java.home": "/usr/lib/jvm/java-14-openjdk-amd64",
   "tsserver.npm": "/usr/bin/npm",
   "languageserver": {

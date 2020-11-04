@@ -1,6 +1,9 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => General
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" increase timeout between keys
+set timeoutlen=1500
+
 " remap leader to space
 nnoremap <space> <Nop>
 let mapleader=" "
@@ -27,6 +30,8 @@ set showcmd
 
 " automatically reload the current buffer if an external program modified it
 set autoread
+
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => VIM user interface
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -127,11 +132,17 @@ map <C-k> <C-W>k
 map <C-h> <C-W>h
 map <C-l> <C-W>l
 
+" Find in the current buffer
+map <silent> <leader>bf :BLines<cr>
+
+" Global searches
+map <silent> <leader>bfg :Ag<cr>
+
 " Display all buffers
-map <silent> <leader>bb :buffers<cr>
+map <silent> <leader>bb :Buffers<cr>
 
 " Close the current buffer
-map <silent> <leader>bd :tabclose<cr>gT
+map <silent> <leader>bd :bd<cr>
 
 " Close all the buffers
 map <silent> <leader>ba :bufdo bd<cr>
@@ -142,19 +153,17 @@ map <silent> <leader>h :bprevious<cr>
 " Useful mappings for managing tabs
 map <silent> <leader>tn :tabnew<cr>
 map <silent> <leader>to :tabonly<cr>
-map <silent> <leader>tc :tabclose<cr>
+map <silent> <leader>td :tabclose<cr>
 map <silent> <leader>tm :tabmove
 map <silent> <leader>t<leader> :tabnext<cr>
+" Opens a new tab with the current buffer's path
+" Super useful when editing files in the same directory
+map <leader>te :tabedit <C-r>=expand("%:p:h")<cr>/
 
 " Let 'tl' toggle between this and the last accessed tab
 let g:lasttab = 1
 nmap <Leader>tl :exe "tabn ".g:lasttab<CR>
 au TabLeave * let g:lasttab = tabpagenr()
-
-
-" Opens a new tab with the current buffer's path
-" Super useful when editing files in the same directory
-map <leader>te :tabedit <C-r>=expand("%:p:h")<cr>/
 
 " Switch CWD to the directory of the open buffer
 map <leader>cd :cd %:p:h<cr>:pwd<cr>
@@ -238,9 +247,11 @@ au BufEnter * if &buftype == 'terminal' | :startinsert | endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 map <silent> <leader>e :NERDTreeToggle<cr>
 autocmd StdinReadPre * let s:std_in=1
+" Automatically close nvim if NERDTree is only thing left open
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
 " show nerd tree automatically, if no file buffer is open on startup
 " autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
-" autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+
 " open nerd tree automatically, if nvim is opened against a directory
 autocmd StdinReadPre * let s:std_in=1
 autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
@@ -256,6 +267,20 @@ nmap <leader>p :Files<cr>
 " used to ignore gitignore files
 let $FZF_DEFAULT_COMMAND = 'ag -g ""'
 
+let g:fzf_action = {
+  \ 'ctrl-t': 'tab split',
+  \ 'ctrl-s': 'split',
+  \ 'ctrl-v': 'vsplit'
+  \}
+
+" only search for file content rather than filename for Ag command
+command! -bang -nargs=* Ag call fzf#vim#ag(<q-args>, {'options': '--delimiter : --nth 4..'}, <bang>0)
+
+" Fuzzy find help for plugin
+map <silent> <leader>gh :Helptags!<cr>
+
+" Fuzzy find mappings for the normal mode
+map <silent> <leader>gm :Maps<cr>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Action menu config
@@ -275,7 +300,7 @@ call plug#begin('~/.vim/plugged')
 " language server
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 " all the extensions for coc-nvim
-let g:coc_global_extensions=[ 'coc-actions', 'coc-explorer', 'coc-java', 'coc-java-debug', 'coc-json', 'coc-marketplace', 'coc-pairs', 'coc-prettier', 'coc-spell-checker', 'coc-terminal', 'coc-tsserver']
+let g:coc_global_extensions=[ 'coc-actions', 'coc-explorer', 'coc-java', 'coc-java-debug', 'coc-json', 'coc-marketplace', 'coc-pairs', 'coc-prettier', 'coc-spell-checker', 'coc-terminal', 'coc-tsserver', "coc-html", "coc-css"]
 
 " status line
 Plug 'vim-airline/vim-airline'
@@ -312,7 +337,13 @@ Plug 'ryanoasis/vim-devicons'
 " file indentation detection
 Plug 'tpope/vim-sleuth'
 
+Plug 'neoclide/jsonc.vim'
+
 call plug#end()
+
+" map json file type for jsonc to allow comments
+autocmd! BufRead,BufNewFile *.json set filetype=jsonc
+
 let g:airline_powerline_fonts = 1
 " let g:airline_section_b = '%{getcwd()}' " in section B of the status line display the CWD
 
@@ -511,21 +542,21 @@ set statusline^=%{coc#status()}%{get(b:,'coc_current_function','')}
 
 " Mappings for CoCList
 " Show all diagnostics.
-nnoremap <silent><nowait> <leader>la  :<C-u>CocList diagnostics<cr>
+nnoremap <silent> <leader>la  :<C-u>CocList diagnostics<cr>
 " Manage extensions.
-nnoremap <silent><nowait> <leader>le  :<C-u>CocList extensions<cr>
+nnoremap <silent> <leader>le  :<C-u>CocList extensions<cr>
 " Show commands.
-nnoremap <silent><nowait> <f1>  :<C-u>CocList commands<cr>
+nnoremap <silent> <f1>  :<C-u>CocList commands<cr>
 " Find symbol of current document.
-nnoremap <silent><nowait> <leader>lo  :<C-u>CocList outline<cr>
+nnoremap <silent> <leader>lo  :<C-u>CocList outline<cr>
 " Search workspace symbols.
-nnoremap <silent><nowait> <leader>ls  :<C-u>CocList -I symbols<cr>
+nnoremap <silent> <leader>ls  :<C-u>CocList -I symbols<cr>
 " Do default action for next item.
-nnoremap <silent><nowait> <leader>lj  :<C-u>CocNext<CR>
+nnoremap <silent> <leader>lj  :<C-u>CocNext<CR>
 " Do default action for previous item.
-nnoremap <silent><nowait> <leader>lk  :<C-u>CocPrev<CR>
+nnoremap <silent> <leader>lk  :<C-u>CocPrev<CR>
 " Resume latest coc list.
-nnoremap <silent><nowait> <leader>lp  :<C-u>CocListResume<CR>
+nnoremap <silent> <leader>lp  :<C-u>CocListResume<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Helper functions
