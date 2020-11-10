@@ -268,9 +268,12 @@ autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in
 " let g:fzf_layout = { 'down': '20%' }
 let g:fzf_layout = { 'window': '10new' }
 nmap <leader>p :Files<cr>
-" requires silversearcher-ag
-" used to ignore gitignore files
-let $FZF_DEFAULT_COMMAND = 'ag -g ""'
+
+if executable("ag")
+  " requires silversearcher-ag
+  " used to ignore gitignore files
+  let $FZF_DEFAULT_COMMAND = 'ag -g ""'
+endif
 
 let g:fzf_action = {
   \ 'ctrl-t': 'tab split',
