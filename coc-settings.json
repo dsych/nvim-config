@@ -20,19 +20,25 @@
   ],
   "java.home": "/usr/lib/jvm/java-14-openjdk-amd64",
   "tsserver.npm": "/usr/bin/npm",
-  "languageserver": {
-    "ccls": {
-      "command": "ccls",
-      "filetypes": ["c", "cpp", "cuda", "objc", "objcpp"],
-      "rootPatterns": [".ccls-root", "compile_commands.json"],
-      "initializationOptions": {
-        "cache": {
-          "directory": ".ccls-cache"
-        },
-        "client": {
-          "snippetSupport": true
-        }
-      }
-    }
-  }
+  "clangd.semanticHighlighting": true,
+  "clangd.path": "/home/dmytro/.config/coc/extensions/coc-clangd-data/install/11.0.0/clangd_11.0.0/bin/clangd",
+  "clangd.enabled": true
+  /* "languageserver": { */
+    /* "ccls": { */
+      /* "command": "ccls", */
+      /* "filetypes": ["c", "cpp", "cuda", "objc", "objcpp"], */
+      /* "rootPatterns": [".ccls-root", "compile_commands.json", ".git", ".vim"], */
+      /* "initializationOptions": { */
+        /* "cache": { */
+          /* "directory": "~/.ccls-cache" */
+        /* }, */
+        /* "client": { */
+          /* "snippetSupport": true */
+        /* }, */
+        /* "highlight":{ */
+          /* "lsRanges": true */
+        /* } */
+      /* } */
+    /* } */
+  /* } */
 }

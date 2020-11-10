@@ -31,6 +31,9 @@ set showcmd
 " automatically reload the current buffer if an external program modified it
 set autoread
 
+" save and source vimrc
+" map <leader>vims :write | so $MYVIMRC
+
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => VIM user interface
@@ -239,6 +242,8 @@ map <leader>j <Plug>(coc-terminal-toggle)
 
 " turn terminal to normal mode with escape
 tnoremap <Esc> <C-\><C-n>
+" close terminal right away. useful for fzf commands
+tnoremap <C-c> <C-q>
 " start terminal in insert mode
 au BufEnter * if &buftype == 'terminal' | :startinsert | endif
 
@@ -338,6 +343,8 @@ Plug 'ryanoasis/vim-devicons'
 Plug 'tpope/vim-sleuth'
 
 Plug 'neoclide/jsonc.vim'
+
+Plug 'jackguo380/vim-lsp-cxx-highlight'
 
 call plug#end()
 
@@ -452,10 +459,12 @@ endif
 inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
                               \: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
 
-" Use `[g` and `]g` to navigate diagnostics
-" Use `:CocDiagnostics` to get all diagnostics of current buffer in location list.
-nmap <silent> [g <Plug>(coc-diagnostic-prev)
-nmap <silent> ]g <Plug>(coc-diagnostic-next)
+" view previous diagnostic
+nmap <silent> <leader>dp <Plug>(coc-diagnostic-prev)
+" view next diagnostic
+nmap <silent> <leader>dn <Plug>(coc-diagnostic-next)
+" Show all diagnostics.
+nnoremap <silent> <leader>da  :<C-u>CocList diagnostics<cr>
 
 " GoTo code navigation.
 nmap <silent> gd <Plug>(coc-definition)
@@ -480,11 +489,11 @@ endfunction
 autocmd CursorHold * silent call CocActionAsync('highlight')
 
 " Symbol renaming.
-nmap <leader>rn <Plug>(coc-rename)
+nmap <leader>grn <Plug>(coc-rename)
 
 " Formatting selected code.
-xmap <leader>f  <Plug>(coc-format-selected)
-nmap <leader>f  <Plug>(coc-format-selected)
+xmap <leader>gf  <Plug>(coc-format-selected)
+nmap <leader>gf  <Plug>(coc-format-selected)
 
 augroup mygroup
   autocmd!
@@ -541,10 +550,10 @@ command! -nargs=0 OR   :call     CocAction('runCommand', 'editor.action.organize
 set statusline^=%{coc#status()}%{get(b:,'coc_current_function','')}
 
 " Mappings for CoCList
-" Show all diagnostics.
-nnoremap <silent> <leader>la  :<C-u>CocList diagnostics<cr>
 " Manage extensions.
 nnoremap <silent> <leader>le  :<C-u>CocList extensions<cr>
+" Open the marketplace
+nnoremap <silent> <leader>lm  :<C-u>CocList marketplace<cr>
 " Show commands.
 nnoremap <silent> <f1>  :<C-u>CocList commands<cr>
 " Find symbol of current document.
