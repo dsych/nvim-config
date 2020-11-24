@@ -145,7 +145,7 @@ map <silent> <leader>bfg :Ag<cr>
 map <silent> <leader>bb :Buffers<cr>
 
 " Close the current buffer
-map <silent> <leader>bd :bd<cr>
+map <silent> <leader>bd :bp\|bd #<cr>
 
 " Close all the buffers
 map <silent> <leader>ba :bufdo bd<cr>
@@ -349,6 +349,8 @@ Plug 'neoclide/jsonc.vim'
 
 Plug 'jackguo380/vim-lsp-cxx-highlight'
 
+Plug 'Rigellute/shades-of-purple.vim'
+
 call plug#end()
 
 " map json file type for jsonc to allow comments
@@ -365,28 +367,37 @@ let g:airline#extensions#tabline#show_close_button = 0 " remove 'X' at the end o
 let g:airline#extensions#tabline#tabs_label = ''       " can put text here like BUFFERS to denote buffers (I clear it so nothing is shown)
 let g:airline#extensions#tabline#buffers_label = ''    " can put text here like TABS to denote tabs (I clear it so nothing is shown)
 let g:airline#extensions#tabline#fnamemod = ':t'       " disable file paths in the tab
-let g:airline#extensions#tabline#show_tab_count = 0    " dont show tab numbers on the right
+let g:airline#extensions#tabline#show_tab_count = 1    " dont show tab numbers on the right
 let g:airline#extensions#tabline#show_buffers = 0      " dont show buffers in the tabline
-let g:airline#extensions#tabline#show_splits = 0       " disables the buffer name that displays on the right of the tabline
-let g:airline#extensions#tabline#show_tab_nr = 0       " disables tab numbers
+let g:airline#extensions#tabline#show_splits = 1       " enable the buffer name that displays on the right of the tabline
+let g:airline#extensions#tabline#show_tab_nr = 1       " disables tab numbers
 let g:airline#extensions#tabline#show_tab_type = 0     " disables the weird ornage arrow on the tabline
 let g:airline#extensions#tabline#buffer_idx_mode = 1
 let g:airline#extensions#tabline#tab_min_count = 0
+let g:airline#extensions#tabline#buffer_nr_show = 1
+
+let g:airline#extensions#tabline#alt_sep = 1
+
 " do not show warnings
 let g:airline_section_warning = ''
 let g:airline_skip_empty_sections = 1
+
+let g:airline#extensions#tabline#exclude_preview = 0
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Colors and Fonts
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Enable syntax highlighting
 set termguicolors
-let g:gruvbox_italic=1
-colorscheme gruvbox
+" let g:gruvbox_italic=1
+" colorscheme gruvbox
+colorscheme shades_of_purple
 syntax enable
 
 set background=dark
 
-let g:airline_theme='gruvbox'
+" let g:airline_theme='gruvbox'
+let g:shades_of_purple_airline = 1
+let g:airline_theme='shades_of_purple'
 
 " Enable 256 colors palette in Gnome Terminal
 if $COLORTERM == 'gnome-terminal'
@@ -644,3 +655,6 @@ function! s:add_mappings() abort
   11copen
   wincmd p
 endfunction
+
+" my coc extensions
+" set runtimepath^=/home/dmytro/workspace/coc-cmake-tools
