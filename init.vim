@@ -250,7 +250,6 @@ au BufEnter * if &buftype == 'terminal' | :startinsert | endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Explorer config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map <silent> <leader>e :NERDTreeToggle<cr>
 autocmd StdinReadPre * let s:std_in=1
 " Automatically close nvim if NERDTree is only thing left open
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
@@ -260,6 +259,9 @@ autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isT
 " open nerd tree automatically, if nvim is opened against a directory
 autocmd StdinReadPre * let s:std_in=1
 autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
+
+map <silent> <leader>e :NERDTreeToggle<cr>
+map <silent> <leader>ef :NERDTreeFocus<cr>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => FZF search config
@@ -290,6 +292,16 @@ map <silent> <leader>gh :Helptags!<cr>
 " Fuzzy find mappings for the normal mode
 map <silent> <leader>gm :Maps<cr>
 
+" function! RipgrepFzf(query, fullscreen)
+" let command_fmt = rg --column --line-number --no-heading --color=always --smart-case -- %s || true''
+" let initial_command = printfcommand_fmt, shellescape(a:query())
+" let reload_command = printfcommand_fmt, '(q}{')
+" let spec = '{options': [--phony'', '--query', a:query, --bind'', 'change:reload:'.reload_command]}
+  " call fzf#vim#grep(initial_command, 1, fzf#vim#with_preview(spec), a:fullscreen)
+" endfunction
+"
+" command! -nargs=* -bang Rg call RipgrepFzf(<q-args, <>bang>0)]}})
+"
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Action menu config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -356,6 +368,8 @@ call plug#end()
 " map json file type for jsonc to allow comments
 autocmd! BufRead,BufNewFile *.json set filetype=jsonc
 
+autocmd! BufRead,BufNewFile *sqc set filetype=cpp
+
 let g:airline_powerline_fonts = 1
 " let g:airline_section_b = '%{getcwd()}' " in section B of the status line display the CWD
 
@@ -417,6 +431,11 @@ nmap <leader>ss :SSave!<cr>
 
 " save session on exit
 autocmd VimLeave * SSave
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" =>  Vimspector
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:vimspector_enable_mappings = 'VISUAL_STUDIO'
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " =>  COC.NVIM config
@@ -551,6 +570,7 @@ xmap <silent> <C-s> <Plug>(coc-range-select)
 
 " Add `:Format` command to format current buffer.
 command! -nargs=0 Format :call CocAction('format')
+map <A-F> :Format<cr>
 
 " Add `:Fold` command to fold current buffer.
 command! -nargs=? Fold :call     CocAction('fold', <f-args>)
