@@ -148,7 +148,11 @@ map <silent> <leader>bb :Buffers<cr>
 map <silent> <leader>bd :bp\|bd #<cr>
 
 " Close all the buffers
-map <silent> <leader>ba :bufdo bd<cr>
+map <silent> <leader>bda :bufdo bd<cr>
+
+" Close all buffers but the current one
+command! BufOnly silent! execute "%bd|e#|db#"
+map <silent> <leader>bdo :BufOnly<cr>
 
 map <silent> <leader>l :bnext<cr>
 map <silent> <leader>h :bprevious<cr>
@@ -261,7 +265,7 @@ autocmd StdinReadPre * let s:std_in=1
 autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
 
 map <silent> <leader>e :NERDTreeToggle<cr>
-map <silent> <leader>ef :NERDTreeFocus<cr>
+map <silent> <leader>ef :NERDTreeFind<cr>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => FZF search config
@@ -414,9 +418,9 @@ let g:shades_of_purple_airline = 1
 let g:airline_theme='shades_of_purple'
 
 " Enable 256 colors palette in Gnome Terminal
-if $COLORTERM == 'gnome-terminal'
+" if $COLORTERM == 'gnome-terminal'
     set t_Co=256
-endif
+" endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " =>  Sessions
