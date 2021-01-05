@@ -371,6 +371,8 @@ Plug 'jackguo380/vim-lsp-cxx-highlight'
 
 Plug 'Rigellute/shades-of-purple.vim'
 
+Plug 'airblade/vim-gitgutter'
+
 call plug#end()
 
 " map json file type for jsonc to allow comments
@@ -651,6 +653,13 @@ function! VisualSelection(direction, extra_filter) range
     let @/ = l:pattern
     let @" = l:saved_reg
 endfunction
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Git-gutter configuration
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+command! Gqf GitGutterQuickFix | copen
+nmap <silent> <leader>hqf :Gqf<cr>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Git fugivite split diff
