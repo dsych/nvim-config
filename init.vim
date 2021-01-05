@@ -411,13 +411,21 @@ let g:airline#extensions#tabline#exclude_preview = 0
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Colors and Fonts
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Enable syntax highlighting
-set termguicolors
-" let g:gruvbox_italic=1
-" colorscheme gruvbox
-colorscheme shades_of_purple
-syntax enable
+" THIS IS PURE FUCKING EVIL!!! DO NOT E-V-E-R SET THIS OPTION
+" screws up all of the terminal colors, completely.
+" going to leave it here is a reminder...
+" set termguicolors
 
+colorscheme shades_of_purple
+" Update bracket matching highlight group to something sane that can be read
+" Apparently, there is such a thing as dynamic color scheme, so
+" register an autocomand to make sure that we update the highlight
+" group when color scheme changes
+autocmd ColorScheme shades_of_purple highlight! link MatchParen Search
+
+
+" Enable syntax highlighting
+syntax enable
 set background=dark
 
 " let g:airline_theme='gruvbox'
@@ -459,7 +467,7 @@ set nobackup
 set nowritebackup
 
 " Give more space for displaying messages.
-" set cmdheight=2
+set cmdheight=2
 
 " Don't pass messages to |ins-completion-menu|.
 set shortmess+=c
