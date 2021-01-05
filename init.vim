@@ -105,11 +105,21 @@ set tm=500
 set number relativenumber
 "
 " toggle to absolute line numbers in insert mode and when buffer loses focus
-augroup numbertoggle
-  autocmd!
-  autocmd BufEnter,FocusGained,InsertLeave * set relativenumber
-  autocmd BufLeave,FocusLost,InsertEnter   * set norelativenumber
-augroup END
+function! ToggleRelativeNumbers(mode)
+  if a:mode
+    augroup numbertoggle
+      autocmd!
+      autocmd BufEnter,FocusGained,InsertLeave * set relativenumber
+      autocmd BufLeave,FocusLost,InsertEnter   * set norelativenumber
+    augroup END
+  else
+    augroup numbertoggle
+      autocmd!
+    augroup END
+  endif
+endfunction
+
+call ToggleRelativeNumbers(1)
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Text, tab and indent related
@@ -373,7 +383,34 @@ Plug 'Rigellute/shades-of-purple.vim'
 
 Plug 'airblade/vim-gitgutter'
 
+" Focused writting
+Plug 'junegunn/goyo.vim'
+Plug 'junegunn/limelight.vim'
+
 call plug#end()
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => GoYo and Limeline configuration to define Zen mode
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:limelight_conceal_ctermfg = 240
+
+let s:zen_mode=0
+function ToggleZen()
+  if s:zen_mode
+    " Disable zen mode
+    let s:zen_mode = 0
+    call ToggleRelativeNumbers(1)
+    :Goyo!
+    :Limelight!
+  else
+    " Enable zen mode
+    let s:zen_mode = 1
+    call ToggleRelativeNumbers(0)
+    :Goyo
+    :Limelight
+  endif
+endfunction
+command! -nargs=0 Zen :call ToggleZen()
 
 " map json file type for jsonc to allow comments
 autocmd! BufRead,BufNewFile *.json set filetype=jsonc
@@ -602,7 +639,7 @@ command! -nargs=0 OR   :call     CocAction('runCommand', 'editor.action.organize
 " Add (Neo)Vim's native statusline support.
 " NOTE: Please see `:h coc-status` for integrations with external plugins that
 " provide custom statusline: lightline.vim, vim-airline.
-set statusline^=%{coc#status()}%{get(b:,'coc_current_function','')}
+" set statusline^=%{coc#status()}%{get(b:,'coc_current_function','')}
 
 " Mappings for CoCList
 " Manage extensions.
