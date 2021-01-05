@@ -1,6 +1,6 @@
 {
   "explorer.icon.enableVimDevicons": true,
-  "coc.preferences.formatOnSaveFiletypes": ["javascript", "typescript", "json", "cpp"],
+  "coc.preferences.formatOnSaveFiletypes": ["javascript", "typescript", "json"],
   "java.configuration.runtimes": [
     {
       "name": "JavaSE-1.8",
@@ -15,7 +15,6 @@
   "cSpell.userWords": [
     "Autowired",
     "Coid",
-    "clangd",
     "openjdk",
     "rederer"
   ],

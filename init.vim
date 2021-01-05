@@ -31,6 +31,9 @@ set showcmd
 " automatically reload the current buffer if an external program modified it
 set autoread
 
+" highlight the current line
+set cursorline
+
 " save and source vimrc
 " map <leader>vims :write | so $MYVIMRC
 
@@ -58,6 +61,9 @@ endif
 
 "Always show current position
 set ruler
+
+" Enable mouse for all modes
+set mouse=a
 
 " Configure backspace so it acts as it should act
 set backspace=eol,start,indent
@@ -97,7 +103,7 @@ set tm=500
 
 " set relative line numbers
 set number relativenumber
-
+"
 " toggle to absolute line numbers in insert mode and when buffer loses focus
 augroup numbertoggle
   autocmd!
@@ -139,7 +145,7 @@ map <C-l> <C-W>l
 map <silent> <leader>bf :BLines<cr>
 
 " Global searches
-map <silent> <leader>bfg :Ag<cr>
+map <leader>fg :Ag
 
 " Display all buffers
 map <silent> <leader>bb :Buffers<cr>
@@ -149,7 +155,6 @@ map <silent> <leader>bd :bp\|bd #<cr>
 
 " Close all the buffers
 map <silent> <leader>bda :bufdo bd<cr>
-
 " Close all buffers but the current one
 command! BufOnly silent! execute "%bd|e#|db#"
 map <silent> <leader>bdo :BufOnly<cr>
@@ -254,6 +259,8 @@ au BufEnter * if &buftype == 'terminal' | :startinsert | endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Explorer config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+map <silent> <leader>e :NERDTreeToggle<cr>
+map <silent> <leader>ef :NERDTreeFind<cr>
 autocmd StdinReadPre * let s:std_in=1
 " Automatically close nvim if NERDTree is only thing left open
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
@@ -263,9 +270,6 @@ autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isT
 " open nerd tree automatically, if nvim is opened against a directory
 autocmd StdinReadPre * let s:std_in=1
 autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
-
-map <silent> <leader>e :NERDTreeToggle<cr>
-map <silent> <leader>ef :NERDTreeFind<cr>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => FZF search config
@@ -324,7 +328,7 @@ call plug#begin('~/.vim/plugged')
 " language server
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 " all the extensions for coc-nvim
-let g:coc_global_extensions=[ 'coc-actions', 'coc-explorer', 'coc-java', 'coc-java-debug', 'coc-json', 'coc-marketplace', 'coc-pairs', 'coc-prettier', 'coc-spell-checker', 'coc-terminal', 'coc-tsserver', "coc-html", "coc-css"]
+let g:coc_global_extensions=[ 'coc-actions', 'coc-explorer', 'coc-java', 'coc-java-debug', 'coc-json', 'coc-marketplace', 'coc-pairs', 'coc-prettier', 'coc-spell-checker', 'coc-terminal', 'coc-tsserver', "coc-html", "coc-css", "coc-vimlsp", "coc-pyright"]
 
 " status line
 Plug 'vim-airline/vim-airline'
@@ -373,10 +377,13 @@ call plug#end()
 autocmd! BufRead,BufNewFile *.json set filetype=jsonc
 
 autocmd! BufRead,BufNewFile *sqc set filetype=cpp
-
 let g:airline_powerline_fonts = 1
 " let g:airline_section_b = '%{getcwd()}' " in section B of the status line display the CWD
 
+" do not show file encoding if it matches this sting
+let g:airline#parts#ffenc#skip_expected_string='utf-8[unix]'
+
+let g:airline_stl_path_style = 'short'
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Tabline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
