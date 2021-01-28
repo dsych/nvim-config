@@ -15,8 +15,8 @@ set history=500
 imap <silent> jk <esc>
 
 " copy and paste from/to the system clipboard
-map <silent> <leader><c-p> "*p<cr>
-map <silent> <leader><c-y> "*y<cr>
+map <silent> <leader><c-p> "+p<cr>
+map <silent> <leader><c-y> "+y<cr>
 
 " quickly saving with <leader>
 map <silent> <leader>w :write<cr>
