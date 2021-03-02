@@ -1,6 +1,9 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => General
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if has('win32') || has('win64')
+  let &shell='cmd.exe'
+endif
 " increase timeout between keys
 set timeoutlen=1500
 
@@ -33,6 +36,9 @@ set autoread
 
 " highlight the current line
 set cursorline
+
+" disable line wrapping
+set nowrap
 
 " save and source vimrc
 " map <leader>vims :write | so $MYVIMRC
@@ -412,6 +418,27 @@ function ToggleZen()
 endfunction
 command! -nargs=0 Zen :call ToggleZen()
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Startify configurations
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:startify_session_before_save = [
+    \ 'echo "Cleaning up before saving.."',
+    \ 'silent! NERDTreeTabsClose'
+    \ ]
+
+let g:startify_session_persistence = 1
+
+" save coc's workspace folders between sessions
+let g:startify_session_savevars = [
+  \ 'g:startify_session_savevars',
+  \ 'g:startify_session_savecmds',
+  \ 'g:WorkspaceFolders'
+  \ ]
+
+
+" save current layout into session
+nmap <leader>ss :SSave!<cr>
+
 " map json file type for jsonc to allow comments
 autocmd! BufRead,BufNewFile *.json set filetype=jsonc
 
@@ -484,12 +511,6 @@ let g:airline_theme='shades_of_purple'
 " delays and poor user experience.
 set updatetime=300
 
-" save current layout into session
-nmap <leader>ss :SSave!<cr>
-
-" save session on exit
-autocmd VimLeave * SSave
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " =>  Vimspector
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -513,7 +534,7 @@ set shortmess+=c
 
 " persist global variables inside session, so that workspace folders are saved
 " between sessions
-set sessionoptions+=globals
+" set sessionoptions+=globals
 
 " Always show the signcolumn, otherwise it would shift the text each time
 " diagnostics appear/become resolved.
