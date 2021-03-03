@@ -442,7 +442,7 @@ nmap <leader>ss :SSave!<cr>
 " map json file type for jsonc to allow comments
 autocmd! BufRead,BufNewFile *.json set filetype=jsonc
 
-autocmd! BufRead,BufNewFile *sqc set filetype=cpp
+autocmd! BufRead,BufNewFile *sqc,*HPP,*CPP set filetype=cpp
 let g:airline_powerline_fonts = 1
 " let g:airline_section_b = '%{getcwd()}' " in section B of the status line display the CWD
 

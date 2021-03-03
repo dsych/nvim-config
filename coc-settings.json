@@ -17,7 +17,8 @@
     "CDSB",
     "Coid",
     "openjdk",
-    "rederer"
+    "rederer",
+    "rmask"
   ],
   "java.home": "/usr/lib/jvm/java-14-openjdk-amd64",
   "tsserver.npm": "/usr/bin/npm",
