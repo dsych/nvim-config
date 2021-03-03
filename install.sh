@@ -1,6 +1,7 @@
 #!/bin/bash
 
 configDir=$HOME/.config/nvim
+scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 # create the nvim directory
 mkdir -p $configDir
@@ -10,6 +11,7 @@ mv $configDir/init.vim $configDir/init.vim.old
 mv $configDir/coc-settings.json $configDir/coc-settings.json.old
 
 # copy over the new configs
-cp ./init.vim ./coc-settings.json $configDir
+ln -s $scriptDir/init.vim $configDir/init.vim
+ln -s $scriptDir/coc-settings.json $configDir/coc-settings.json
 
 echo "Done"
