@@ -2,7 +2,11 @@
 " => General
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 if has('win32') || has('win64')
-  let &shell='cmd.exe'
+  if has_key(environ(), 'GIT_BASH')
+    let &shell = environ()['GIT_BASH']
+  else
+    let &shell='cmd.exe'
+  endif
 endif
 " increase timeout between keys
 set timeoutlen=1500
@@ -316,6 +320,11 @@ map <silent> <leader>gh :Helptags!<cr>
 " Fuzzy find mappings for the normal mode
 map <silent> <leader>gm :Maps<cr>
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" =>  Vimspector
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:vimspector_enable_mappings = 'VISUAL_STUDIO'
+
 " function! RipgrepFzf(query, fullscreen)
 " let command_fmt = rg --column --line-number --no-heading --color=always --smart-case -- %s || true''
 " let initial_command = printfcommand_fmt, shellescape(a:query())
@@ -510,11 +519,6 @@ let g:airline_theme='shades_of_purple'
 " Having longer updatetime (default is 4000 ms = 4 s) leads to noticeable
 " delays and poor user experience.
 set updatetime=300
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" =>  Vimspector
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:vimspector_enable_mappings = 'VISUAL_STUDIO'
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " =>  COC.NVIM config
