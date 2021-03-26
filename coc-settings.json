@@ -1,5 +1,9 @@
 {
   "explorer.icon.enableVimDevicons": true,
+  "diagnostic.errorSign": "✘",
+  "diagnostic.warningSign": "",
+  "diagnostic.infoSign": "",
+  "codeLens.enable": true,
   "coc.preferences.formatOnSaveFiletypes": ["javascript", "typescript", "json"],
   "diagnostic.checkCurrentLine": true,
   "java.configuration.runtimes": [
@@ -18,6 +22,7 @@
     "CDSB",
     "Coid",
     "openjdk",
+    "println",
     "rederer",
     "rmask"
   ],
@@ -27,21 +32,21 @@
   "clangd.path": "/home/dmytro/.config/coc/extensions/coc-clangd-data/install/11.0.0/clangd_11.0.0/bin/clangd",
   "clangd.enabled": true
   /* "languageserver": { */
-    /* "ccls": { */
-      /* "command": "ccls", */
-      /* "filetypes": ["c", "cpp", "cuda", "objc", "objcpp"], */
-      /* "rootPatterns": [".ccls-root", "compile_commands.json", ".git", ".vim"], */
-      /* "initializationOptions": { */
-        /* "cache": { */
-          /* "directory": "~/.ccls-cache" */
-        /* }, */
-        /* "client": { */
-          /* "snippetSupport": true */
-        /* }, */
-        /* "highlight":{ */
-          /* "lsRanges": true */
-        /* } */
-      /* } */
-    /* } */
+  /* "ccls": { */
+  /* "command": "ccls", */
+  /* "filetypes": ["c", "cpp", "cuda", "objc", "objcpp"], */
+  /* "rootPatterns": [".ccls-root", "compile_commands.json", ".git", ".vim"], */
+  /* "initializationOptions": { */
+  /* "cache": { */
+  /* "directory": "~/.ccls-cache" */
+  /* }, */
+  /* "client": { */
+  /* "snippetSupport": true */
+  /* }, */
+  /* "highlight":{ */
+  /* "lsRanges": true */
+  /* } */
+  /* } */
+  /* } */
   /* } */
 }
