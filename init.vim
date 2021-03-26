@@ -18,6 +18,8 @@ let mapleader=" "
 " Sets how many lines of history VIM has to remember
 set history=500
 
+nnoremap <silent> <leader>z  :stop<cr>
+
 " escape insert mode with jk
 imap <silent> jk <esc>
 
@@ -52,8 +54,8 @@ set nowrap
 " => VIM user interface
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " display tabs as vertical bars
-:set list
-:set lcs=tab:\|\  " the last character is space!
+" :set list
+" :set lcs=tab:\|\  " the last character is space!
 
 " Set 7 lines to the cursor - when moving vertically using j/k
 set so=7
@@ -136,6 +138,12 @@ call ToggleRelativeNumbers(1)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Use spaces instead of tabs
 set expandtab
+
+" set indent width
+set tabstop=4
+
+" set configure << and >> to be the same number of spaces as tabstop
+set shiftwidth=0
 
 " Be smart when using tabs ;)
 set smarttab
@@ -272,7 +280,7 @@ map <leader>j <Plug>(coc-terminal-toggle)
 " turn terminal to normal mode with escape
 tnoremap <Esc> <C-\><C-n>
 " close terminal right away. useful for fzf commands
-tnoremap <C-c> <C-q>
+" tnoremap <C-o> <C-q>
 " start terminal in insert mode
 au BufEnter * if &buftype == 'terminal' | :startinsert | endif
 
@@ -345,6 +353,7 @@ endfunction
 xmap <silent> <leader>a :<C-u>execute 'CocCommand actions.open ' . visualmode()<CR>
 nmap <silent> <leader>a :<C-u>set operatorfunc=<SID>cocActionsOpenFromSelected<CR>g@
 
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Plugins
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -402,7 +411,24 @@ Plug 'airblade/vim-gitgutter'
 Plug 'junegunn/goyo.vim'
 Plug 'junegunn/limelight.vim'
 
+" testing framework
+Plug 'vim-test/vim-test'
+
+Plug 'nathanaelkane/vim-indent-guides'
+
 call plug#end()
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => vim-test framework for testing
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+nnoremap <silent> <leader>in :TestNearest<cr>
+nnoremap <silent> <leader>if :TestFile<cr>
+nnoremap <silent> <leader>is :TestSuite<cr>
+nnoremap <silent> <leader>il :TestLast<cr>
+nnoremap <silent> <leader>ig :TestVisit<cr>
+
+let test#strategy = 'neovim'
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => GoYo and Limeline configuration to define Zen mode
@@ -491,7 +517,8 @@ let g:airline#extensions#tabline#exclude_preview = 0
 " going to leave it here is a reminder...
 " set termguicolors
 
-colorscheme shades_of_purple
+" colorscheme shades_of_purple
+colorscheme gruvbox
 " Update bracket matching highlight group to something sane that can be read
 " Apparently, there is such a thing as dynamic color scheme, so
 " register an autocomand to make sure that we update the highlight
@@ -503,14 +530,21 @@ autocmd ColorScheme shades_of_purple highlight! link MatchParen Search
 syntax enable
 set background=dark
 
-" let g:airline_theme='gruvbox'
-let g:shades_of_purple_airline = 1
-let g:airline_theme='shades_of_purple'
+let g:airline_theme='gruvbox'
+" let g:shades_of_purple_airline = 1
+" let g:airline_theme='shades_of_purple'
 
 " Enable 256 colors palette in Gnome Terminal
 " if $COLORTERM == 'gnome-terminal'
     set t_Co=256
 " endif
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Indentation highlighting with vim-indent-guides
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:indent_guides_enable_on_vim_startup = 1
+let g:indent_guides_default_mapping = 0
+let g:indent_guides_guide_size = 1
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " =>  Sessions
