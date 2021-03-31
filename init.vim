@@ -333,6 +333,19 @@ map <silent> <leader>gm :Maps<cr>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:vimspector_enable_mappings = 'VISUAL_STUDIO'
 
+" for normal mode - the word under the cursor
+nmap <Leader>di <Plug>VimspectorBalloonEval
+" for visual mode, the visually selected text
+xmap <Leader>di <Plug>VimspectorBalloonEval
+
+function! s:Debugpy() abort
+  py3 __import__( 'vimspector',
+                \ fromlist=[ 'developer' ] ).developer.SetUpDebugpy()
+endfunction
+
+" add command to allow debugging of vimspector with vimspector...
+command! -nargs=0 Debugpy call s:Debugpy()
+
 " function! RipgrepFzf(query, fullscreen)
 " let command_fmt = rg --column --line-number --no-heading --color=always --smart-case -- %s || true''
 " let initial_command = printfcommand_fmt, shellescape(a:query())
