@@ -813,6 +813,33 @@ function! s:add_mappings() abort
   wincmd p
 endfunction
 
+let s:spring_boot_active_profile = ""
+
+function! s:start_spring_boot_app_in_debug_mode() abort
+
+  let files = split(system('find . -name pom.xml'), '\n')
+
+  if empty(files)
+      echo 'Unable to detect spring boot projects'
+      return
+  endif
+
+  let target_file = inputlist(['Select the target project'] + map(copy(files), 'v:key+1.". ".substitute(substitute(v:val, "\./", "", ""), "/pom.xml", "", "")'))
+
+  if target_file < 1 || target_file >= len(files)
+      return
+  endif
+
+  let s:spring_boot_active_profile = input("Which profile to use: ", s:spring_boot_active_profile)
+
+  botright split term://bash
+  call feedkeys('mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005" -Dspring-boot.run.profiles='.s:spring_boot_active_profile.' -f '.files[target_file - 1]."\<cr>")
+
+endfunction
+
+command! SpringStartDebug call s:start_spring_boot_app_in_debug_mode()
+
+
 " ----------------------------------------------------------------------------
 " DiffRev
 " ----------------------------------------------------------------------------
