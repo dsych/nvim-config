@@ -169,26 +169,6 @@ map <C-k> <C-W>k
 map <C-h> <C-W>h
 map <C-l> <C-W>l
 
-" Find in the current buffer
-map <silent> <leader>bf :BLines<cr>
-
-" Global searches
-map <leader>fg :Ag
-
-" Display all buffers
-map <silent> <leader>bb :Buffers<cr>
-
-" Close the current buffer
-map <silent> <leader>bd :bp\|bd #<cr>
-
-" Close all the buffers
-map <silent> <leader>bda :bufdo bd<cr>
-" Close all buffers but the current one
-command! BufOnly silent! execute "%bd|e#|db#"
-map <silent> <leader>bdo :BufOnly<cr>
-
-map <silent> <leader>l :bnext<cr>
-map <silent> <leader>h :bprevious<cr>
 
 " Useful mappings for managing tabs
 map <silent> <leader>tn :tabnew<cr>
@@ -299,34 +279,6 @@ autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isT
 autocmd StdinReadPre * let s:std_in=1
 autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => FZF search config
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" map  <leader>p :call fzf#run(fzf#wrap({'sink': 'e'}))<cr>
-" let g:fzf_layout = { 'down': '20%' }
-let g:fzf_layout = { 'window': '10new' }
-nmap <leader>p :Files<cr>
-
-if executable("ag")
-  " requires silversearcher-ag
-  " used to ignore gitignore files
-  let $FZF_DEFAULT_COMMAND = 'ag -g ""'
-endif
-
-let g:fzf_action = {
-  \ 'ctrl-t': 'tab split',
-  \ 'ctrl-s': 'split',
-  \ 'ctrl-v': 'vsplit'
-  \}
-
-" only search for file content rather than filename for Ag command
-command! -bang -nargs=* Ag call fzf#vim#ag(<q-args>, {'options': '--delimiter : --nth 4..'}, <bang>0)
-
-" Fuzzy find help for plugin
-map <silent> <leader>gh :Helptags!<cr>
-
-" Fuzzy find mappings for the normal mode
-map <silent> <leader>gm :Maps<cr>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " =>  Vimspector
@@ -372,24 +324,23 @@ nmap <silent> <leader>a :<C-u>set operatorfunc=<SID>cocActionsOpenFromSelected<C
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 call plug#begin('~/.vim/plugged')
 
+Plug 'kyazdani42/nvim-web-devicons' " Recommended (for coloured icons)
+
 " language server
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 " all the extensions for coc-nvim
-let g:coc_global_extensions=[ 'coc-actions', 'coc-explorer', 'coc-java', 'coc-java-debug', 'coc-json', 'coc-marketplace', 'coc-pairs', 'coc-prettier', 'coc-spell-checker', 'coc-terminal', 'coc-tsserver', "coc-html", "coc-css", "coc-vimlsp", "coc-pyright"]
+let g:coc_global_extensions=[ 'coc-actions', 'coc-java', 'coc-java-debug', 'coc-json', 'coc-marketplace', 'coc-pairs', 'coc-prettier', 'coc-spell-checker', 'coc-terminal', 'coc-tsserver', "coc-html", "coc-css", "coc-vimlsp", "coc-pyright", "coc-cmake", "coc-emmet", "coc-clangd"]
 
-" status line
-Plug 'vim-airline/vim-airline'
-Plug 'vim-airline/vim-airline-themes'
+" bufferline line
+Plug 'romgrk/barbar.nvim'
 
 " debugging
 Plug 'puremourning/vimspector'
 
-" theme
-Plug 'morhetz/gruvbox'
-
 " files search
-Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
-Plug 'junegunn/fzf.vim'
+Plug 'nvim-lua/popup.nvim'
+Plug 'nvim-lua/plenary.nvim'
+Plug 'nvim-telescope/telescope.nvim'
 
 Plug 'tpope/vim-fugitive'
 
@@ -405,10 +356,6 @@ Plug 'preservim/nerdtree'
 
 Plug 'Xuyuanp/nerdtree-git-plugin'
 
-" file explorer icons
-Plug 'ryanoasis/vim-devicons'
-" end order matters here
-
 " file indentation detection
 Plug 'tpope/vim-sleuth'
 
@@ -416,9 +363,13 @@ Plug 'neoclide/jsonc.vim'
 
 Plug 'jackguo380/vim-lsp-cxx-highlight'
 
+" theme
+Plug 'morhetz/gruvbox'
 Plug 'Rigellute/shades-of-purple.vim'
 
-Plug 'airblade/vim-gitgutter'
+" git signs
+Plug 'nvim-lua/plenary.nvim'
+Plug 'lewis6991/gitsigns.nvim'
 
 " Focused writting
 Plug 'junegunn/goyo.vim'
@@ -429,7 +380,95 @@ Plug 'vim-test/vim-test'
 
 Plug 'nathanaelkane/vim-indent-guides'
 
+" register management
+Plug 'tversteeg/registers.nvim'
+
+Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
+
 call plug#end()
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => git signs and hunks
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+lua require('gitsigns').setup()
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => telescope fuzzy finder
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" Find files using Telescope command-line sugar.
+nnoremap <leader>p :Telescope find_files<cr>
+nnoremap <leader>fg :Telescope live_grep<cr>
+nnoremap <leader>bb :Telescope buffers<cr>
+nnoremap <leader>gh :Telescope help_tags<cr>
+nnoremap <leader>gm :Telescope keymaps<cr>
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => bufferline
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" NOTE: If barbar's option dict isn't created yet, create it
+let bufferline = get(g:, 'bufferline', {})
+
+" Enable/disable animations
+let bufferline.animation = v:true
+
+" Enable/disable auto-hiding the tab bar when there is a single buffer
+let bufferline.auto_hide = v:false
+
+" Enable/disable current/total tabpages indicator (top right corner)
+let bufferline.tabpages = v:true
+
+" Enable/disable close button
+let bufferline.closable = v:true
+
+" Enables/disable clickable tabs
+"  - left-click: go to buffer
+"  - middle-click: delete buffer
+let bufferline.clickable = v:true
+
+" Enable/disable icons
+" if set to 'numbers', will show buffer index in the tabline
+" if set to 'both', will show buffer index and icons in the tabline
+let bufferline.icons = v:true
+
+" Sets the icon's highlight group.
+" If false, will use nvim-web-devicons colors
+let bufferline.icon_custom_colors = v:false
+
+" Configure icons on the bufferline.
+let bufferline.icon_separator_active = '▎'
+let bufferline.icon_separator_inactive = '▎'
+let bufferline.icon_close_tab = ''
+let bufferline.icon_close_tab_modified = '●'
+
+" Sets the maximum padding width with which to surround each tab
+let bufferline.maximum_padding = 4
+
+" If set, the letters for each buffer in buffer-pick mode will be
+" assigned based on their name. Otherwise or in case all letters are
+" already assigned, the behavior is to assign letters in order of
+" usability (see order below)
+let bufferline.semantic_letters = v:true
+
+" New buffer letters are assigned in this order. This order is
+" optimal for the qwerty keyboard layout but might need adjustement
+" for other layouts.
+let bufferline.letters =
+  \ 'asdfjkl;ghnmxcvbziowerutyqpASDFJKLGHNMXCVBZIOWERUTYQP'
+
+nnoremap <silent> <leader>bp :BufferPick<cr>
+
+" Close the current buffer
+nnoremap <silent> <leader>bd :BufferClose<cr>
+nnoremap <silent> <A-l> :BufferNext<cr>
+nnoremap <silent> <A-h> :BufferPrevious<cr>
+" Close all the buffers
+nnoremap <silent> <leader>bda :bufdo bd<cr>
+
+" Close all buffers but the current one
+" command! BufOnly silent! execute "%bd|e#|db#"
+nnoremap <silent> <leader>bdo :BufferCloseAllButCurrent<cr>
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -491,44 +530,14 @@ nmap <leader>ss :SSave!<cr>
 autocmd! BufRead,BufNewFile *.json set filetype=jsonc
 
 autocmd! BufRead,BufNewFile *sqc,*HPP,*CPP set filetype=cpp
-let g:airline_powerline_fonts = 1
-" let g:airline_section_b = '%{getcwd()}' " in section B of the status line display the CWD
 
-" do not show file encoding if it matches this sting
-let g:airline#parts#ffenc#skip_expected_string='utf-8[unix]'
-
-let g:airline_stl_path_style = 'short'
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Tabline
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:airline#extensions#tabline#enabled = 1           " enable airline tabline
-let g:airline#extensions#tabline#show_close_button = 0 " remove 'X' at the end of the tabline
-let g:airline#extensions#tabline#tabs_label = ''       " can put text here like BUFFERS to denote buffers (I clear it so nothing is shown)
-let g:airline#extensions#tabline#buffers_label = ''    " can put text here like TABS to denote tabs (I clear it so nothing is shown)
-let g:airline#extensions#tabline#fnamemod = ':t'       " disable file paths in the tab
-let g:airline#extensions#tabline#show_tab_count = 1    " dont show tab numbers on the right
-let g:airline#extensions#tabline#show_buffers = 0      " dont show buffers in the tabline
-let g:airline#extensions#tabline#show_splits = 1       " enable the buffer name that displays on the right of the tabline
-let g:airline#extensions#tabline#show_tab_nr = 1       " disables tab numbers
-let g:airline#extensions#tabline#show_tab_type = 0     " disables the weird ornage arrow on the tabline
-let g:airline#extensions#tabline#buffer_idx_mode = 1
-let g:airline#extensions#tabline#tab_min_count = 0
-let g:airline#extensions#tabline#buffer_nr_show = 1
-
-let g:airline#extensions#tabline#alt_sep = 1
-
-" do not show warnings
-let g:airline_section_warning = ''
-let g:airline_skip_empty_sections = 1
-
-let g:airline#extensions#tabline#exclude_preview = 0
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Colors and Fonts
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " THIS IS PURE FUCKING EVIL!!! DO NOT E-V-E-R SET THIS OPTION
 " screws up all of the terminal colors, completely.
 " going to leave it here is a reminder...
-" set termguicolors
+set termguicolors
 
 " colorscheme shades_of_purple
 colorscheme gruvbox
@@ -542,10 +551,6 @@ autocmd ColorScheme shades_of_purple highlight! link MatchParen Search
 " Enable syntax highlighting
 syntax enable
 set background=dark
-
-let g:airline_theme='gruvbox'
-" let g:shades_of_purple_airline = 1
-" let g:airline_theme='shades_of_purple'
 
 " Enable 256 colors palette in Gnome Terminal
 " if $COLORTERM == 'gnome-terminal'
@@ -707,11 +712,6 @@ command! -nargs=? Fold :call     CocAction('fold', <f-args>)
 
 " Add `:OR` command for organize imports of the current buffer.
 command! -nargs=0 OR   :call     CocAction('runCommand', 'editor.action.organizeImport')
-
-" Add (Neo)Vim's native statusline support.
-" NOTE: Please see `:h coc-status` for integrations with external plugins that
-" provide custom statusline: lightline.vim, vim-airline.
-" set statusline^=%{coc#status()}%{get(b:,'coc_current_function','')}
 
 " Mappings for CoCList
 " Manage extensions.
@@ -920,5 +920,340 @@ nnoremap [r :<C-U>call <SID>view_next_git_diff_for_revision('cprevious')<CR>
 nnoremap ]R :<C-U>call <SID>view_next_git_diff_for_revision('clast')<CR>
 nnoremap [R :<C-U>call <SID>view_next_git_diff_for_revision('cfirst')<CR>
 
-" my coc extensions
-" set runtimepath^=/home/dmytro/workspace/coc-cmake-tools
+
+" ----------------------------------------------------------------------------
+" Evil line configuration for galaxyline
+" ----------------------------------------------------------------------------
+
+lua << EOF
+local gl = require('galaxyline')
+local gls = gl.section
+local extension = require('galaxyline.provider_extensions')
+
+gl.short_line_list = {
+    'LuaTree',
+    'vista',
+    'dbui',
+    'startify',
+    'term',
+    'nerdtree',
+    'fugitive',
+    'fugitiveblame',
+    'plug'
+}
+
+-- VistaPlugin = extension.vista_nearest
+
+local colors = {
+    bg = '#282c34',
+    line_bg = '#353644',
+    fg = '#8FBCBB',
+    fg_green = '#65a380',
+
+    yellow = '#fabd2f',
+    cyan = '#008080',
+    darkblue = '#081633',
+    green = '#afd700',
+    orange = '#FF8800',
+    purple = '#5d4d7a',
+    magenta = '#c678dd',
+    blue = '#51afef';
+    red = '#ec5f67'
+}
+
+local function lsp_status(status)
+    shorter_stat = ''
+    for match in string.gmatch(status, "[^%s]+")  do
+        err_warn = string.find(match, "^[WE]%d+", 0)
+        if not err_warn then
+            shorter_stat = shorter_stat .. ' ' .. match
+        end
+    end
+    return shorter_stat
+end
+
+
+local function get_coc_lsp()
+  local status = vim.fn['coc#status']()
+  if not status or status == '' then
+      return ''
+  end
+  return lsp_status(status)
+end
+
+function get_diagnostic_info()
+  if vim.fn.exists('*coc#rpc#start_server') == 1 then
+    return get_coc_lsp()
+    end
+  return ''
+end
+
+local function get_current_func()
+  local has_func, func_name = pcall(vim.fn.nvim_buf_get_var,0,'coc_current_function')
+  if not has_func then return end
+      return func_name
+  end
+
+function get_function_info()
+  if vim.fn.exists('*coc#rpc#start_server') == 1 then
+    return get_current_func()
+    end
+  return ''
+end
+
+local function trailing_whitespace()
+    local trail = vim.fn.search("\\s$", "nw")
+    if trail ~= 0 then
+        return ' '
+    else
+        return nil
+    end
+end
+
+CocStatus = get_diagnostic_info
+CocFunc = get_current_func
+TrailingWhiteSpace = trailing_whitespace
+
+function has_file_type()
+    local f_type = vim.bo.filetype
+    if not f_type or f_type == '' then
+        return false
+    end
+    return true
+end
+
+local buffer_not_empty = function()
+  if vim.fn.empty(vim.fn.expand('%:t')) ~= 1 then
+    return true
+  end
+  return false
+end
+
+gls.left[1] = {
+  FirstElement = {
+    provider = function() return ' ' end,
+    highlight = {colors.blue,colors.line_bg}
+  },
+}
+gls.left[2] = {
+  ViMode = {
+    provider = function()
+      -- auto change color according the vim mode
+      local alias = {
+          n = 'NORMAL',
+          i = 'INSERT',
+          c= 'COMMAND',
+          V= 'VISUAL',
+          [''] = 'VISUAL',
+          v ='VISUAL',
+          c  = 'COMMAND-LINE',
+          ['r?'] = ':CONFIRM',
+          rm = '--MORE',
+          R  = 'REPLACE',
+          Rv = 'VIRTUAL',
+          s  = 'SELECT',
+          S  = 'SELECT',
+          ['r']  = 'HIT-ENTER',
+          [''] = 'SELECT',
+          t  = 'TERMINAL',
+          ['!']  = 'SHELL',
+      }
+      local mode_color = {
+          n = colors.green,
+          i = colors.blue,v=colors.magenta,[''] = colors.blue,V=colors.blue,
+          c = colors.red,no = colors.magenta,s = colors.orange,S=colors.orange,
+          [''] = colors.orange,ic = colors.yellow,R = colors.purple,Rv = colors.purple,
+          cv = colors.red,ce=colors.red, r = colors.cyan,rm = colors.cyan, ['r?'] = colors.cyan,
+          ['!']  = colors.green,t = colors.green,
+          c  = colors.purple,
+          ['r?'] = colors.red,
+          ['r']  = colors.red,
+          rm = colors.red,
+          R  = colors.yellow,
+          Rv = colors.magenta,
+      }
+      local vim_mode = vim.fn.mode()
+      vim.api.nvim_command('hi GalaxyViMode guifg='..mode_color[vim_mode])
+      return alias[vim_mode] .. ' '
+    end,
+    highlight = {colors.red,colors.line_bg,'bold'},
+  },
+}
+gls.left[3] ={
+  FileIcon = {
+    provider = 'FileIcon',
+    condition = buffer_not_empty,
+    highlight = {require('galaxyline.provider_fileinfo').get_file_icon_color,colors.line_bg},
+  },
+}
+gls.left[4] = {
+  FileName = {
+    provider = {'FileName'},
+    condition = buffer_not_empty,
+    highlight = {colors.fg,colors.line_bg,'bold'}
+  }
+}
+
+gls.left[5] = {
+  GitIcon = {
+    provider = function() return '  ' end,
+    condition = require('galaxyline.provider_vcs').check_git_workspace,
+    highlight = {colors.orange,colors.line_bg},
+  }
+}
+gls.left[6] = {
+  GitBranch = {
+    provider = 'GitBranch',
+    condition = require('galaxyline.provider_vcs').check_git_workspace,
+    highlight = {'#8FBCBB',colors.line_bg,'bold'},
+  }
+}
+
+local checkwidth = function()
+  local squeeze_width  = vim.fn.winwidth(0) / 2
+  if squeeze_width > 40 then
+    return true
+  end
+  return false
+end
+
+gls.left[7] = {
+  DiffAdd = {
+    provider = 'DiffAdd',
+    condition = checkwidth,
+    icon = ' ',
+    highlight = {colors.green,colors.line_bg},
+  }
+}
+gls.left[8] = {
+  DiffModified = {
+    provider = 'DiffModified',
+    condition = checkwidth,
+    icon = ' ',
+    highlight = {colors.orange,colors.line_bg},
+  }
+}
+gls.left[9] = {
+  DiffRemove = {
+    provider = 'DiffRemove',
+    condition = checkwidth,
+    icon = ' ',
+    highlight = {colors.red,colors.line_bg},
+  }
+}
+gls.left[10] = {
+  LeftEnd = {
+    provider = function() return '' end,
+    separator = '',
+    separator_highlight = {colors.bg,colors.line_bg},
+    highlight = {colors.line_bg,colors.line_bg}
+  }
+}
+
+gls.left[11] = {
+    TrailingWhiteSpace = {
+     provider = TrailingWhiteSpace,
+     icon = '  ',
+     highlight = {colors.yellow,colors.bg},
+    }
+}
+
+gls.left[12] = {
+  DiagnosticError = {
+    provider = 'DiagnosticError',
+    icon = '  ',
+    highlight = {colors.red,colors.bg}
+  }
+}
+gls.left[13] = {
+  Space = {
+    provider = function () return ' ' end
+  }
+}
+gls.left[14] = {
+  DiagnosticWarn = {
+    provider = 'DiagnosticWarn',
+    icon = '  ',
+    highlight = {colors.yellow,colors.bg},
+  }
+}
+
+
+gls.left[15] = {
+    CocStatus = {
+     provider = CocStatus,
+     highlight = {colors.green,colors.bg},
+     icon = '  '
+    }
+}
+
+gls.left[16] = {
+  CocFunc = {
+    provider = CocFunc,
+    icon = '  λ ',
+    highlight = {colors.yellow,colors.bg},
+  }
+}
+
+gls.right[1]= {
+  FileFormat = {
+    provider = 'FileFormat',
+    separator = ' ',
+    separator_highlight = {colors.bg,colors.line_bg},
+    highlight = {colors.fg,colors.line_bg,'bold'},
+  }
+}
+gls.right[4] = {
+  LineInfo = {
+    provider = 'LineColumn',
+    separator = ' | ',
+    separator_highlight = {colors.blue,colors.line_bg},
+    highlight = {colors.fg,colors.line_bg},
+  },
+}
+gls.right[5] = {
+  PerCent = {
+    provider = 'LinePercent',
+    separator = ' ',
+    separator_highlight = {colors.line_bg,colors.line_bg},
+    highlight = {colors.cyan,colors.darkblue,'bold'},
+  }
+}
+
+-- gls.right[4] = {
+--   ScrollBar = {
+--     provider = 'ScrollBar',
+--     highlight = {colors.blue,colors.purple},
+--   }
+-- }
+--
+-- gls.right[3] = {
+--   Vista = {
+--     provider = VistaPlugin,
+--     separator = ' ',
+--     separator_highlight = {colors.bg,colors.line_bg},
+--     highlight = {colors.fg,colors.line_bg,'bold'},
+--   }
+-- }
+
+gls.short_line_left[1] = {
+  BufferType = {
+    provider = 'FileTypeName',
+    separator = '',
+    condition = has_file_type,
+    separator_highlight = {colors.purple,colors.bg},
+    highlight = {colors.fg,colors.purple}
+  }
+}
+
+
+gls.short_line_right[1] = {
+  BufferIcon = {
+    provider= 'BufferIcon',
+    separator = '',
+    condition = has_file_type,
+    separator_highlight = {colors.purple,colors.bg},
+    highlight = {colors.fg,colors.purple}
+  }
+}
+EOF
