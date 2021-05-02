@@ -385,13 +385,20 @@ Plug 'tversteeg/registers.nvim'
 
 Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
 
+Plug 'sindrets/diffview.nvim'
+
 call plug#end()
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => git signs and hunks
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-lua require('gitsigns').setup()
+lua require('gitsigns').setup{}
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => revision diff config
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+lua require('diffview').setup{}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => telescope fuzzy finder
@@ -838,88 +845,6 @@ function! s:start_spring_boot_app_in_debug_mode() abort
 endfunction
 
 command! SpringStartDebug call s:start_spring_boot_app_in_debug_mode()
-
-
-" ----------------------------------------------------------------------------
-" DiffRev
-" ----------------------------------------------------------------------------
-
-" Letter to word mapping for git diff output
-let s:git_status_dictionary = {
-      \ "A": "Added",
-      \ "B": "Broken",
-      \ "C": "Copied",
-      \ "D": "Deleted",
-      \ "M": "Modified",
-      \ "R": "Renamed",
-      \ "T": "Changed",
-      \ "U": "Unmerged",
-      \ "X": "Unknown"
-      \ }
-let s:current_revision = ''
-let s:review_tab = -1
-
-function! s:set_review_tab_number(tab_num) abort
-  if a:tab_num ==? s:review_tab
-    let s:review_tab = -1
-  endif
-endfunction
-
-function! s:create_new_review_tab() abort
-    tabnew
-
-    augroup review_tab_group
-      autocmd!
-      autocmd TabClosed * :call s:set_review_tab_number(expand('<afile>')) | autocmd! review_tab_group
-    augroup END
-
-    return tabpagenr()
-endfunction
-
-function! s:get_diff_files(rev) abort
-  let title = 'Gdiff '.a:rev
-  let command = 'git diff --name-status '.a:rev
-  let lines = split(system(command), '\n')
-  let items = []
-
-  for line in lines
-    let filename = matchstr(line, "\\S\\+$")
-    let status = s:git_status_dictionary[matchstr(line, "^\\w")]
-    let item = { "filename": filename, "text": status }
-
-    call add(items, item)
-  endfor
-
-  let list = {'title': title, 'items': items}
-
-  call setqflist([], 'r', list)
-
-  let s:review_tab = s:create_new_review_tab()
-
-  let s:current_revision = a:rev
-  copen
-
-  call s:view_next_git_diff_for_revision('cfirst')
-endfunction
-
-function! s:view_next_git_diff_for_revision(direction) abort
-  if s:review_tab >= 1
-    execute s:review_tab.'tabnext'
-    close
-  else
-    let s:review_tab = s:create_new_review_tab()
-  endif
-
-  execute a:direction.' | Gdiff '.s:current_revision
-endfunction
-
-command! -nargs=1 DiffRev call s:get_diff_files(<q-args>)
-
-nnoremap ]r :<C-U>call <SID>view_next_git_diff_for_revision('cnext')<CR>
-nnoremap [r :<C-U>call <SID>view_next_git_diff_for_revision('cprevious')<CR>
-nnoremap ]R :<C-U>call <SID>view_next_git_diff_for_revision('clast')<CR>
-nnoremap [R :<C-U>call <SID>view_next_git_diff_for_revision('cfirst')<CR>
-
 
 " ----------------------------------------------------------------------------
 " Evil line configuration for galaxyline
