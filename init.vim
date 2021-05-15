@@ -366,6 +366,7 @@ Plug 'jackguo380/vim-lsp-cxx-highlight'
 " theme
 Plug 'morhetz/gruvbox'
 Plug 'Rigellute/shades-of-purple.vim'
+Plug 'folke/tokyonight.nvim'
 
 " git signs
 Plug 'nvim-lua/plenary.nvim'
@@ -387,8 +388,19 @@ Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
 
 Plug 'sindrets/diffview.nvim'
 
+Plug 'justinmk/vim-sneak'
+Plug 'tpope/vim-surround'
+
 call plug#end()
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => vim-sneak
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" remap default keybindings to sneak
+map f <Plug>Sneak_f
+map F <Plug>Sneak_F
+map t <Plug>Sneak_t
+map T <Plug>Sneak_T
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => git signs and hunks
@@ -529,6 +541,14 @@ let g:startify_session_savevars = [
   \ 'g:WorkspaceFolders'
   \ ]
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Tokyonight
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" NOTE: has to precede the color scheme settings
+let g:tokyonight_style = 'storm'
+let g:tokyonight_sidebars = [ 'nerdtree', 'terminal' ]
+let g:tokyonight_hide_inactive_statusline = v:true
+let g:tokyonight_italic_comments = v:true
 
 " save current layout into session
 nmap <leader>ss :SSave!<cr>
@@ -544,10 +564,10 @@ autocmd! BufRead,BufNewFile *sqc,*HPP,*CPP set filetype=cpp
 " THIS IS PURE FUCKING EVIL!!! DO NOT E-V-E-R SET THIS OPTION
 " screws up all of the terminal colors, completely.
 " going to leave it here is a reminder...
+" OH HOW THINGS HAVE CHANGED)
 set termguicolors
 
-" colorscheme shades_of_purple
-colorscheme gruvbox
+colorscheme tokyonight
 " Update bracket matching highlight group to something sane that can be read
 " Apparently, there is such a thing as dynamic color scheme, so
 " register an autocomand to make sure that we update the highlight
@@ -561,7 +581,7 @@ set background=dark
 
 " Enable 256 colors palette in Gnome Terminal
 " if $COLORTERM == 'gnome-terminal'
-    set t_Co=256
+    " set t_Co=256
 " endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -570,6 +590,7 @@ set background=dark
 let g:indent_guides_enable_on_vim_startup = 1
 let g:indent_guides_default_mapping = 0
 let g:indent_guides_guide_size = 1
+let g:indent_guides_exclude_filetypes = ['help', 'nerdtree', 'startify']
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " =>  Sessions
@@ -711,7 +732,7 @@ nmap <silent> <C-s> <Plug>(coc-range-select)
 xmap <silent> <C-s> <Plug>(coc-range-select)
 
 " Add `:Format` command to format current buffer.
-command! -nargs=0 Format :call CocAction('format')
+command! -nargs=0 -range Format :call CocAction('format')
 map <A-F> :Format<cr>
 
 " Add `:Fold` command to fold current buffer.
@@ -1019,18 +1040,11 @@ gls.left[4] = {
   }
 }
 
-gls.left[5] = {
-  GitIcon = {
-    provider = function() return '  ' end,
-    condition = require('galaxyline.provider_vcs').check_git_workspace,
-    highlight = {colors.orange,colors.line_bg},
-  }
-}
 gls.left[6] = {
   GitBranch = {
     provider = 'GitBranch',
     condition = require('galaxyline.provider_vcs').check_git_workspace,
-    highlight = {'#8FBCBB',colors.line_bg,'bold'},
+    highlight = {colors.orange,colors.line_bg,'bold'},
   }
 }
 
@@ -1182,3 +1196,6 @@ gls.short_line_right[1] = {
   }
 }
 EOF
+
+set runtimepath^=/home/dmytro/workspace/coc-arduino
+" set runtimepath^=/home/dmytro/workspace/coc-test
