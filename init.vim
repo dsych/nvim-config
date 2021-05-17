@@ -842,7 +842,7 @@ endfunction
 
 let s:spring_boot_active_profile = ""
 
-function! s:start_spring_boot_app_in_debug_mode() abort
+function! s:start_spring_boot_app_in_debug_mode(is_debug) abort
 
   let files = split(system('find . -name pom.xml'), '\n')
 
@@ -859,12 +859,19 @@ function! s:start_spring_boot_app_in_debug_mode() abort
 
   let s:spring_boot_active_profile = input("Which profile to use: ", s:spring_boot_active_profile)
 
+  let command = 'mvn spring-boot:run'
+
+  if a:is_debug
+    let command +=  ' -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005"'
+  endif
+
   botright split term://bash
-  call feedkeys('mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005" -Dspring-boot.run.profiles='.s:spring_boot_active_profile.' -f '.files[target_file - 1]."\<cr>")
+  call feedkeys(command.' -Dspring-boot.run.profiles='.s:spring_boot_active_profile.' -f '.files[target_file - 1]."\<cr>")
 
 endfunction
 
-command! SpringStartDebug call s:start_spring_boot_app_in_debug_mode()
+command! SpringStartDebug call s:start_spring_boot_app_in_debug_mode(1)
+command! SpringStart call s:start_spring_boot_app_in_debug_mode(0)
 
 " ----------------------------------------------------------------------------
 " Evil line configuration for galaxyline
