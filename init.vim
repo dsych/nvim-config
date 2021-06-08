@@ -2,11 +2,11 @@
 " => General
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 if has('win32') || has('win64')
-  if has_key(environ(), 'GIT_BASH')
-    let &shell = environ()['GIT_BASH']
-  else
-    let &shell='cmd.exe'
-  endif
+  " if has_key(environ(), 'GIT_BASH')
+    " let &shell = environ()['GIT_BASH']
+  " else
+  let &shell='cmd.exe'
+  " endif
 endif
 " increase timeout between keys
 set timeoutlen=1500
@@ -248,11 +248,6 @@ let g:NERDCommentEmptyLines = 1
 let g:NERDTrimTrailingWhitespace = 1
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => NERD git plugin
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:NERDTreeGitStatusUseNerdFonts = 1
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Terminal toggle config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 map <leader>j <Plug>(coc-terminal-toggle)
@@ -267,20 +262,19 @@ au BufEnter * if &buftype == 'terminal' | :startinsert | endif
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Explorer config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map <silent> <leader>e :NERDTreeToggle<cr>
-map <silent> <leader>ef :NERDTreeFind<cr>
-autocmd StdinReadPre * let s:std_in=1
-" Automatically close nvim if NERDTree is only thing left open
-autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-" show nerd tree automatically, if no file buffer is open on startup
-" autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
-
-" open nerd tree automatically, if nvim is opened against a directory
-autocmd StdinReadPre * let s:std_in=1
-autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
+map <silent> <leader>e :NvimTreeToggle<cr>
+map <silent> <leader>ef :NvimTreeFindFile<cr>
+let g:nvim_tree_auto_open = 1 "0 by default, opens the tree when typing `vim $DIR` or `vim`
+let g:nvim_tree_auto_ignore_ft = [ 'startify', 'dashboard' ] "empty by default, don't auto open tree on specific filetypes.
+let g:nvim_tree_quit_on_open = 1 "0 by default, closes the tree when you open a file
+let g:nvim_tree_follow = 1 "0 by default, this option allows the cursor to be updated when entering a buffer               """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:nvim_tree_indent_markers = 1 "0 by default, this option shows indent markers when folders are open                   " =>  Vimspector
+let g:nvim_tree_add_trailing = 1 "0 by default, append a trailing slash to folder names
+let g:nvim_tree_group_empty = 1 " 0 by default, compact folders that only contain a single folder into one node in the file tree"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:nvim_tree_ignore = [ '.git', '.cache' ]
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" =>  Vimspector
+" => Vimspector
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:vimspector_enable_mappings = 'VISUAL_STUDIO'
 
@@ -307,16 +301,6 @@ command! -nargs=0 Debugpy call s:Debugpy()
 "
 " command! -nargs=* -bang Rg call RipgrepFzf(<q-args, <>bang>0)]}})
 "
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Action menu config
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Remap for do codeAction of selected region
-function! s:cocActionsOpenFromSelected(type) abort
-  execute 'CocCommand actions.open ' . a:type
-endfunction
-xmap <silent> <leader>a :<C-u>execute 'CocCommand actions.open ' . visualmode()<CR>
-nmap <silent> <leader>a :<C-u>set operatorfunc=<SID>cocActionsOpenFromSelected<CR>g@
-
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Plugins
@@ -351,9 +335,10 @@ Plug 'preservim/nerdcommenter'
 
 " begin order matters here
 " file explorer
-Plug 'preservim/nerdtree'
+" Plug 'preservim/nerdtree'
+" Plug 'Xuyuanp/nerdtree-git-plugin'
 
-Plug 'Xuyuanp/nerdtree-git-plugin'
+Plug 'kyazdani42/nvim-tree.lua'
 
 " file indentation detection
 Plug 'tpope/vim-sleuth'
@@ -528,7 +513,7 @@ command! -nargs=0 Zen :call ToggleZen()
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:startify_session_before_save = [
     \ 'echo "Cleaning up before saving.."',
-    \ 'silent! NERDTreeTabsClose'
+    \ 'silent! NvimTreeClose'
     \ ]
 
 let g:startify_session_persistence = 1
@@ -545,7 +530,7 @@ let g:startify_session_savevars = [
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " NOTE: has to precede the color scheme settings
 let g:tokyonight_style = 'storm'
-let g:tokyonight_sidebars = [ 'nerdtree', 'terminal' ]
+let g:tokyonight_sidebars = [ 'nerdtree', 'terminal', "LuaTree" ]
 let g:tokyonight_hide_inactive_statusline = v:true
 let g:tokyonight_italic_comments = v:true
 
@@ -580,7 +565,7 @@ set background=dark
 
 " Enable 256 colors palette in Gnome Terminal
 " if $COLORTERM == 'gnome-terminal'
-    " set t_Co=256
+" set t_Co=256
 " endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -589,7 +574,7 @@ set background=dark
 let g:indent_guides_enable_on_vim_startup = 1
 let g:indent_guides_default_mapping = 0
 let g:indent_guides_guide_size = 1
-let g:indent_guides_exclude_filetypes = ['help', 'nerdtree', 'startify']
+let g:indent_guides_exclude_filetypes = ['help', 'nerdtree', 'startify', 'LuaTree']
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " =>  Sessions
@@ -655,9 +640,9 @@ inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
                               \: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
 
 " view previous diagnostic
-nmap <silent> <leader>dp <Plug>(coc-diagnostic-prev)
+nmap <silent> <leader>dp <Plug>(coc-diagnostic-prev-error)
 " view next diagnostic
-nmap <silent> <leader>dn <Plug>(coc-diagnostic-next)
+nmap <silent> <leader>dn <Plug>(coc-diagnostic-next-error)
 " Show all diagnostics.
 nnoremap <silent> <leader>da  :<C-u>CocList diagnostics<cr>
 
@@ -700,11 +685,9 @@ augroup end
 
 " Applying codeAction to the selected region.
 " Example: `<leader>aap` for current paragraph
-xmap <leader>a  <Plug>(coc-codeaction-selected)
-nmap <leader>a  <Plug>(coc-codeaction-selected)
+xmap <leader>a  <Plug>(coc-codeaction-cursor)
+nmap <leader>a  <Plug>(coc-codeaction-cursor)
 
-" Remap keys for applying codeAction to the current buffer.
-nmap <leader>ac  <Plug>(coc-codeaction)
 " Apply AutoFix to problem on the current line.
 nmap <leader>qf  <Plug>(coc-fix-current)
 
