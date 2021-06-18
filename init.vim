@@ -248,18 +248,6 @@ let g:NERDCommentEmptyLines = 1
 let g:NERDTrimTrailingWhitespace = 1
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Terminal toggle config
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map <leader>j <Plug>(coc-terminal-toggle)
-
-" turn terminal to normal mode with escape
-tnoremap <Esc> <C-\><C-n>
-" close terminal right away. useful for fzf commands
-" tnoremap <C-o> <C-q>
-" start terminal in insert mode
-au BufEnter * if &buftype == 'terminal' | :startinsert | endif
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Explorer config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 map <silent> <leader>e :NvimTreeToggle<cr>
@@ -272,6 +260,7 @@ let g:nvim_tree_indent_markers = 1 "0 by default, this option shows indent marke
 let g:nvim_tree_add_trailing = 1 "0 by default, append a trailing slash to folder names
 let g:nvim_tree_group_empty = 1 " 0 by default, compact folders that only contain a single folder into one node in the file tree"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:nvim_tree_ignore = [ '.git', '.cache' ]
+let g:nvim_tree_width = 45
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Vimspector
@@ -312,7 +301,7 @@ Plug 'kyazdani42/nvim-web-devicons' " Recommended (for coloured icons)
 " language server
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 " all the extensions for coc-nvim
-let g:coc_global_extensions=[ 'coc-actions', 'coc-java', 'coc-java-debug', 'coc-json', 'coc-marketplace', 'coc-pairs', 'coc-prettier', 'coc-spell-checker', 'coc-terminal', 'coc-tsserver', "coc-html", "coc-css", "coc-vimlsp", "coc-pyright", "coc-cmake", "coc-emmet", "coc-clangd"]
+let g:coc_global_extensions=[ 'coc-actions', 'coc-java', 'coc-java-debug', 'coc-json', 'coc-marketplace', 'coc-pairs', 'coc-prettier', 'coc-spell-checker', 'coc-terminal', 'coc-tsserver', "coc-html", "coc-css", "coc-vimlsp", "coc-pyright", "coc-cmake", "coc-emmet", "coc-clangd", "coc-angular"]
 
 " bufferline line
 Plug 'romgrk/barbar.nvim'
@@ -333,11 +322,7 @@ Plug 'mhinz/vim-startify'
 " commenting
 Plug 'preservim/nerdcommenter'
 
-" begin order matters here
 " file explorer
-" Plug 'preservim/nerdtree'
-" Plug 'Xuyuanp/nerdtree-git-plugin'
-
 Plug 'kyazdani42/nvim-tree.lua'
 
 " file indentation detection
@@ -353,7 +338,6 @@ Plug 'Rigellute/shades-of-purple.vim'
 Plug 'folke/tokyonight.nvim'
 
 " git signs
-Plug 'nvim-lua/plenary.nvim'
 Plug 'lewis6991/gitsigns.nvim'
 
 " Focused writting
@@ -363,7 +347,7 @@ Plug 'junegunn/limelight.vim'
 " testing framework
 Plug 'vim-test/vim-test'
 
-Plug 'nathanaelkane/vim-indent-guides'
+Plug 'Yggdroot/indentLine'
 
 " register management
 Plug 'tversteeg/registers.nvim'
@@ -375,7 +359,55 @@ Plug 'sindrets/diffview.nvim'
 Plug 'justinmk/vim-sneak'
 Plug 'tpope/vim-surround'
 
+" terminal
+Plug 'akinsho/nvim-toggleterm.lua'
+
+" syntax highlights and more
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}  " We recommend updating the parsers on update
+
 call plug#end()
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Indentation highlighting with vim-indent-guides
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:indentLine_fileType = ['help', 'nerdtree', 'startify', 'LuaTree', 'TelescopePrompt']
+let g:indentLine_char = '|'
+let g:indentLine_leadingSpaceEnabled = 1
+let g:indentLine_leadingSpaceChar = '·'
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => tresitter config
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+lua << EOF
+require('nvim-treesitter.configs').setup {
+  ensure_installed = "maintained",
+  indent = {
+    enable = true
+  },
+  highlight = {
+    enable = true
+  }
+}
+EOF
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Terminal toggle config
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" map <leader>j <Plug>(coc-terminal-toggle)
+lua require("toggleterm").setup{
+  \ open_mapping = [[<c-\>]]
+  \ }
+" turn terminal to normal mode with escape
+tnoremap <Esc> <C-\><C-n>
+" start terminal in insert mode
+" and do not show terminal buffers in buffer list
+augroup terminal
+au!
+au TermOpen * setlocal nobuflisted
+" au BufEnter * if &buftype == 'terminal' | :startinsert | endif
+augroup END
+
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => vim-sneak
@@ -568,13 +600,6 @@ set background=dark
 " set t_Co=256
 " endif
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Indentation highlighting with vim-indent-guides
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:indent_guides_enable_on_vim_startup = 1
-let g:indent_guides_default_mapping = 0
-let g:indent_guides_guide_size = 1
-let g:indent_guides_exclude_filetypes = ['help', 'nerdtree', 'startify', 'LuaTree']
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " =>  Sessions
@@ -855,6 +880,22 @@ endfunction
 
 command! SpringStartDebug call s:start_spring_boot_app_in_debug_mode(1)
 command! SpringStart call s:start_spring_boot_app_in_debug_mode(0)
+
+
+" redirect the output of a Vim or external command into a scratch buffer
+function! Redir(cmd)
+  if a:cmd =~ '^!'
+    execute "let output = system('" . substitute(a:cmd, '^!', '', '') . "')"
+  else
+    redir => output
+    execute a:cmd
+    redir END
+  endif
+  new
+  " setlocal nobuflisted buftype=nofile bufhidden=wipe noswapfile
+  call setline(1, split(output, "\n"))
+endfunction
+command! -nargs=1 Redir silent call Redir(<f-args>)
 
 " ----------------------------------------------------------------------------
 " Evil line configuration for galaxyline
