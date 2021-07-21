@@ -584,6 +584,8 @@ autocmd! BufRead,BufNewFile *sqc,*HPP,*CPP set filetype=cpp
 set termguicolors
 
 colorscheme tokyonight
+autocmd ColorScheme tokyonight highlight! link LineNr Question
+autocmd ColorScheme tokyonight highlight! link CursorLineNr Question
 " Update bracket matching highlight group to something sane that can be read
 " Apparently, there is such a thing as dynamic color scheme, so
 " register an autocomand to make sure that we update the highlight
