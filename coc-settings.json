@@ -6,31 +6,42 @@
   "codeLens.enable": true,
   "coc.preferences.formatOnSaveFiletypes": ["javascript", "typescript", "json", "html", "css"],
   "diagnostic.checkCurrentLine": true,
-  "java.configuration.runtimes": [
-    {
-      "name": "JavaSE-1.8",
-      "path": "/usr/lib/jvm/java-8-openjdk-amd64",
-      "default": true
-    },
-    {
-      "name": "JavaSE-14",
-      "path": "/usr/lib/jvm/java-14-openjdk-amd64"
-    }
-  ],
+  "java.import.gradle.enabled": true,
+  // "java.configuration.runtimes": [
+    // {
+      // "name": "JavaSE-1.8",
+      // "path": "/usr/lib/jvm/java-8-openjdk-amd64",
+      // "default": true
+    // },
+    // {
+      // "name": "JavaSE-14",
+      // "path": "/usr/lib/jvm/java-14-openjdk-amd64"
+    // }
+  // ],
   "cSpell.userWords": [
     "Acesg",
     "Autowired",
     "CDSB",
     "Coid",
+    "Configurator",
+    "Dtests",
     "Hrdc",
     "Mingo",
+    "Xdebug",
+    "Xrunjdwp",
+    "appender",
+    "backpressure",
+    "brazilgradle",
+    "brazilgradleintegtest",
     "coincap",
+    "dsych",
+    "jvmargs",
     "openjdk",
     "println",
     "rederer",
     "rmask"
   ],
-  "java.home": "/usr/lib/jvm/java-14-openjdk-amd64",
+  // "java.home": "/usr/lib/jvm/java-14-openjdk-amd64",
   "tsserver.npm": "/usr/bin/npm",
   "clangd.semanticHighlighting": true,
   "clangd.path": "/home/dmytro/.config/coc/extensions/coc-clangd-data/install/11.0.0/clangd_11.0.0/bin/clangd",

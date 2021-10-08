@@ -74,8 +74,8 @@ endif
 "Always show current position
 set ruler
 
-" Enable mouse for all modes
-set mouse=a
+" Disable mouse for all modes
+set mouse=
 
 " Configure backspace so it acts as it should act
 set backspace=eol,start,indent
@@ -248,19 +248,17 @@ let g:NERDCommentEmptyLines = 1
 let g:NERDTrimTrailingWhitespace = 1
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Explorer config
+" => nvimtree.1, see after pluging
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 map <silent> <leader>e :NvimTreeToggle<cr>
 map <silent> <leader>ef :NvimTreeFindFile<cr>
-let g:nvim_tree_auto_open = 1 "0 by default, opens the tree when typing `vim $DIR` or `vim`
 let g:nvim_tree_auto_ignore_ft = [ 'startify', 'dashboard' ] "empty by default, don't auto open tree on specific filetypes.
 let g:nvim_tree_quit_on_open = 1 "0 by default, closes the tree when you open a file
-let g:nvim_tree_follow = 1 "0 by default, this option allows the cursor to be updated when entering a buffer               """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:nvim_tree_indent_markers = 1 "0 by default, this option shows indent markers when folders are open                   " =>  Vimspector
+let g:nvim_tree_indent_markers = 1 "0 by default, this option shows indent markers when folders are open
 let g:nvim_tree_add_trailing = 1 "0 by default, append a trailing slash to folder names
-let g:nvim_tree_group_empty = 1 " 0 by default, compact folders that only contain a single folder into one node in the file tree"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:nvim_tree_group_empty = 1 " 0 by default, compact folders that only contain a single folder into one node in the file tree
 let g:nvim_tree_ignore = [ '.git', '.cache' ]
-let g:nvim_tree_width = 45
+let g:nvim_tree_special_files = { 'README.md': 1, 'Makefile': 1, 'MAKEFILE': 1 } " List of filenames that gets highlighted with NvimTreeSpecialFile
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Vimspector
@@ -336,6 +334,7 @@ Plug 'jackguo380/vim-lsp-cxx-highlight'
 Plug 'morhetz/gruvbox'
 Plug 'Rigellute/shades-of-purple.vim'
 Plug 'folke/tokyonight.nvim'
+Plug 'rose-pine/neovim'
 
 " git signs
 Plug 'lewis6991/gitsigns.nvim'
@@ -350,7 +349,7 @@ Plug 'vim-test/vim-test'
 Plug 'Yggdroot/indentLine'
 
 " register management
-Plug 'tversteeg/registers.nvim'
+" Plug 'tversteeg/registers.nvim'
 
 Plug 'glepnir/galaxyline.nvim' , {'branch': 'main'}
 
@@ -365,8 +364,101 @@ Plug 'akinsho/nvim-toggleterm.lua'
 " syntax highlights and more
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}  " We recommend updating the parsers on update
 
+" gradle integration
+Plug 'hdiniz/vim-gradle'
+
+Plug 'GustavoKatel/sidebar.nvim'
+
+" style checker
+" Plug 'vim-syntastic/syntastic'
+
+Plug 'satabin/hocon-vim'
+
+" markdown preview
+" depends on https://github.com/charmbracelet/glow
+Plug 'ellisonleao/glow.nvim'
+
 call plug#end()
 
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => nvimtree.2
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+lua << EOF
+require'nvim-tree'.setup {
+  -- updates the root directory of the tree on `DirChanged` (when your run `:cd` usually)
+  update_cwd = false,
+
+  view = {
+    width= 45
+  },
+
+  -- updates the root directory of the tree on `DirChanged` (when your run `:cd` usually)
+  update_cwd = true,
+
+  -- update the focused file on `BufEnter`, un-collapses the folders recursively until it finds the file
+  update_focused_file = {
+    enable = true,
+   }
+}
+EOF
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => syntastic config
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:syntastic_always_populate_loc_list = 1
+let g:syntastic_auto_loc_list = 1
+let g:syntastic_check_on_open = 1
+let g:syntastic_check_on_wq = 0
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => sidebar config
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+lua << EOF
+function map(org, fun)
+  local res = {}
+  org = org or {}
+  for i,v in pairs(org) do
+    res[i] = fun(v)
+  end
+  return res
+end
+
+function empty(org)
+  return org == nil or next(org) == nil
+end
+
+local gradle_tasks = nil
+local gradle_section = {
+    title = "Gradle tasks",
+    icon = "->",
+    setup = function()
+        -- called only once and if the section is being used
+        gradle_tasks = vim.api.nvim_eval("map(filter(systemlist('./gradlew tasks'), {idx, line -> line =~? '\\w\\+ - .*'}), { idx, line -> split(trim(line), '-') })")
+    end,
+    draw = function(ctx)
+       if empty(gradle_tasks) then
+         return "<No tasks found>"
+       else
+        return map(gradle_tasks, function(item) return item[1] end)
+       end
+    end,
+    bindings = {
+      ["e"] = function(line, col)
+          if not empty(gradle_tasks) then
+            vim.api.nvim_command("Gradle "..gradle_tasks[line + 1][1])
+          end
+      end
+    }
+}
+require("sidebar-nvim").setup({
+  open = false,
+  side = "right",
+  update_interval = 10000,
+  sections = { "git-status", gradle_section },
+})
+EOF
+
+nnoremap <silent> <leader>s :SidebarNvimToggle<cr>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Indentation highlighting with vim-indent-guides
@@ -433,9 +525,9 @@ lua require('diffview').setup{}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 " Find files using Telescope command-line sugar.
-nnoremap <leader>p :Telescope find_files<cr>
-nnoremap <leader>fg :Telescope live_grep<cr>
-nnoremap <leader>bb :Telescope buffers<cr>
+nnoremap <leader>p :lua require("telescope.builtin").find_files({path_display={"smart", "shorten"}})<cr>
+nnoremap <leader>fg :lua require("telescope.builtin").live_grep({path_display={"smart", "shorten"}, only_sort_text=true})<cr>
+nnoremap <leader>bb :lua require("telescope.builtin").buffers({path_display={"smart", "shorten"}})<cr>
 nnoremap <leader>gh :Telescope help_tags<cr>
 nnoremap <leader>gm :Telescope keymaps<cr>
 
@@ -514,6 +606,13 @@ nnoremap <silent> <leader>if :TestFile<cr>
 nnoremap <silent> <leader>is :TestSuite<cr>
 nnoremap <silent> <leader>il :TestLast<cr>
 nnoremap <silent> <leader>ig :TestVisit<cr>
+" for maven set to something like this:
+"  -Dtests.additional.jvmargs="'-Xdebug -Xrunjdwp:transport=dt_socket,address=localhost:5005,server=y,suspend=y'"
+" for gradle use:
+"  --debug-jvm
+let g:test_debug_flags = ''
+nnoremap <leader>ids :let g:test_debug_flags=""
+nnoremap <leader>id :execute('TestNearest'.g:test_debug_flags)<cr>
 
 let test#strategy = 'neovim'
 
@@ -562,7 +661,7 @@ let g:startify_session_savevars = [
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " NOTE: has to precede the color scheme settings
 let g:tokyonight_style = 'storm'
-let g:tokyonight_sidebars = [ 'nerdtree', 'terminal', "LuaTree" ]
+let g:tokyonight_sidebars = [ 'nerdtree', 'terminal', "LuaTree", "sidebarnvim" ]
 let g:tokyonight_hide_inactive_statusline = v:true
 let g:tokyonight_italic_comments = v:true
 
@@ -583,7 +682,7 @@ autocmd! BufRead,BufNewFile *sqc,*HPP,*CPP set filetype=cpp
 " OH HOW THINGS HAVE CHANGED)
 set termguicolors
 
-colorscheme tokyonight
+colorscheme rose-pine
 autocmd ColorScheme tokyonight highlight! link LineNr Question
 autocmd ColorScheme tokyonight highlight! link CursorLineNr Question
 " Update bracket matching highlight group to something sane that can be read
@@ -1229,5 +1328,21 @@ gls.short_line_right[1] = {
 }
 EOF
 
-set runtimepath^=/home/dmytro/workspace/coc-arduino
-" set runtimepath^=/home/dmytro/workspace/coc-test
+" ------------------------------------------------------
+"  Additional runtime path and script locations
+" ------------------------------------------------------
+function! s:source_all_additional_files(dir_path) abort
+  if isdirectory(a:dir_path)
+      for d in readdir(a:dir_path, {n -> n =~ '.vim'})
+        let filename = a:dir_path.'/'.d
+        if filereadable(filename)
+            call execute('source '.filename)
+        endif
+      endfor
+  endif
+endfunction
+
+" source any additional configuration files that i don't want to check in git
+call s:source_all_additional_files($HOME.'/.config/nvim/additional')
+set runtimepath^=$HOME/.config/nvim/additional
+
