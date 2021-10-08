@@ -367,8 +367,6 @@ Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}  " We recommend upda
 " gradle integration
 Plug 'hdiniz/vim-gradle'
 
-Plug 'GustavoKatel/sidebar.nvim'
-
 " style checker
 " Plug 'vim-syntastic/syntastic'
 
@@ -409,56 +407,6 @@ let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_auto_loc_list = 1
 let g:syntastic_check_on_open = 1
 let g:syntastic_check_on_wq = 0
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => sidebar config
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-lua << EOF
-function map(org, fun)
-  local res = {}
-  org = org or {}
-  for i,v in pairs(org) do
-    res[i] = fun(v)
-  end
-  return res
-end
-
-function empty(org)
-  return org == nil or next(org) == nil
-end
-
-local gradle_tasks = nil
-local gradle_section = {
-    title = "Gradle tasks",
-    icon = "->",
-    setup = function()
-        -- called only once and if the section is being used
-        gradle_tasks = vim.api.nvim_eval("map(filter(systemlist('./gradlew tasks'), {idx, line -> line =~? '\\w\\+ - .*'}), { idx, line -> split(trim(line), '-') })")
-    end,
-    draw = function(ctx)
-       if empty(gradle_tasks) then
-         return "<No tasks found>"
-       else
-        return map(gradle_tasks, function(item) return item[1] end)
-       end
-    end,
-    bindings = {
-      ["e"] = function(line, col)
-          if not empty(gradle_tasks) then
-            vim.api.nvim_command("Gradle "..gradle_tasks[line + 1][1])
-          end
-      end
-    }
-}
-require("sidebar-nvim").setup({
-  open = false,
-  side = "right",
-  update_interval = 10000,
-  sections = { "git-status", gradle_section },
-})
-EOF
-
-nnoremap <silent> <leader>s :SidebarNvimToggle<cr>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Indentation highlighting with vim-indent-guides
