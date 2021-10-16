@@ -346,7 +346,7 @@ Plug 'junegunn/limelight.vim'
 " testing framework
 Plug 'vim-test/vim-test'
 
-Plug 'Yggdroot/indentLine'
+Plug 'lukas-reineke/indent-blankline.nvim'
 
 " register management
 " Plug 'tversteeg/registers.nvim'
@@ -363,9 +363,6 @@ Plug 'akinsho/nvim-toggleterm.lua'
 
 " syntax highlights and more
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}  " We recommend updating the parsers on update
-
-" gradle integration
-Plug 'hdiniz/vim-gradle'
 
 " style checker
 " Plug 'vim-syntastic/syntastic'
@@ -396,7 +393,7 @@ require'nvim-tree'.setup {
   -- update the focused file on `BufEnter`, un-collapses the folders recursively until it finds the file
   update_focused_file = {
     enable = true,
-   }
+  }
 }
 EOF
 
@@ -405,19 +402,24 @@ EOF
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 1
+let g:syntastic_check_on_open = 0
 let g:syntastic_check_on_wq = 0
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Indentation highlighting with vim-indent-guides
+" => Indentation highlighting with blankline
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:indentLine_fileType = ['help', 'nerdtree', 'startify', 'LuaTree', 'TelescopePrompt']
-let g:indentLine_char = '|'
-let g:indentLine_leadingSpaceEnabled = 1
-let g:indentLine_leadingSpaceChar = '·'
+lua << EOF
+require("indent_blankline").setup {
+  space_char_blankline = " ",
+  show_current_context = true,
+  use_treesitter = true,
+  buftype_exclude = {'help', 'nerdtree', 'startify', 'LuaTree', 'TelescopePrompt'},
+  show_first_indent_level = false
+}
+EOF
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => tresitter config
+" => treesitter config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 lua << EOF
 require('nvim-treesitter.configs').setup {
@@ -590,6 +592,9 @@ command! -nargs=0 Zen :call ToggleZen()
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Startify configurations
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" save current layout into session
+nmap <leader>ss :SSave!<cr>
+
 let g:startify_session_before_save = [
     \ 'echo "Cleaning up before saving.."',
     \ 'silent! NvimTreeClose'
@@ -604,6 +609,12 @@ let g:startify_session_savevars = [
   \ 'g:WorkspaceFolders'
   \ ]
 
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Rose-pint
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+lua vim.g.rose_pine_variant = 'moon'
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Tokyonight
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -612,9 +623,6 @@ let g:tokyonight_style = 'storm'
 let g:tokyonight_sidebars = [ 'nerdtree', 'terminal', "LuaTree", "sidebarnvim" ]
 let g:tokyonight_hide_inactive_statusline = v:true
 let g:tokyonight_italic_comments = v:true
-
-" save current layout into session
-nmap <leader>ss :SSave!<cr>
 
 " map json file type for jsonc to allow comments
 autocmd! BufRead,BufNewFile *.json set filetype=jsonc

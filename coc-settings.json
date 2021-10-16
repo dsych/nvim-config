@@ -1,10 +1,18 @@
 {
   "explorer.icon.enableVimDevicons": true,
+  "coc.source.omni.filetypes": ["VimspectorPrompt"],
+  // "coc.source.omni.triggerCharacters": [".", "->", ":", "<"],
   "diagnostic.errorSign": "✘",
   "diagnostic.warningSign": "",
   "diagnostic.infoSign": "",
   "codeLens.enable": true,
-  "coc.preferences.formatOnSaveFiletypes": ["javascript", "typescript", "json", "html", "css"],
+  "coc.preferences.formatOnSaveFiletypes": [
+    "javascript",
+    "typescript",
+    "json",
+    "html",
+    "css"
+  ],
   "diagnostic.checkCurrentLine": true,
   "java.import.gradle.enabled": true,
   // "java.configuration.runtimes": [
@@ -36,10 +44,21 @@
     "coincap",
     "dsych",
     "jvmargs",
+    "Vimspector",
+    "bufnr",
+    "bufwinid",
+    "coincap",
+    "curr",
+    "getid",
+    "gotoid",
+    "idxs",
+    "lnum",
+    "omni",
     "openjdk",
     "println",
     "rederer",
-    "rmask"
+    "rmask",
+    "winid"
   ],
   // "java.home": "/usr/lib/jvm/java-14-openjdk-amd64",
   "tsserver.npm": "/usr/bin/npm",
