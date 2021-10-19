@@ -263,12 +263,26 @@ let g:nvim_tree_special_files = { 'README.md': 1, 'Makefile': 1, 'MAKEFILE': 1 }
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Vimspector
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:vimspector_enable_mappings = 'VISUAL_STUDIO'
+" let g:vimspector_enable_mappings = 'VISUAL_STUDIO'
 
 " for normal mode - the word under the cursor
-nmap <Leader>di <Plug>VimspectorBalloonEval
+nmap <Bslash>e <Plug>VimspectorBalloonEval
 " for visual mode, the visually selected text
-xmap <Leader>di <Plug>VimspectorBalloonEval
+xmap <Bslash>e <Plug>VimspectorBalloonEval
+
+nmap <Bslash>c        <Plug>VimspectorContinue
+nmap <Bslash>l        <Plug>VimspectorLaunch
+nmap <Bslash>t        <Plug>VimspectorStop
+nmap <Bslash>r        <Plug>VimspectorRestart
+nmap <Bslash>p        <Plug>VimspectorPause
+nmap <Bslash>b        <Plug>VimspectorToggleBreakpoint
+nmap <Bslash>bc       <Plug>VimspectorToggleConditionalBreakpoint
+nmap <Bslash>bf       <Plug>VimspectorAddFunctionBreakpoint
+nmap <Bslash>br       <Plug>VimspectorRunToCursor
+nmap <Bslash>s        <Plug>VimspectorStepOver
+nmap <Bslash>i        <Plug>VimspectorStepInto
+nmap <Bslash>o        <Plug>VimspectorStepOut
+nmap <Bslash>d        :VimspectorReset<cr>
 
 function! s:Debugpy() abort
   py3 __import__( 'vimspector',
@@ -584,8 +598,9 @@ nnoremap <silent> <leader>ig :TestVisit<cr>
 " for gradle use:
 "  --debug-jvm
 let g:test_debug_flags = ''
-nnoremap <leader>ids :let g:test_debug_flags=""
+nnoremap <leader>idf :let g:test_debug_flags=""
 nnoremap <leader>id :execute('TestNearest'.g:test_debug_flags)<cr>
+nnoremap <leader>ids :execute('TestSuite'.g:test_debug_flags)<cr>
 
 let test#strategy = 'neovim'
 
