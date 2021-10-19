@@ -278,17 +278,6 @@ endfunction
 " add command to allow debugging of vimspector with vimspector...
 command! -nargs=0 Debugpy call s:Debugpy()
 
-" function! RipgrepFzf(query, fullscreen)
-" let command_fmt = rg --column --line-number --no-heading --color=always --smart-case -- %s || true''
-" let initial_command = printfcommand_fmt, shellescape(a:query())
-" let reload_command = printfcommand_fmt, '(q}{')
-" let spec = '{options': [--phony'', '--query', a:query, --bind'', 'change:reload:'.reload_command]}
-  " call fzf#vim#grep(initial_command, 1, fzf#vim#with_preview(spec), a:fullscreen)
-" endfunction
-"
-" command! -nargs=* -bang Rg call RipgrepFzf(<q-args, <>bang>0)]}})
-"
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Plugins
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -373,7 +362,15 @@ Plug 'satabin/hocon-vim'
 " depends on https://github.com/charmbracelet/glow
 Plug 'ellisonleao/glow.nvim'
 
+" search and replace inside quickfix window
+Plug 'gabrielpoca/replacer.nvim'
+
 call plug#end()
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => replacer
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+nnoremap <silent> <leader>rq :lua require("replacer").run()<cr>
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => nvimtree.2
@@ -475,9 +472,35 @@ lua require('diffview').setup{}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 " Find files using Telescope command-line sugar.
-nnoremap <leader>p :lua require("telescope.builtin").find_files({path_display={"smart", "shorten"}})<cr>
-nnoremap <leader>fg :lua require("telescope.builtin").live_grep({path_display={"smart", "shorten"}, only_sort_text=true})<cr>
-nnoremap <leader>bb :lua require("telescope.builtin").buffers({path_display={"smart", "shorten"}})<cr>
+lua << EOF
+require'telescope'.setup {
+  defaults = {
+    prompt_prefix="🔍"
+  },
+  pickers = {
+    find_files = {
+      previewer = false,
+      theme = "dropdown",
+      path_display={"smart", "shorten"}
+    },
+    live_grep = {
+      previewer = false,
+      theme = "ivy",
+      path_display={"smart", "shorten"},
+      only_sort_text=true
+    },
+    buffers = {
+      theme = "ivy",
+      path_display={"smart", "shorten"}
+    }
+  }
+}
+EOF
+
+nnoremap <leader>p :lua require("telescope.builtin").find_files()<cr>
+nnoremap <leader>fg :lua require("telescope.builtin").live_grep()<cr>
+nnoremap <leader>bb :lua require("telescope.builtin").buffers()<cr>
+nnoremap <leader>rr :lua require("telescope.builtin").resume()<cr>
 nnoremap <leader>gh :Telescope help_tags<cr>
 nnoremap <leader>gm :Telescope keymaps<cr>
 
