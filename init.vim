@@ -227,11 +227,15 @@ endif
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => convenience mappings for configs
+" => convenience mappings
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" for configs
 nnoremap <leader>ne :edit $MYVIMRC<cr>
 nnoremap <leader>na :tabnew <bar> :edit ~/.config/nvim/additional<cr>
 
+" insert mode deletion
+inoremap <M-l> <del>
+inoremap <M-h> <bs>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Command mode related
@@ -256,7 +260,7 @@ let g:NERDCommentEmptyLines = 1
 let g:NERDTrimTrailingWhitespace = 1
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => nvimtree.1, see after pluging
+" => nvimtree.1, see after pluging section
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 map <silent> <leader>e :NvimTreeToggle<cr>
 map <silent> <leader>ef :NvimTreeFindFile<cr>
@@ -266,7 +270,7 @@ let g:nvim_tree_indent_markers = 1 "0 by default, this option shows indent marke
 let g:nvim_tree_add_trailing = 1 "0 by default, append a trailing slash to folder names
 let g:nvim_tree_group_empty = 1 " 0 by default, compact folders that only contain a single folder into one node in the file tree
 let g:nvim_tree_ignore = [ '.git', '.cache' ]
-let g:nvim_tree_special_files = { 'README.md': 1, 'Makefile': 1, 'MAKEFILE': 1 } " List of filenames that gets highlighted with NvimTreeSpecialFile
+let g:nvim_tree_special_files = { 'README.md': 1, 'Makefile': 1, 'MAKEFILE': 1, 'Config': 1, 'build.gradle': 1, '.vimspector.json': 1 } " List of filenames that gets highlighted with NvimTreeSpecialFile
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Vimspector
@@ -445,7 +449,7 @@ require("indent_blankline").setup {
   space_char_blankline = " ",
   show_current_context = true,
   use_treesitter = true,
-  buftype_exclude = {'help', 'nerdtree', 'startify', 'LuaTree', 'TelescopePrompt'},
+  buftype_exclude = {'help', 'nerdtree', 'startify', 'LuaTree', 'TelescopePrompt', 'terminal'},
   show_first_indent_level = false,
   context_patterns = { 'class', 'function', 'method', 'expression', 'statement' }
 }
