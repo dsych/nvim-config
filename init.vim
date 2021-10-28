@@ -225,6 +225,14 @@ if has("autocmd")
     autocmd BufWritePre * :call CleanExtraSpaces()
 endif
 
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => convenience mappings for configs
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+nnoremap <leader>ne :edit $MYVIMRC<cr>
+nnoremap <leader>na :tabnew <bar> :edit ~/.config/nvim/additional<cr>
+
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Command mode related
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -279,10 +287,23 @@ nmap <Bslash>b        <Plug>VimspectorToggleBreakpoint
 nmap <Bslash>bc       <Plug>VimspectorToggleConditionalBreakpoint
 nmap <Bslash>bf       <Plug>VimspectorAddFunctionBreakpoint
 nmap <Bslash>br       <Plug>VimspectorRunToCursor
+nmap <Bslash>bda      :call vimspector#ClearBreakpoints()<cr>
 nmap <Bslash>s        <Plug>VimspectorStepOver
 nmap <Bslash>i        <Plug>VimspectorStepInto
 nmap <Bslash>o        <Plug>VimspectorStepOut
 nmap <Bslash>d        :VimspectorReset<cr>
+
+function! s:save_vimspector_session() abort
+  if filereadable('./.vimspector.json')
+    execute VimspectorMkSession
+  endif
+endfunction
+
+augroup vimspector_session
+  autocmd!
+  autocmd VimLeave * :call s:save_vimspector_session()
+  autocmd VimEnter * :VimspectorLoadSession
+augroup END
 
 function! s:Debugpy() abort
   py3 __import__( 'vimspector',
@@ -302,7 +323,7 @@ Plug 'kyazdani42/nvim-web-devicons' " Recommended (for coloured icons)
 " language server
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 " all the extensions for coc-nvim
-let g:coc_global_extensions=[ 'coc-actions', 'coc-java', 'coc-java-debug', 'coc-json', 'coc-marketplace', 'coc-pairs', 'coc-prettier', 'coc-spell-checker', 'coc-terminal', 'coc-tsserver', "coc-html", "coc-css", "coc-vimlsp", "coc-pyright", "coc-cmake", "coc-emmet", "coc-clangd", "coc-angular"]
+let g:coc_global_extensions=[ 'coc-actions', 'coc-java', 'coc-java-debug', 'coc-json', 'coc-marketplace', 'coc-pairs', 'coc-prettier', 'coc-spell-checker', 'coc-terminal', 'coc-tsserver', "coc-html", "coc-css", "coc-vimlsp", "coc-pyright", "coc-cmake", "coc-emmet", "coc-clangd", "coc-angular", "coc-snippets"]
 
 " bufferline line
 Plug 'romgrk/barbar.nvim'
@@ -425,7 +446,8 @@ require("indent_blankline").setup {
   show_current_context = true,
   use_treesitter = true,
   buftype_exclude = {'help', 'nerdtree', 'startify', 'LuaTree', 'TelescopePrompt'},
-  show_first_indent_level = false
+  show_first_indent_level = false,
+  context_patterns = { 'class', 'function', 'method', 'expression', 'statement' }
 }
 EOF
 
@@ -439,7 +461,8 @@ require('nvim-treesitter.configs').setup {
     enable = true
   },
   highlight = {
-    enable = true
+    enable = true,
+    additional_vim_regex_highlighting = false
   }
 }
 EOF
@@ -588,19 +611,21 @@ nnoremap <silent> <leader>bdo :BufferCloseAllButCurrent<cr>
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => vim-test framework for testing
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-nnoremap <silent> <leader>in :TestNearest<cr>
-nnoremap <silent> <leader>if :TestFile<cr>
-nnoremap <silent> <leader>is :TestSuite<cr>
-nnoremap <silent> <leader>il :TestLast<cr>
-nnoremap <silent> <leader>ig :TestVisit<cr>
+nnoremap <silent> <leader>in :execute('TestNearest '.g:test_extra_flags)<cr>
+nnoremap <silent> <leader>if :execute('TestFile '.g:test_extra_flags)<cr>
+nnoremap <silent> <leader>is :execute('TestSuite '.g:test_extra_flags)<cr>
+nnoremap <silent> <leader>il :execute('TestLast '.g:test_extra_flags)<cr>
+nnoremap <silent> <leader>ig :execute('TestVisit '.g:test_extra_flags)<cr>
 " for maven set to something like this:
 "  -Dtests.additional.jvmargs="'-Xdebug -Xrunjdwp:transport=dt_socket,address=localhost:5005,server=y,suspend=y'"
 " for gradle use:
 "  --debug-jvm
 let g:test_debug_flags = ''
+let g:test_extra_flags = ''
 nnoremap <leader>idf :let g:test_debug_flags=""
-nnoremap <leader>id :execute('TestNearest'.g:test_debug_flags)<cr>
-nnoremap <leader>ids :execute('TestSuite'.g:test_debug_flags)<cr>
+nnoremap <leader>ie :let g:test_debug_flags=""
+nnoremap <leader>id :execute('TestNearest '.g:test_extra_flags.' '.g:test_debug_flags)<cr>
+nnoremap <leader>ids :execute('TestSuite '.g:test_extra_flags.' '.g:test_debug_flags)<cr>
 
 let test#strategy = 'neovim'
 
@@ -647,11 +672,11 @@ let g:startify_session_savevars = [
   \ 'g:WorkspaceFolders'
   \ ]
 
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Rose-pint
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 lua vim.g.rose_pine_variant = 'moon'
+lua vim.g.rose_pine_bold_vertical_split_line = true
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Tokyonight
@@ -689,12 +714,6 @@ autocmd ColorScheme shades_of_purple highlight! link MatchParen Search
 " Enable syntax highlighting
 syntax enable
 set background=dark
-
-" Enable 256 colors palette in Gnome Terminal
-" if $COLORTERM == 'gnome-terminal'
-" set t_Co=256
-" endif
-
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " =>  Sessions
@@ -759,18 +778,44 @@ endif
 inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
                               \: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
 
+
+" Use <C-l> for trigger snippet expand.
+" inoremap <C-l> <Plug>(coc-snippets-expand)
+
+" Use <C-j> for select text for visual placeholder of snippet.
+vnoremap <C-j> <Plug>(coc-snippets-select)
+
+
+" Use <C-j> for jump to next placeholder, it's default of coc.nvim
+let g:coc_snippet_next = '<c-l>'
+
+" Use <C-k> for jump to previous placeholder, it's default of coc.nvim
+let g:coc_snippet_prev = '<c-h>'
+
+" Use <C-j> for both expand and jump (make expand higher priority.)
+" imap <C-j> <Plug>(coc-snippets-expand-jump)
+
+" view previous diagnostic error
+nmap <silent> [d <Plug>(coc-diagnostic-prev-error)
+" view next diagnostic error
+nmap <silent> ]d <Plug>(coc-diagnostic-next-error)
 " view previous diagnostic
-nmap <silent> <leader>dp <Plug>(coc-diagnostic-prev-error)
+nmap <silent> [w <Plug>(coc-diagnostic-prev-error)
 " view next diagnostic
-nmap <silent> <leader>dn <Plug>(coc-diagnostic-next-error)
+nmap <silent> ]w <Plug>(coc-diagnostic-next-error)
+
 " Show all diagnostics.
-nnoremap <silent> <leader>da  :<C-u>CocList diagnostics<cr>
+nnoremap <silent> ]D  :<C-u>CocList diagnostics<cr>
+nnoremap <silent> [D  :<C-u>CocList diagnostics<cr>
+
 
 " GoTo code navigation.
 nmap <silent> gd <Plug>(coc-definition)
 nmap <silent> gy <Plug>(coc-type-definition)
 nmap <silent> gi <Plug>(coc-implementation)
 nmap <silent> gr <Plug>(coc-references)
+
+inoremap <silent> <c-k> <C-r>=CocActionAsync('showSignatureHelp')<CR>
 
 " Use K to show documentation in preview window.
 nnoremap <silent> K :call <SID>show_documentation()<CR>
@@ -860,6 +905,9 @@ nnoremap <silent> <leader>lj  :<C-u>CocNext<CR>
 nnoremap <silent> <leader>lk  :<C-u>CocPrev<CR>
 " Resume latest coc list.
 nnoremap <silent> <leader>lp  :<C-u>CocListResume<CR>
+" Restart coc
+nnoremap <silent> <leader>lr  :<C-u>CocRestart<CR>
+
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Helper functions
