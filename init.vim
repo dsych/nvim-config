@@ -332,6 +332,8 @@ Plug 'kyazdani42/nvim-web-devicons' " Recommended (for coloured icons)
 
 Plug 'neovim/nvim-lspconfig'
 Plug 'williamboman/nvim-lsp-installer'
+Plug 'nvim-lua/lsp-status.nvim'
+Plug 'onsails/lspkind-nvim'
 
 Plug 'ms-jpq/coq_nvim', {'branch': 'coq'}
 Plug 'ms-jpq/coq.thirdparty', {'branch': '3p'}
@@ -413,21 +415,99 @@ Plug 'gabrielpoca/replacer.nvim'
 
 call plug#end()
 
-let g:coq_settings = { 'auto_start': v:true }
+let lsp_kind_icons = luaeval("require'lspkind'.presets.default")
+
+let g:coq_settings = { 'auto_start': v:true, 'display.icons.mode': 'short', 'display.icons.mappings': lsp_kind_icons }
 
 lua <<EOF
+local is_inside = function(target, src)
+  for i,v in ipairs(src) do
+    if v == target then
+      return true
+    end
+  end
+  return false
+end
+
+show_documentation = function()
+  if is_inside(vim.api.nvim_buf_get_option(0, 'filetype'), { 'vim', 'help' }) then
+    vim.api.nvim_command('h '..vim.api.nvim_eval('expand("<cword>")'))
+  elseif #vim.lsp.buf_get_clients() > 0 then
+    vim.lsp.buf.hover()
+  else
+    vim.api.nvim_command('!'..vim.api.nvim_eval('"&keywordprg"')..' '..vim.api.nvim_eval('expand("<cword>")'))
+  end
+end
+
 local coq = require'coq'
-local nvim_lsp = require'lspconfig'
+local lsp_installer = require("nvim-lsp-installer")
+local lsp_status = require'lsp-status'
 
-local lsp_root = vim.api.nvim_exec("echo stdpath('data')", true).."/lsp_servers"
+lsp_status.config{
+  diagnostics = false,
+  show_filename = false
+}
 
-nvim_lsp.clangd.setup(coq.lsp_ensure_capabilities({
-    cmd = { lsp_root.."/clangd/clangd", "--background-index" }
-}))
 
-nvim_lsp.pyright.setup(coq.lsp_ensure_capabilities({
-    cmd = { "node", lsp_root.."/python/node_modules/pyright/dist/pyright.js" }
-}))
+lsp_installer.on_server_ready(function(server)
+    lsp_status.register_progress()
+
+    local lsp_opts = {}
+
+    local function buf_set_keymap(...) vim.api.nvim_set_keymap(...) end
+    -- local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
+
+    -- Enable completion triggered by <c-x><c-o>
+    -- buf_set_option('omnifunc', 'v:lua.vim.lsp.omnifunc')
+
+    -- Mappings.
+    local opts = { noremap=true, silent=true }
+
+    -- See `:help vim.lsp.*` for documentation on any of the below functions
+    buf_set_keymap('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<CR>', opts)
+    buf_set_keymap('n', 'gd', '<cmd>lua require"telescope.builtin".lsp_definitions()<CR>', opts)
+    buf_set_keymap('n', 'gi', '<cmd>lua require"telescope.builtin".lsp_implementations()<CR>', opts)
+    buf_set_keymap('n', '<leader>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
+    buf_set_keymap('n', 'grn', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
+
+    buf_set_keymap('n', 'gs', '<cmd>lua require"telescope.builtin".lsp_document_symbols()<CR>', opts)
+    buf_set_keymap('n', 'K', '<cmd>lua show_documentation()<CR>', opts)
+    -- buf_set_keymap('n', '<C-K>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', opts)
+    buf_set_keymap('n', 'gr', '<cmd>lua require"telescope.builtin".lsp_references()<CR>', opts)
+    buf_set_keymap('n', '<leader>gr', '<cmd>lua require"telescope.builtin".lsp_references()<CR>', opts)
+
+    buf_set_keymap('n', '<space>wa', '<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>', opts)
+    buf_set_keymap('n', '<space>wr', '<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>', opts)
+    buf_set_keymap('n', '<space>wl', '<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>', opts)
+
+    buf_set_keymap('n', '<leader>a', '<cmd>lua require("telescope.builtin").lsp_code_actions()<CR>', opts)
+
+    buf_set_keymap('n', '<leader>le', '<cmd>lua require"telescope.builtin".lsp_document_diagnostics({severity = vim.diagnostic.severity.ERROR})<CR>', opts)
+    buf_set_keymap('n', '<leader>ld', '<cmd>lua require"telescope.builtin".lsp_document_diagnostics()<CR>', opts)
+    buf_set_keymap('n', '[d', '<cmd>lua vim.diagnostic.goto_prev()<CR>', opts)
+    buf_set_keymap('n', ']d', '<cmd>lua vim.diagnostic.goto_next()<CR>', opts)
+    buf_set_keymap('n', '[e', '<cmd>lua vim.diagnostic.goto_prev({severity = vim.diagnostic.severity.ERROR})<CR>', opts)
+    buf_set_keymap('n', ']e', '<cmd>lua vim.diagnostic.goto_next({severity = vim.diagnostic.severity.ERROR})<CR>', opts)
+
+    buf_set_keymap('n', '<M-F>', '<cmd>lua vim.lsp.buf.formatting()<CR>', opts)
+    -- buf_set_keymap('v', '<M-F>', '<cmd>lua vim.lsp.buf.range_formatting({})<CR>', opts)
+    -- buf_set_keymap('x', '<M-F>', '<cmd>lua vim.lsp.buf.range_formatting({})<CR>', opts)
+
+    lsp_opts.on_attach = lsp_status.on_attach
+
+    server:setup(coq.lsp_ensure_capabilities(lsp_opts))
+end)
+-- local nvim_lsp = require'lspconfig'
+
+-- local lsp_root = vim.api.nvim_exec("echo stdpath('data')", true).."/lsp_servers"
+
+-- nvim_lsp.clangd.setup(coq.lsp_ensure_capabilities({
+--     cmd = { lsp_root.."/clangd/clangd", "--background-index" }
+-- }))
+--
+-- nvim_lsp.pyright.setup(coq.lsp_ensure_capabilities({
+--     cmd = { "node", lsp_root.."/python/node_modules/pyright/dist/pyright.js" }
+-- }))
 EOF
 
 lua <<EOF
@@ -1126,15 +1206,15 @@ end
 
 
 local function get_coc_lsp()
-  local status = vim.fn['coc#status']()
+  local status = require'lsp-status'.status()
   if not status or status == '' then
       return ''
   end
-  return lsp_status(status)
+  return status
 end
 
 function get_diagnostic_info()
-  if vim.fn.exists('*coc#rpc#start_server') == 1 then
+  if #vim.lsp.buf_get_clients() > 0 then
     return get_coc_lsp()
     end
   return ''
