@@ -12,6 +12,31 @@ endif
 " increase timeout between keys
 set timeoutlen=1500
 
+" Having longer updatetime (default is 4000 ms = 4 s) leads to noticeable
+" delays and poor user experience.
+set updatetime=300
+
+" TextEdit might fail if hidden is not set.
+set hidden
+
+" Some servers have issues with backup files
+set nobackup
+set nowritebackup
+
+" Give more space for displaying messages.
+set cmdheight=2
+
+" Don't pass messages to |ins-completion-menu|.
+set shortmess+=c
+
+" persist global variables inside session, so that workspace folders are saved
+" between sessions
+" set sessionoptions+=globals
+
+" Always show the signcolumn, otherwise it would shift the text each time
+" diagnostics appear/become resolved.
+set signcolumn=yes:2
+
 " remap leader to space
 nnoremap <space> <Nop>
 let mapleader=" "
@@ -54,10 +79,6 @@ set nowrap
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => VIM user interface
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" display tabs as vertical bars
-" :set list
-" :set lcs=tab:\|\  " the last character is space!
-
 " Set 7 lines to the cursor - when moving vertically using j/k
 set so=7
 
@@ -198,9 +219,6 @@ au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g
 " Always show the status line
 set laststatus=2
 
-" Format the status line
-" set statusline=\ %{HasPaste()}%F%m%r%h\ %w\ \ CWD:\ %r%{getcwd()}%h\ \ \ Line:\ %l\ \ Column:\ %c
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Editing mappings
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -250,17 +268,6 @@ cnoremap <C-P> <Up>
 cnoremap <C-N> <Down>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Nerd commenter config
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map <silent> <leader>c <plug>NERDCommenterToggle
-" Add spaces after comment delimiters by default
-let g:NERDSpaceDelims = 1
-" Allow commenting and inverting empty lines (useful when commenting a region)
-let g:NERDCommentEmptyLines = 1
-" Enable trimming of trailing whitespace when uncommenting
-let g:NERDTrimTrailingWhitespace = 1
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => nvimtree.1, see after pluging section
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 map <silent> <leader>e :NvimTreeToggle<cr>
@@ -270,13 +277,11 @@ let g:nvim_tree_quit_on_open = 1 "0 by default, closes the tree when you open a 
 let g:nvim_tree_indent_markers = 1 "0 by default, this option shows indent markers when folders are open
 let g:nvim_tree_add_trailing = 1 "0 by default, append a trailing slash to folder names
 let g:nvim_tree_group_empty = 1 " 0 by default, compact folders that only contain a single folder into one node in the file tree
-let g:nvim_tree_ignore = [ '.git', '.cache' ]
 let g:nvim_tree_special_files = { 'README.md': 1, 'Makefile': 1, 'MAKEFILE': 1, 'Config': 1, 'build.gradle': 1, '.vimspector.json': 1 } " List of filenames that gets highlighted with NvimTreeSpecialFile
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Vimspector
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" let g:vimspector_enable_mappings = 'VISUAL_STUDIO'
 
 " for normal mode - the word under the cursor
 nmap <Bslash>e <Plug>VimspectorBalloonEval
@@ -304,10 +309,16 @@ function! s:save_vimspector_session() abort
   endif
 endfunction
 
+function! s:load_vimspector_session() abort
+  if filereadable('./.vimspector.session')
+    execute VimspectorLoadSession
+  endif
+endfunction
+
 augroup vimspector_session
   autocmd!
   autocmd VimLeave * :call s:save_vimspector_session()
-  autocmd VimEnter * :VimspectorLoadSession
+  autocmd VimEnter * :call s:load_vimspector_session()
 augroup END
 
 function! s:Debugpy() abort
@@ -326,16 +337,13 @@ call plug#begin('~/.vim/plugged')
 Plug 'kyazdani42/nvim-web-devicons' " Recommended (for coloured icons)
 
 " language server
-" Plug 'neoclide/coc.nvim', {'branch': 'release'}
-" all the extensions for coc-nvim
-" let g:coc_global_extensions=[ 'coc-actions', 'coc-java', 'coc-java-debug', 'coc-json', 'coc-marketplace', 'coc-pairs', 'coc-prettier', 'coc-spell-checker', 'coc-terminal', 'coc-tsserver', "coc-html", "coc-css", "coc-vimlsp", "coc-pyright", "coc-cmake", "coc-emmet", "coc-clangd", "coc-angular", "coc-snippets"]
-
 Plug 'neovim/nvim-lspconfig'
 Plug 'williamboman/nvim-lsp-installer'
 Plug 'nvim-lua/lsp-status.nvim'
 Plug 'onsails/lspkind-nvim'
 
 Plug 'ms-jpq/coq_nvim', {'branch': 'coq'}
+Plug 'ms-jpq/coq.artifacts', {'branch': 'artifacts'}
 Plug 'ms-jpq/coq.thirdparty', {'branch': '3p'}
 
 " bufferline line
@@ -355,7 +363,7 @@ Plug 'tpope/vim-fugitive'
 Plug 'mhinz/vim-startify'
 
 " commenting
-Plug 'preservim/nerdcommenter'
+Plug 'b3nj5m1n/kommentary'
 
 " file explorer
 Plug 'kyazdani42/nvim-tree.lua'
@@ -400,6 +408,8 @@ Plug 'akinsho/nvim-toggleterm.lua'
 
 " syntax highlights and more
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}  " We recommend updating the parsers on update
+" intelligent comments based on treesitter
+Plug 'JoosepAlviste/nvim-ts-context-commentstring'
 
 " style checker
 " Plug 'vim-syntastic/syntastic'
@@ -415,9 +425,34 @@ Plug 'gabrielpoca/replacer.nvim'
 
 call plug#end()
 
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => kommentary
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+lua << EOF
+require('kommentary.config').configure_language('default', {
+  prefer_single_line_comments = true
+})
+require('kommentary.config').configure_language({'typescriptreact', 'html', 'typescript', 'javascript', 'lua'}, {
+  single_line_comment_string = 'auto',
+  multi_line_comment_strings = 'auto',
+  hook_function = function()
+    require('ts_context_commentstring.internal').update_commentstring()
+  end,
+})
+EOF
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => native lsp and coq
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let lsp_kind_icons = luaeval("require'lspkind'.presets.default")
 
-let g:coq_settings = { 'auto_start': v:true, 'display.icons.mode': 'short', 'display.icons.mappings': lsp_kind_icons }
+let g:coq_settings = {
+    \ 'auto_start': "shut-up",
+    \ 'display.icons.mode': 'short',
+    \ 'display.icons.mappings': lsp_kind_icons,
+    \ 'keymap.jump_to_mark': '<c-m>'
+\ }
 
 lua <<EOF
 local is_inside = function(target, src)
@@ -539,6 +574,10 @@ require'nvim-tree'.setup {
   -- update the focused file on `BufEnter`, un-collapses the folders recursively until it finds the file
   update_focused_file = {
     enable = true,
+  },
+
+  filters = {
+    custom = { '.git', '.cache' }
   }
 }
 EOF
@@ -577,6 +616,10 @@ require('nvim-treesitter.configs').setup {
   highlight = {
     enable = true,
     additional_vim_regex_highlighting = false
+  },
+  context_commenting = {
+    enable = true,
+    autocmd = false
   }
 }
 EOF
@@ -647,12 +690,24 @@ require'telescope'.setup {
 }
 EOF
 
+" file navigation
 nnoremap <leader>p :lua require("telescope.builtin").find_files()<cr>
-nnoremap <leader>fg :lua require("telescope.builtin").live_grep()<cr>
 nnoremap <leader>bb :lua require("telescope.builtin").buffers()<cr>
+
+" global search, useful with qf + replacer
+nnoremap <leader>fg :lua require("telescope.builtin").live_grep()<cr>
+
+" git helpers
+nnoremap <leader>vb :lua require("telescope.builtin").git_branches()<cr>
+nnoremap <leader>vb :lua require("telescope.builtin").git_stash()<cr>
+
+" general pickers
+nnoremap <leader>gc :lua require("telescope.builtin").commands()<cr>
+nnoremap <leader>gh :lua require("telescope.builtin").help_tags()<cr>
+nnoremap <leader>gm :lua require("telescope.builtin").keymaps()<cr>
+
+" resume prev picker with state
 nnoremap <leader>rr :lua require("telescope.builtin").resume()<cr>
-nnoremap <leader>gh :Telescope help_tags<cr>
-nnoremap <leader>gm :Telescope keymaps<cr>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => bufferline
@@ -831,196 +886,6 @@ set background=dark
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " =>  Sessions
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" Having longer updatetime (default is 4000 ms = 4 s) leads to noticeable
-" delays and poor user experience.
-set updatetime=300
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" =>  COC.NVIM config
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" TextEdit might fail if hidden is not set.
-set hidden
-
-" Some servers have issues with backup files, see #649.
-set nobackup
-set nowritebackup
-
-" Give more space for displaying messages.
-set cmdheight=2
-
-" Don't pass messages to |ins-completion-menu|.
-set shortmess+=c
-
-" persist global variables inside session, so that workspace folders are saved
-" between sessions
-" set sessionoptions+=globals
-
-" Always show the signcolumn, otherwise it would shift the text each time
-" diagnostics appear/become resolved.
-if has("patch-8.1.1564")
-  " Recently vim can merge signcolumn and number column into one
-  set signcolumn=number
-else
-  set signcolumn=yes
-endif
-"
-" " Use tab for trigger completion with characters ahead and navigate.
-" " NOTE: Use command ':verbose imap <tab>' to make sure tab is not mapped by
-" " other plugin before putting this into your config.
-" inoremap <silent><expr> <TAB>
-      " \ pumvisible() ? "\<C-n>" :
-      " \ <SID>check_back_space() ? "\<TAB>" :
-      " \ coc#refresh()
-" inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
-"
-" function! s:check_back_space() abort
-  " let col = col('.') - 1
-  " return !col || getline('.')[col - 1]  =~# '\s'
-" endfunction
-"
-" " Use <c-space> to trigger completion.
-" if has('nvim')
-  " inoremap <silent><expr> <c-space> coc#refresh()
-" else
-  " inoremap <silent><expr> <c-@> coc#refresh()
-" endif
-"
-" " Make <CR> auto-select the first completion item and notify coc.nvim to
-" " format on enter, <cr> could be remapped by other vim plugin
-" inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm()
-                              " \: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
-"
-"
-" " Use <C-l> for trigger snippet expand.
-" " inoremap <C-l> <Plug>(coc-snippets-expand)
-"
-" " Use <C-j> for select text for visual placeholder of snippet.
-" vnoremap <C-j> <Plug>(coc-snippets-select)
-"
-"
-" " Use <C-j> for jump to next placeholder, it's default of coc.nvim
-" let g:coc_snippet_next = '<c-l>'
-"
-" " Use <C-k> for jump to previous placeholder, it's default of coc.nvim
-" let g:coc_snippet_prev = '<c-h>'
-"
-" " Use <C-j> for both expand and jump (make expand higher priority.)
-" " imap <C-j> <Plug>(coc-snippets-expand-jump)
-"
-" " view previous diagnostic error
-" nmap <silent> [d <Plug>(coc-diagnostic-prev-error)
-" " view next diagnostic error
-" nmap <silent> ]d <Plug>(coc-diagnostic-next-error)
-" " view previous diagnostic
-" nmap <silent> [w <Plug>(coc-diagnostic-prev-error)
-" " view next diagnostic
-" nmap <silent> ]w <Plug>(coc-diagnostic-next-error)
-"
-" " Show all diagnostics.
-" nnoremap <silent> ]D  :<C-u>CocList diagnostics<cr>
-" nnoremap <silent> [D  :<C-u>CocList diagnostics<cr>
-"
-"
-" " GoTo code navigation.
-" nmap <silent> gd <Plug>(coc-definition)
-" nmap <silent> gy <Plug>(coc-type-definition)
-" nmap <silent> gi <Plug>(coc-implementation)
-" nmap <silent> gr <Plug>(coc-references)
-"
-" inoremap <silent> <c-k> <C-r>=CocActionAsync('showSignatureHelp')<CR>
-"
-" " Use K to show documentation in preview window.
-" nnoremap <silent> K :call <SID>show_documentation()<CR>
-"
-" function! s:show_documentation()
-  " if (index(['vim','help'], &filetype) >= 0)
-    " execute 'h '.expand('<cword>')
-  " elseif (coc#rpc#ready())
-    " call CocActionAsync('doHover')
-  " else
-    " execute '!' . &keywordprg . " " . expand('<cword>')
-  " endif
-" endfunction
-"
-" " Highlight the symbol and its references when holding the cursor.
-" autocmd CursorHold * silent call CocActionAsync('highlight')
-"
-" " Symbol renaming.
-" nmap <leader>grn <Plug>(coc-rename)
-"
-" " Formatting selected code.
-" xmap <leader>gf  <Plug>(coc-format-selected)
-" nmap <leader>gf  <Plug>(coc-format-selected)
-"
-" augroup mygroup
-  " autocmd!
-  " " Setup formatexpr specified filetype(s).
-  " autocmd FileType typescript,json setl formatexpr=CocAction('formatSelected')
-  " " Update signature help on jump placeholder.
-  " autocmd User CocJumpPlaceholder call CocActionAsync('showSignatureHelp')
-" augroup end
-"
-" " Applying codeAction to the selected region.
-" " Example: `<leader>aap` for current paragraph
-" xmap <leader>a  <Plug>(coc-codeaction-cursor)
-" nmap <leader>a  <Plug>(coc-codeaction-cursor)
-"
-" " Apply AutoFix to problem on the current line.
-" nmap <leader>qf  <Plug>(coc-fix-current)
-"
-" " Map function and class text objects
-" " NOTE: Requires 'textDocument.documentSymbol' support from the language server.
-" xmap if <Plug>(coc-funcobj-i)
-" omap if <Plug>(coc-funcobj-i)
-" xmap af <Plug>(coc-funcobj-a)
-" omap af <Plug>(coc-funcobj-a)
-" xmap ic <Plug>(coc-classobj-i)
-" omap ic <Plug>(coc-classobj-i)
-" xmap ac <Plug>(coc-classobj-a)
-" omap ac <Plug>(coc-classobj-a)
-"
-" " Remap <C-f> and <C-b> for scroll float windows/popups.
-" nnoremap <expr><C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
-" nnoremap <expr><C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
-" inoremap <expr><C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<Right>"
-" inoremap <expr><C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<Left>"
-"
-" " Use CTRL-S for selections ranges.
-" " Requires 'textDocument/selectionRange' support of language server.
-" nmap <silent> <C-s> <Plug>(coc-range-select)
-" xmap <silent> <C-s> <Plug>(coc-range-select)
-"
-" " Add `:Format` command to format current buffer.
-" command! -nargs=0 -range Format :call CocAction('format')
-" map <A-F> :Format<cr>
-"
-" " Add `:Fold` command to fold current buffer.
-" command! -nargs=? Fold :call     CocAction('fold', <f-args>)
-"
-" " Add `:OR` command for organize imports of the current buffer.
-" command! -nargs=0 OR   :call     CocAction('runCommand', 'editor.action.organizeImport')
-"
-" " Mappings for CoCList
-" " Manage extensions.
-" nnoremap <silent> <leader>le  :<C-u>CocList extensions<cr>
-" " Open the marketplace
-" nnoremap <silent> <leader>lm  :<C-u>CocList marketplace<cr>
-" " Show commands.
-" nnoremap <silent> <f1>  :<C-u>CocList commands<cr>
-" " Find symbol of current document.
-" nnoremap <silent> <leader>lo  :<C-u>CocList outline<cr>
-" " Search workspace symbols.
-" nnoremap <silent> <leader>ls  :<C-u>CocList -I symbols<cr>
-" " Do default action for next item.
-" nnoremap <silent> <leader>lj  :<C-u>CocNext<CR>
-" " Do default action for previous item.
-" nnoremap <silent> <leader>lk  :<C-u>CocPrev<CR>
-" " Resume latest coc list.
-" nnoremap <silent> <leader>lp  :<C-u>CocListResume<CR>
-" " Restart coc
-" nnoremap <silent> <leader>lr  :<C-u>CocRestart<CR>
-"
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Helper functions
