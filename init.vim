@@ -387,7 +387,7 @@ Plug 'b3nj5m1n/kommentary'
 Plug 'kyazdani42/nvim-tree.lua'
 
 " file indentation detection
-Plug 'tpope/vim-sleuth'
+" Plug 'tpope/vim-sleuth'
 
 Plug 'neoclide/jsonc.vim'
 
@@ -428,6 +428,8 @@ Plug 'akinsho/nvim-toggleterm.lua'
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}  " We recommend updating the parsers on update
 " intelligent comments based on treesitter
 Plug 'JoosepAlviste/nvim-ts-context-commentstring'
+" additional text objects
+Plug 'nvim-treesitter/nvim-treesitter-textobjects'
 
 " style checker
 " Plug 'vim-syntastic/syntastic'
@@ -441,7 +443,35 @@ Plug 'ellisonleao/glow.nvim'
 " search and replace inside quickfix window
 Plug 'gabrielpoca/replacer.nvim'
 
+" improved text objects
+Plug 'wellle/targets.vim'
+
 call plug#end()
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => treesitter text objects
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+lua <<EOF
+require'nvim-treesitter.configs'.setup {
+  textobjects = {
+    select = {
+      enable = true,
+
+      -- Automatically jump forward to textobj, similar to targets.vim
+      lookahead = true,
+
+      keymaps = {
+        -- You can use the capture groups defined in textobjects.scm
+        ["af"] = "@function.outer",
+        ["if"] = "@function.inner",
+        ["ac"] = "@class.outer",
+        ["ic"] = "@class.inner",
+        ["ii"] = "@conditional.inner",
+        ["ai"] = "@conditional.outer"
+      },
+    }
+  }
+}
+EOF
 
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -1078,10 +1108,6 @@ syntax enable
 set background=dark
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" =>  Sessions
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Helper functions
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Returns true if paste mode is enabled
@@ -1220,6 +1246,9 @@ lua << EOF
 local gl = require('galaxyline')
 local gls = gl.section
 local extension = require('galaxyline.provider_extensions')
+local condition = require('galaxyline.condition')
+local diag = require('galaxyline.provider_diagnostic')
+local fileinfo = require('galaxyline.provider_fileinfo')
 
 gl.short_line_list = {
     'LuaTree',
@@ -1233,7 +1262,46 @@ gl.short_line_list = {
     'plug'
 }
 
--- VistaPlugin = extension.vista_nearest
+local icons = {
+  rounded_left_filled = '',
+  rounded_right_filled = '',
+  arrow_left_filled = '', -- e0b2
+  arrow_right_filled = '', -- e0b0
+  arrow_left = '', -- e0b3
+  arrow_right = '', -- e0b1
+  ghost = '',
+  warn = '',
+  info = '',
+  error = '',
+  hint = '',
+  branch = '',
+  file = '',
+  dotdotdot = '…',
+  information = '',
+  symlink = '',
+  line_number = '',
+  debug = '',
+  trace = '✎',
+  git = {
+    unstaged = '✗',
+    staged = '✓',
+    unmerged = '',
+    renamed = '➜',
+    untracked = '★',
+    deleted = '',
+    ignored = '◌',
+  },
+  folder = {
+    arrow_open = '',
+    arrow_closed = '',
+    default = '',
+    open = '',
+    empty = '',
+    empty_open = '',
+    symlink = '',
+    symlink_open = '',
+  },
+}
 
 local colors = {
     bg = '#282c34',
@@ -1248,9 +1316,48 @@ local colors = {
     orange = '#FF8800',
     purple = '#5d4d7a',
     magenta = '#c678dd',
-    blue = '#51afef';
-    red = '#ec5f67'
+    blue = '#51afef',
+    red = '#ec5f67',
+    white = '#FFFFFF'
 }
+
+local get_mode = function()
+  local mode_colors = {
+    [110] = { 'NORMAL', colors.blue, colors.bg },
+    [105] = { 'INSERT', colors.cyan, colors.bg },
+    [99] = { 'COMMAND', colors.orange, colors.bg },
+    [116] = { 'TERMINAL', colors.blue, colors.bg },
+    [118] = { 'VISUAL', colors.purple, colors.bg },
+    [22] = { 'V-BLOCK', colors.purple, colors.bg },
+    [86] = { 'V-LINE', colors.purple, colors.bg },
+    [82] = { 'REPLACE', colors.red, colors.bg },
+    [115] = { 'SELECT', colors.red, colors.bg },
+    [83] = { 'S-LINE', colors.red, colors.bg },
+  }
+
+  local mode_data = mode_colors[vim.fn.mode():byte()]
+  if mode_data ~= nil then
+    return mode_data
+  end
+end
+
+local function check_width_and_git_and_buffer()
+  return condition.check_git_workspace() and condition.buffer_not_empty()
+end
+
+local check_buffer_and_width = function()
+  return condition.buffer_not_empty() and condition.hide_in_width()
+end
+
+local function highlight(group, bg, fg, gui)
+  if gui ~= nil and gui ~= '' then
+    vim.api.nvim_command(('hi %s guibg=%s guifg=%s gui=%s'):format(group, bg, fg, gui))
+  elseif bg == nil then
+    vim.api.nvim_command(('hi %s guifg=%s'):format(group, fg))
+  else
+    vim.api.nvim_command(('hi %s guibg=%s guifg=%s'):format(group, bg, fg))
+  end
+end
 
 local function lsp_status(status)
     shorter_stat = ''
@@ -1320,78 +1427,27 @@ local buffer_not_empty = function()
   return false
 end
 
-gls.left[1] = {
-  FirstElement = {
-    provider = function() return ' ' end,
-    highlight = {colors.blue,colors.line_bg}
-  },
-}
-gls.left[2] = {
-  ViMode = {
-    provider = function()
-      -- auto change color according the vim mode
-      local alias = {
-          n = 'NORMAL',
-          i = 'INSERT',
-          c= 'COMMAND',
-          V= 'VISUAL',
-          [''] = 'VISUAL',
-          v ='VISUAL',
-          c  = 'COMMAND-LINE',
-          ['r?'] = ':CONFIRM',
-          rm = '--MORE',
-          R  = 'REPLACE',
-          Rv = 'VIRTUAL',
-          s  = 'SELECT',
-          S  = 'SELECT',
-          ['r']  = 'HIT-ENTER',
-          [''] = 'SELECT',
-          t  = 'TERMINAL',
-          ['!']  = 'SHELL',
-      }
-      local mode_color = {
-          n = colors.green,
-          i = colors.blue,v=colors.magenta,[''] = colors.blue,V=colors.blue,
-          c = colors.red,no = colors.magenta,s = colors.orange,S=colors.orange,
-          [''] = colors.orange,ic = colors.yellow,R = colors.purple,Rv = colors.purple,
-          cv = colors.red,ce=colors.red, r = colors.cyan,rm = colors.cyan, ['r?'] = colors.cyan,
-          ['!']  = colors.green,t = colors.green,
-          c  = colors.purple,
-          ['r?'] = colors.red,
-          ['r']  = colors.red,
-          rm = colors.red,
-          R  = colors.yellow,
-          Rv = colors.magenta,
-      }
-      local vim_mode = vim.fn.mode()
-      vim.api.nvim_command('hi GalaxyViMode guifg='..mode_color[vim_mode])
-      return alias[vim_mode] .. ' '
-    end,
-    highlight = {colors.red,colors.line_bg,'bold'},
-  },
-}
-gls.left[3] ={
-  FileIcon = {
-    provider = 'FileIcon',
-    condition = buffer_not_empty,
-    highlight = {require('galaxyline.provider_fileinfo').get_file_icon_color,colors.line_bg},
-  },
-}
-gls.left[4] = {
-  FileName = {
-    provider = {'FileName'},
-    condition = buffer_not_empty,
-    highlight = {colors.fg,colors.line_bg,'bold'}
-  }
-}
+local function split(str, sep)
+  local res = {}
+  for w in str:gmatch('([^' .. sep .. ']*)') do
+    if w ~= '' then
+      table.insert(res, w)
+    end
+  end
+  return res
+end
 
-gls.left[6] = {
-  GitBranch = {
-    provider = 'GitBranch',
-    condition = require('galaxyline.provider_vcs').check_git_workspace,
-    highlight = {colors.orange,colors.line_bg,'bold'},
-  }
-}
+local FilePathShortProvider = function()
+  local fp = vim.fn.fnamemodify(vim.fn.expand('%'), ':~:.:h')
+  local tbl = split(fp, '/')
+  local len = #tbl
+
+  if len > 2 and tbl[1] ~= '~' then
+    return icons.dotdotdot .. '/' .. table.concat(tbl, '/', len - 1) .. '/'
+  else
+    return fp .. '/'
+  end
+end
 
 local checkwidth = function()
   local squeeze_width  = vim.fn.winwidth(0) / 2
@@ -1401,144 +1457,365 @@ local checkwidth = function()
   return false
 end
 
-gls.left[7] = {
-  DiffAdd = {
-    provider = 'DiffAdd',
-    condition = checkwidth,
-    icon = ' ',
-    highlight = {colors.green,colors.line_bg},
-  }
-}
-gls.left[8] = {
-  DiffModified = {
-    provider = 'DiffModified',
-    condition = checkwidth,
-    icon = ' ',
-    highlight = {colors.orange,colors.line_bg},
-  }
-}
-gls.left[9] = {
-  DiffRemove = {
-    provider = 'DiffRemove',
-    condition = checkwidth,
-    icon = ' ',
-    highlight = {colors.red,colors.line_bg},
-  }
-}
-gls.left[10] = {
-  LeftEnd = {
-    provider = function() return '' end,
-    separator = '',
-    separator_highlight = {colors.bg,colors.line_bg},
-    highlight = {colors.line_bg,colors.line_bg}
-  }
-}
+local BracketProvider = function(icon, cond)
+  return function()
+    local result
 
-gls.left[11] = {
-    TrailingWhiteSpace = {
-     provider = TrailingWhiteSpace,
-     icon = '  ',
-     highlight = {colors.yellow,colors.bg},
+    if cond == true or cond == false then
+      result = cond
+    else
+      result = cond()
+    end
+
+    if result ~= nil and result ~= '' then
+      return icon
+    end
+  end
+end
+
+gls.left = {
+  {
+    GhostLeftBracket = {
+      provider = BracketProvider(icons.rounded_left_filled, true),
+      highlight = 'GalaxyViModeNestedInv',
+    },
+  },
+  {
+    Ghost = {
+      provider = BracketProvider(icons.ghost, true),
+      highlight = 'GalaxyViModeInv',
+    },
+  },
+  {
+    ViModeLeftBracket = {
+      provider = BracketProvider(icons.rounded_right_filled, true),
+      highlight = 'GalaxyViMode',
+    },
+  },
+  {
+    ViMode = {
+      provider = function()
+        local m = get_mode()
+        if m == nil then
+          return
+        end
+
+        local label, mode_color, mode_nested = unpack(m)
+        highlight('GalaxyViMode', mode_color, mode_nested)
+        highlight('GalaxyViModeInv', mode_nested, mode_color)
+        highlight('GalaxyViModeNested', mode_nested, colors.bg)
+        highlight('GalaxyViModeNestedInv', colors.bg, mode_nested)
+        highlight('GalaxyPercentBracket', colors.bg, mode_color)
+
+        highlight('GalaxyGitLCBracket', mode_nested, mode_color)
+
+        if condition.buffer_not_empty() then
+          highlight('GalaxyViModeBracket', mode_nested, mode_color)
+        else
+          if condition.check_git_workspace() then
+            highlight('GalaxyGitLCBracket', colors.bg, mode_color)
+          end
+          highlight('GalaxyViModeBracket', colors.bg, mode_color)
+        end
+        return '  ' .. label .. ' '
+      end,
+    },
+  },
+   {
+    ViModeBracket = {
+      provider = BracketProvider(icons.arrow_right_filled, true),
+      highlight = 'GalaxyViModeBracket',
+    },
+  },
+  {
+    GitIcon = {
+      provider = BracketProvider('  ' .. icons.branch .. ' ', true),
+      condition = check_width_and_git_and_buffer,
+      highlight = 'GalaxyViModeInv',
+    },
+  },
+  {
+    GitBranch = {
+      provider = function()
+        local vcs = require('galaxyline.provider_vcs')
+        local branch_name = vcs.get_git_branch()
+        if not branch_name then
+          return ' no git '
+        end
+        if string.len(branch_name) > 28 then
+          return string.sub(branch_name, 1, 25) .. icons.dotdotdot
+        end
+        return branch_name .. ' '
+      end,
+      condition = check_width_and_git_and_buffer,
+      highlight = 'GalaxyViModeInv',
+      separator = icons.arrow_right,
+      separator_highlight = 'GalaxyViModeInv',
+    },
+  },
+  {
+    FileIcon = {
+      provider = function()
+        local icon = fileinfo.get_file_icon()
+        if condition.check_git_workspace() then
+          return ' ' .. icon
+        end
+
+        return '  ' .. icon
+      end,
+      condition = condition.buffer_not_empty,
+      highlight = 'GalaxyViModeInv',
+    },
+  },
+  {
+    FilePath = {
+      provider = FilePathShortProvider,
+      condition = check_buffer_and_width,
+      highlight = 'GalaxyViModeInv',
+    },
+  },
+  {
+    FileName = {
+      provider = 'FileName',
+      condition = condition.buffer_not_empty,
+      highlight = 'GalaxyViModeInv',
+      separator = icons.arrow_right_filled,
+      separator_highlight = 'GalaxyViModeNestedInv',
+    },
+  },
+  {
+    DiffAdd = {
+      provider = 'DiffAdd',
+      condition = checkwidth,
+      icon = ' ',
+      highlight = {colors.green,colors.bg},
     }
-}
-
-gls.left[12] = {
-  DiagnosticError = {
-    provider = 'DiagnosticError',
-    icon = '  ',
-    highlight = {colors.red,colors.bg}
-  }
-}
-gls.left[13] = {
-  Space = {
-    provider = function () return ' ' end
-  }
-}
-gls.left[14] = {
-  DiagnosticWarn = {
-    provider = 'DiagnosticWarn',
-    icon = '  ',
-    highlight = {colors.yellow,colors.bg},
-  }
-}
-
-
-gls.left[15] = {
+  },
+  {
+    DiffModified = {
+      provider = 'DiffModified',
+      condition = checkwidth,
+      icon = ' ',
+      highlight = {colors.orange,colors.bg},
+    }
+  },
+  {
+    DiffRemove = {
+      provider = 'DiffRemove',
+      condition = checkwidth,
+      icon = ' ',
+      highlight = {colors.red,colors.bg},
+    }
+  },
+  {
     CocStatus = {
-     provider = CocStatus,
-     highlight = {colors.green,colors.bg},
-     icon = '  '
+      provider = {
+        BracketProvider(icons.arrow_right, true),
+        CocStatus
+      },
+      highlight = 'GalaxyViModeInv',
     }
-}
-
-gls.left[16] = {
-  CocFunc = {
-    provider = CocFunc,
-    icon = '  λ ',
-    highlight = {colors.yellow,colors.bg},
-  }
-}
-
-gls.right[1]= {
-  FileFormat = {
-    provider = 'FileFormat',
-    separator = ' ',
-    separator_highlight = {colors.bg,colors.line_bg},
-    highlight = {colors.fg,colors.line_bg,'bold'},
-  }
-}
-gls.right[4] = {
-  LineInfo = {
-    provider = 'LineColumn',
-    separator = ' | ',
-    separator_highlight = {colors.blue,colors.line_bg},
-    highlight = {colors.fg,colors.line_bg},
   },
 }
-gls.right[5] = {
-  PerCent = {
-    provider = 'LinePercent',
-    separator = ' ',
-    separator_highlight = {colors.line_bg,colors.line_bg},
-    highlight = {colors.cyan,colors.darkblue,'bold'},
-  }
+
+highlight('GalaxyDiagnosticError', colors.red, colors.bg)
+highlight('GalaxyDiagnosticErrorInv', colors.bg, colors.red)
+
+highlight('GalaxyDiagnosticWarn', colors.yellow, colors.bg)
+highlight('GalaxyDiagnosticWarnInv', colors.bg, colors.yellow)
+
+highlight('GalaxyDiagnosticInfo', colors.purple, colors.bg)
+highlight('GalaxyDiagnosticInfoInv', colors.bg, colors.purple)
+
+local LineColumnProvider = function()
+  local line_column = fileinfo.line_column()
+  line_column = line_column:gsub('%s+', '')
+  return ' ' .. icons.line_number .. line_column
+end
+
+local PercentProvider = function()
+  local line_column = fileinfo.current_line_percent()
+  line_column = line_column:gsub('%s+', '')
+  return line_column .. ' ☰'
+end
+
+gls.right = {
+  {
+    DiagnosticErrorLeftBracket = {
+      provider = BracketProvider(icons.rounded_left_filled, diag.get_diagnostic_error),
+      highlight = 'GalaxyDiagnosticErrorInv',
+      condition = condition.buffer_not_empty,
+    },
+  },
+{
+    DiagnosticError = {
+      provider = 'DiagnosticError',
+      icon = icons.error .. ' ',
+      highlight = 'GalaxyDiagnosticError',
+      condition = condition.buffer_not_empty,
+    },
+  },
+  {
+    DiagnosticErrorRightBracket = {
+      provider = {
+        BracketProvider(icons.rounded_right_filled, diag.get_diagnostic_error),
+        BracketProvider(' ', diag.get_diagnostic_error),
+      },
+      highlight = 'GalaxyDiagnosticErrorInv',
+      condition = condition.buffer_not_empty,
+    },
+  },
+  {
+    DiagnosticWarnLeftBracket = {
+      provider = BracketProvider(icons.rounded_left_filled, diag.get_diagnostic_warn),
+      highlight = 'GalaxyDiagnosticWarnInv',
+      condition = condition.buffer_not_empty,
+    },
+  },
+  {
+    DiagnosticWarn = {
+      provider = 'DiagnosticWarn',
+      highlight = 'GalaxyDiagnosticWarn',
+      icon = icons.warn .. ' ',
+      condition = condition.buffer_not_empty,
+    },
+  },
+  {
+    DiagnosticWarnRightBracket = {
+      provider = {
+        BracketProvider(icons.rounded_right_filled, diag.get_diagnostic_warn),
+        BracketProvider(' ', diag.get_diagnostic_warn),
+      },
+      highlight = 'GalaxyDiagnosticWarnInv',
+      condition = condition.buffer_not_empty,
+    },
+  },
+  {
+    DiagnosticInfoLeftBracket = {
+      provider = BracketProvider(icons.rounded_left_filled, diag.get_diagnostic_info),
+      highlight = 'GalaxyDiagnosticInfoInv',
+    },
+  },
+  {
+    DiagnosticInfo = {
+      provider = 'DiagnosticInfo',
+      icon = icons.info .. ' ',
+      highlight = 'GalaxyDiagnosticInfo',
+      condition = check_width_and_git_and_buffer,
+    },
+  },
+  {
+    DiagnosticInfoRightBracket = {
+      provider = {
+        BracketProvider(icons.rounded_right_filled, diag.get_diagnostic_info),
+        BracketProvider(' ', diag.get_diagnostic_info),
+      },
+      highlight = 'GalaxyDiagnosticInfoInv',
+      condition = condition.buffer_not_empty,
+    },
+  },
+  {
+    LineColumn = {
+      provider = {
+        LineColumnProvider,
+        function()
+          return ' '
+        end,
+      },
+      highlight = 'GalaxyViMode',
+      separator = icons.arrow_left_filled,
+      separator_highlight = 'GalaxyGitLCBracket',
+    },
+  },
+  {
+    PerCent = {
+      provider = {
+        PercentProvider,
+      },
+      highlight = 'GalaxyViMode',
+      separator = icons.arrow_left .. ' ',
+      separator_highlight = 'GalaxyViModeLeftBracket',
+    },
+  },
+  {
+    PercentRightBracket = {
+      provider = BracketProvider(icons.rounded_right_filled, true),
+      highlight = 'GalaxyPercentBracket',
+    },
+  },
 }
 
--- gls.right[4] = {
---   ScrollBar = {
---     provider = 'ScrollBar',
---     highlight = {colors.blue,colors.purple},
---   }
--- }
---
--- gls.right[3] = {
---   Vista = {
---     provider = VistaPlugin,
---     separator = ' ',
---     separator_highlight = {colors.bg,colors.line_bg},
---     highlight = {colors.fg,colors.line_bg,'bold'},
---   }
--- }
-
-gls.short_line_left[1] = {
-  BufferType = {
-    provider = 'FileTypeName',
-    separator = '',
-    condition = has_file_type,
-    separator_highlight = {colors.purple,colors.bg},
-    highlight = {colors.fg,colors.purple}
-  }
+gls.short_line_left = {
+  {
+    GhostLeftBracketShort = {
+      provider = BracketProvider(icons.rounded_left_filled, true),
+      highlight = { colors.white, colors.bg },
+    },
+  },
+  {
+    GhostShort = {
+      provider = BracketProvider(icons.ghost, true),
+      highlight = { colors.bg, colors.white },
+    },
+  },
+  {
+    GhostRightBracketShort = {
+      provider = BracketProvider(icons.rounded_right_filled, true),
+      highlight = { colors.white, colors.bg },
+    },
+  },
+  {
+    FileIconShort = {
+      provider = {
+        function()
+          return '  '
+        end,
+        'FileIcon',
+      },
+      condition = condition.buffer_not_empty,
+      highlight = {
+        fileinfo.get_file_icon,
+        colors.bg,
+      },
+    },
+  },
+  {
+    FilePathShort = {
+      provider = FilePathShortProvider,
+      condition = condition.buffer_not_empty,
+      highlight = { colors.white, colors.bg },
+    },
+  },
+  {
+    FileNameShort = {
+      provider = 'FileName',
+      condition = condition.buffer_not_empty,
+      highlight = { colors.white, colors.bg },
+    },
+  },
 }
 
-
-gls.short_line_right[1] = {
-  BufferIcon = {
-    provider= 'BufferIcon',
-    separator = '',
-    condition = has_file_type,
-    separator_highlight = {colors.purple,colors.bg},
-    highlight = {colors.fg,colors.purple}
-  }
+gls.short_line_right = {
+  {
+    ShortLineColumn = {
+      provider = {
+        LineColumnProvider,
+        function()
+          return ' '
+        end,
+      },
+      highlight = { colors.white, colors.bg },
+    },
+  },
+  {
+    ShortPerCent = {
+      provider = {
+        PercentProvider,
+      },
+      separator = icons.arrow_left .. ' ',
+      highlight = { colors.white, colors.bg },
+    },
+  },
 }
 EOF
 
