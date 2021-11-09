@@ -1,7 +1,23 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => GLOBAL OVERLOADS
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! s:source_all_additional_files(dir_path) abort
+  if isdirectory(a:dir_path)
+      for d in readdir(a:dir_path, {n -> n =~ '.vim'})
+        let filename = a:dir_path.'/'.d
+        if filereadable(filename)
+            call execute('source '.filename)
+        endif
+      endfor
+  endif
+endfunction
+
+" load host specific configuration here
+call s:source_all_additional_files(stdpath('config').'/additional/host')
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => General
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:python3_host_prog = '/usr/bin/python3.8'
 if has('win32') || has('win64')
   " if has_key(environ(), 'GIT_BASH')
     " let &shell = environ()['GIT_BASH']
@@ -50,8 +66,8 @@ nnoremap <silent> <leader>z  :stop<cr>
 imap <silent> jk <esc>
 
 " copy and paste from/to the system clipboard
-map <silent> <leader><c-p> "+p<cr>
-map <silent> <leader><c-y> "+y<cr>
+" map <silent> <leader><c-p> "+p<cr>
+" map <silent> <leader><c-y> "+y<cr>
 
 " quickly saving with <leader>
 map <silent> <leader>w :write<cr>
@@ -346,6 +362,8 @@ Plug 'ms-jpq/coq_nvim', {'branch': 'coq'}
 Plug 'ms-jpq/coq.artifacts', {'branch': 'artifacts'}
 Plug 'ms-jpq/coq.thirdparty', {'branch': '3p'}
 
+Plug 'mfussenegger/nvim-jdtls'
+
 " bufferline line
 Plug 'romgrk/barbar.nvim'
 
@@ -445,13 +463,11 @@ EOF
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => native lsp and coq
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let lsp_kind_icons = luaeval("require'lspkind'.presets.default")
-
 let g:coq_settings = {
     \ 'auto_start': "shut-up",
     \ 'display.icons.mode': 'short',
-    \ 'display.icons.mappings': lsp_kind_icons,
-    \ 'keymap.jump_to_mark': '<c-m>'
+    \ 'display.icons.mappings': luaeval("require'lspkind'.presets.default"),
+    \ 'keymap.jump_to_mark': '<C-S>'
 \ }
 
 lua <<EOF
@@ -484,72 +500,250 @@ lsp_status.config{
 }
 
 
+-- Mappings.
+local function buf_set_keymap(...) vim.api.nvim_set_keymap(...) end
+local keymap_opts = { noremap=true, silent=true }
+
+local configure_lsp = function(lsp_opts)
+  lsp_opts = lsp_opts or {}
+
+  lsp_status.register_progress()
+
+  -- See `:help vim.lsp.*` for documentation on any of the below functions
+  buf_set_keymap('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<CR>', keymap_opts)
+  buf_set_keymap('n', 'gd', '<cmd>lua require"telescope.builtin".lsp_definitions()<CR>', keymap_opts)
+  buf_set_keymap('n', 'gi', '<cmd>lua require"telescope.builtin".lsp_implementations()<CR>', keymap_opts)
+  buf_set_keymap('n', '<leader>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', keymap_opts)
+  buf_set_keymap('n', 'grn', '<cmd>lua vim.lsp.buf.rename()<CR>', keymap_opts)
+
+  buf_set_keymap('n', 'gs', '<cmd>lua require"telescope.builtin".lsp_document_symbols()<CR>', keymap_opts)
+  buf_set_keymap('n', 'K', '<cmd>lua show_documentation()<CR>', keymap_opts)
+  buf_set_keymap('n', '<C-Y>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', keymap_opts)
+  buf_set_keymap('n', 'gr', '<cmd>lua require"telescope.builtin".lsp_references()<CR>', keymap_opts)
+  buf_set_keymap('n', '<leader>gr', '<cmd>lua require"telescope.builtin".lsp_references()<CR>', keymap_opts)
+
+  buf_set_keymap('n', '<space>wa', '<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>', keymap_opts)
+  buf_set_keymap('n', '<space>wr', '<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>', keymap_opts)
+  buf_set_keymap('n', '<space>wl', '<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>', keymap_opts)
+
+  buf_set_keymap('n', '<leader>a', '<cmd>lua require("telescope.builtin").lsp_code_actions()<CR>', keymap_opts)
+
+  buf_set_keymap('n', '<leader>de', '<cmd>lua require"telescope.builtin".lsp_document_diagnostics({severity = "ERROR"})<CR>', keymap_opts)
+  buf_set_keymap('n', '<leader>dd', '<cmd>lua require"telescope.builtin".lsp_document_diagnostics()<CR>', keymap_opts)
+  buf_set_keymap('n', '[d', '<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>', keymap_opts)
+  buf_set_keymap('n', ']d', '<cmd>lua vim.lsp.diagnostic.goto_next()<CR>', keymap_opts)
+  buf_set_keymap('n', '[e', '<cmd>lua vim.lsp.diagnostic.goto_prev({severity = "Error"})<CR>', keymap_opts)
+  buf_set_keymap('n', ']e', '<cmd>lua vim.lsp.diagnostic.goto_next({severity = "Error"})<CR>', keymap_opts)
+
+  buf_set_keymap('n', '<M-F>', '<cmd>lua vim.lsp.buf.formatting()<CR>', keymap_opts)
+  -- buf_set_keymap('v', '<M-F>', '<cmd>lua vim.lsp.buf.range_formatting({})<CR>', opts)
+  -- buf_set_keymap('x', '<M-F>', '<cmd>lua vim.lsp.buf.range_formatting({})<CR>', opts)
+
+  local old_on_attach = lsp_opts.on_attach
+
+  lsp_opts.on_attach = function(client, bufnr)
+    lsp_status.on_attach(client)
+
+    if old_on_attach then
+      old_on_attach(client, bufnr)
+    end
+    vim.api.nvim_exec([[
+        hi LspReferenceRead cterm=bold ctermbg=red guibg=LightYellow
+        hi LspReferenceText cterm=bold ctermbg=red guibg=LightYellow
+        hi LspReferenceWrite cterm=bold ctermbg=red guibg=LightYellow
+        augroup lsp_document_highlight
+          autocmd!
+          autocmd CursorHold <buffer> lua vim.lsp.buf.document_highlight()
+          autocmd CursorMoved <buffer> lua vim.lsp.buf.clear_references()
+        augroup END
+    ]], false)
+  end
+
+  return coq.lsp_ensure_capabilities(lsp_opts)
+end
+
+-- actually start the languare server
 lsp_installer.on_server_ready(function(server)
-    lsp_status.register_progress()
-
-    local lsp_opts = {}
-
-    local function buf_set_keymap(...) vim.api.nvim_set_keymap(...) end
-    -- local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
-
-    -- Enable completion triggered by <c-x><c-o>
-    -- buf_set_option('omnifunc', 'v:lua.vim.lsp.omnifunc')
-
-    -- Mappings.
-    local opts = { noremap=true, silent=true }
-
-    -- See `:help vim.lsp.*` for documentation on any of the below functions
-    buf_set_keymap('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<CR>', opts)
-    buf_set_keymap('n', 'gd', '<cmd>lua require"telescope.builtin".lsp_definitions()<CR>', opts)
-    buf_set_keymap('n', 'gi', '<cmd>lua require"telescope.builtin".lsp_implementations()<CR>', opts)
-    buf_set_keymap('n', '<leader>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
-    buf_set_keymap('n', 'grn', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
-
-    buf_set_keymap('n', 'gs', '<cmd>lua require"telescope.builtin".lsp_document_symbols()<CR>', opts)
-    buf_set_keymap('n', 'K', '<cmd>lua show_documentation()<CR>', opts)
-    -- buf_set_keymap('n', '<C-K>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', opts)
-    buf_set_keymap('n', 'gr', '<cmd>lua require"telescope.builtin".lsp_references()<CR>', opts)
-    buf_set_keymap('n', '<leader>gr', '<cmd>lua require"telescope.builtin".lsp_references()<CR>', opts)
-
-    buf_set_keymap('n', '<space>wa', '<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>', opts)
-    buf_set_keymap('n', '<space>wr', '<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>', opts)
-    buf_set_keymap('n', '<space>wl', '<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>', opts)
-
-    buf_set_keymap('n', '<leader>a', '<cmd>lua require("telescope.builtin").lsp_code_actions()<CR>', opts)
-
-    buf_set_keymap('n', '<leader>le', '<cmd>lua require"telescope.builtin".lsp_document_diagnostics({severity = vim.diagnostic.severity.ERROR})<CR>', opts)
-    buf_set_keymap('n', '<leader>ld', '<cmd>lua require"telescope.builtin".lsp_document_diagnostics()<CR>', opts)
-    buf_set_keymap('n', '[d', '<cmd>lua vim.diagnostic.goto_prev()<CR>', opts)
-    buf_set_keymap('n', ']d', '<cmd>lua vim.diagnostic.goto_next()<CR>', opts)
-    buf_set_keymap('n', '[e', '<cmd>lua vim.diagnostic.goto_prev({severity = vim.diagnostic.severity.ERROR})<CR>', opts)
-    buf_set_keymap('n', ']e', '<cmd>lua vim.diagnostic.goto_next({severity = vim.diagnostic.severity.ERROR})<CR>', opts)
-
-    buf_set_keymap('n', '<M-F>', '<cmd>lua vim.lsp.buf.formatting()<CR>', opts)
-    -- buf_set_keymap('v', '<M-F>', '<cmd>lua vim.lsp.buf.range_formatting({})<CR>', opts)
-    -- buf_set_keymap('x', '<M-F>', '<cmd>lua vim.lsp.buf.range_formatting({})<CR>', opts)
-
-    lsp_opts.on_attach = lsp_status.on_attach
-
-    server:setup(coq.lsp_ensure_capabilities(lsp_opts))
+  server:setup(configure_lsp())
 end)
--- local nvim_lsp = require'lspconfig'
 
--- local lsp_root = vim.api.nvim_exec("echo stdpath('data')", true).."/lsp_servers"
+--------------------------------------------------------------
+-- > JAVA SPECIFIC LSP CONFIG
+--------------------------------------------------------------
+local on_java_attach = function(client, bufnr)
+  require'jdtls.setup'.add_commands()
 
--- nvim_lsp.clangd.setup(coq.lsp_ensure_capabilities({
---     cmd = { lsp_root.."/clangd/clangd", "--background-index" }
--- }))
---
--- nvim_lsp.pyright.setup(coq.lsp_ensure_capabilities({
---     cmd = { "node", lsp_root.."/python/node_modules/pyright/dist/pyright.js" }
--- }))
+  -- Java specific mappings
+  buf_set_keymap("n", "<leader>li", "<Cmd>lua require'jdtls'.organize_imports()<CR>", keymap_opts)
+  buf_set_keymap("v", "<leader>le", "<Esc><Cmd>lua require('jdtls').extract_variable(true)<CR>", keymap_opts)
+  buf_set_keymap("n", "<leader>le", "<Cmd>lua require('jdtls').extract_variable()<CR>", keymap_opts)
+  buf_set_keymap("v", "<leader>lm", "<Esc><Cmd>lua require('jdtls').extract_method(true)<CR>", keymap_opts)
+  -- buf_set_keymap("n", "<leader>a", "<Cmd>lua require('jdtls').code_action()<CR>", keymap_opts)
+  -- buf_set_keymap("x", "<leader>a", "<Esc><Cmd>lua require('jdtls').code_action(true)<CR>", keymap_opts)
+
+  -- overwrite default vimspector launch mapping
+  buf_set_keymap("n", "<Bslash>l", "<Cmd>lua start_vimspector_java()<CR>", keymap_opts)
+  -- require'formatter'.setup{
+  --     filetype = {
+  --         java = {
+  --             function()
+  --                 return {
+  --                     exe = 'java',
+  --                     args = { '-jar', os.getenv('HOME') .. '/.local/jars/google-java-format.jar', vim.api.nvim_buf_get_name(0) },
+  --                     stdin = true
+  --                 }
+  --             end
+  --         }
+  --     }
+  -- }
+
+  -- vim.api.nvim_exec([[
+  --   augroup FormatAutogroup
+  --     autocmd!
+  --     autocmd BufWritePost *.java FormatWrite
+  --   augroup end
+  -- ]], true)
+  -- buf_set_keymap('n', '<leader>q', '<cmd>lua vim.lsp.diagnostic.set_loclist()<CR>', opts)
+
+end
+
+-- DEBUGGINS WITH VIMSPECTOR
+start_vimspector_java = function()
+  -- need to start java-debug adapter first and pass it's port to vimspector
+  require'jdtls.util'.execute_command({command = 'vscode.java.startDebugSession'}, function(err0, port)
+    assert(not err0, vim.inspect(err0))
+
+    vim.cmd("call vimspector#LaunchWithSettings(#{ AdapterPort: " .. port .. ", configuration: 'Java Attach' })")
+  end, 0)
+end
+
+
+function setup_java_lsp()
+
+  local root_dir = get_java_root and get_java_root() or require('jdtls.setup').find_root({'gradlew', '.git'})
+
+  local home = os.getenv('HOME')
+  -- where eclipse stores runtime files about current project
+  local eclipse_workspace = home .. "/.local/share/eclipse/" .. vim.fn.fnamemodify(root_dir, ':p:h:t')
+
+  local ws_folders_lsp = get_java_workspaces and get_java_workspaces(root_dir) or {}
+  local ws_folders_jdtls = {}
+  for _, ws in ipairs(ws_folders_lsp) do
+      table.insert(ws_folders_jdtls, string.format("file://%s", ws))
+  end
+
+  local capabilities = {
+      eclipse_workspace_root = root_dir,
+      workspace = {
+          configuration = true
+      },
+      textDocument = {
+          completion = {
+              completionItem = {
+                  snippetSupport = true
+              }
+          }
+      }
+  }
+
+  local config = {
+    handlers = {
+      ["textDocument/publishDiagnostics"] = vim.lsp.with(
+        vim.lsp.diagnostic.on_publish_diagnostics, {
+          -- Enable underline, use default values
+          underline = true,
+          -- Enable virtual text, override spacing to 4
+          virtual_text = {
+            spacing = 4,
+          },
+          -- Use a function to dynamically turn signs off
+          -- and on, using buffer local variables
+          --signs = function(bufnr, client_id)
+            --return vim.bo[bufnr].show_signs == false
+          --end,
+          -- Disable a feature
+          update_in_insert = false,
+        }
+      ),
+    },
+    flags = {
+      allow_incremental_sync = true,
+    },
+    capabilities = capabilities,
+    settings = {
+      -- ['java.format.settings.url'] = home .. "/.config/nvim/language-servers/java-google-formatter.xml",
+      -- ['java.format.settings.profile'] = "GoogleStyle",
+      java = {
+        signatureHelp = { enabled = true },
+        contentProvider = { preferred = 'fernflower' },
+        completion = {
+          favoriteStaticMembers = {
+            "org.hamcrest.MatcherAssert.assertThat",
+            "org.hamcrest.Matchers.*",
+            "org.hamcrest.CoreMatchers.*",
+            "org.junit.jupiter.api.Assertions.*",
+            "java.util.Objects.requireNonNull",
+            "java.util.Objects.requireNonNullElse",
+            "org.mockito.Mockito.*"
+          }
+        },
+        sources = {
+          organizeImports = {
+            starThreshold = 9999,
+            staticStarThreshold = 9999
+          }
+        },
+        codeGeneration = {
+          toString = {
+            template = "${object.className}{${member.name()}=${member.value}, ${otherMembers}}"
+          }
+        }
+      }
+    },
+    cmd = {'jdtls', eclipse_workspace},
+    on_attach = on_java_attach,
+    on_init = (function(client, _)
+      client.notify('workspace/didChangeConfiguration', { settings = config.settings })
+    end),
+    -- SUPER IMPORTANT, this will prevent lsp from launching in
+    -- every workspaces
+    root_dir = root_dir
+  }
+
+  local extendedClientCapabilities = require'jdtls'.extendedClientCapabilities
+  extendedClientCapabilities.resolveAdditionalTextEditsSupport = true
+  config.init_options = {
+    -- jdtls extensions e.g. debugging
+    bundles = {
+      home .. "/.local/source/java-debug/com.microsoft.java.debug.plugin/target/com.microsoft.java.debug.plugin-0.33.0.jar"
+    };
+    extendedClientCapabilities = extendedClientCapabilities;
+    workspaceFolders = ws_folders_jdtls,
+  }
+
+  -- start the server
+  require('jdtls').start_or_attach(configure_lsp(config))
+
+  -- notify lsp about workspaces
+  for _,line in ipairs(ws_folders_lsp) do
+      vim.lsp.buf.add_workspace_folder(line)
+  end
+
+  vim.api.nvim_command("command! CleanJavaWorkspace :!rm -rf '" .. eclipse_workspace .. "' <bar> :StopLsp <bar> :StartJavaLsp")
+  buf_set_keymap("n", "<leader>lr", "<Cmd>CleanJavaWorkspace<CR>", keymap_opts)
+
+end
+
 EOF
 
-lua <<EOF
-require("coq_3p") {
-    { src = "nvimlua", short_name = "nLUA"}
-}
-EOF
+command! StopLsp :lua vim.lsp.stop_client(vim.lsp.get_active_clients())
+command! StartJavaLsp :lua setup_java_lsp()
+nnoremap <silent> <leader>lj :StartJavaLsp<CR>
+
+augroup jdtls_lsp
+    autocmd!
+    autocmd FileType java lua setup_java_lsp()
+augroup end
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => replacer
@@ -1351,18 +1545,8 @@ EOF
 " ------------------------------------------------------
 "  Additional runtime path and script locations
 " ------------------------------------------------------
-function! s:source_all_additional_files(dir_path) abort
-  if isdirectory(a:dir_path)
-      for d in readdir(a:dir_path, {n -> n =~ '.vim'})
-        let filename = a:dir_path.'/'.d
-        if filereadable(filename)
-            call execute('source '.filename)
-        endif
-      endfor
-  endif
-endfunction
 
 " source any additional configuration files that i don't want to check in git
-call s:source_all_additional_files($HOME.'/.config/nvim/additional')
+call s:source_all_additional_files(stdpath('config').'/additional')
 set runtimepath^=$HOME/.config/nvim/additional
 
