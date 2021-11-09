@@ -534,6 +534,36 @@ lsp_status.config{
 local function buf_set_keymap(...) vim.api.nvim_set_keymap(...) end
 local keymap_opts = { noremap=true, silent=true }
 
+local mk_config = function()
+  local capabilities = vim.lsp.protocol.make_client_capabilities()
+  capabilities.workspace.configuration = true
+  capabilities.textDocument.completion.completionItem.snippetSupport = true
+
+  return {
+    flags = {
+      allow_incremental_sync = true,
+    };
+    handlers = {
+      ["textDocument/publishDiagnostics"] = vim.lsp.with(
+        vim.lsp.diagnostic.on_publish_diagnostics, {
+           -- Enable underline, use default values
+           underline = true,
+           -- Enable virtual text, override spacing to 4
+           virtual_text = {
+             spacing = 4,
+           },
+           -- Disable a feature
+           update_in_insert = false,
+        }
+    ),
+  };
+    capabilities = capabilities;
+    on_init = (function(client)
+      client.notify('workspace/didChangeConfiguration', { settings = client.config.settings })
+    end)
+  }
+end
+
 local configure_lsp = function(lsp_opts)
   lsp_opts = lsp_opts or {}
 
@@ -594,7 +624,7 @@ end
 
 -- actually start the languare server
 lsp_installer.on_server_ready(function(server)
-  server:setup(configure_lsp())
+  server:setup(configure_lsp(mk_config()))
 end)
 
 --------------------------------------------------------------
@@ -608,9 +638,8 @@ local on_java_attach = function(client, bufnr)
   buf_set_keymap("v", "<leader>le", "<Esc><Cmd>lua require('jdtls').extract_variable(true)<CR>", keymap_opts)
   buf_set_keymap("n", "<leader>le", "<Cmd>lua require('jdtls').extract_variable()<CR>", keymap_opts)
   buf_set_keymap("v", "<leader>lm", "<Esc><Cmd>lua require('jdtls').extract_method(true)<CR>", keymap_opts)
-  -- buf_set_keymap("n", "<leader>a", "<Cmd>lua require('jdtls').code_action()<CR>", keymap_opts)
-  -- buf_set_keymap("x", "<leader>a", "<Esc><Cmd>lua require('jdtls').code_action(true)<CR>", keymap_opts)
-
+  buf_set_keymap("n", "<leader>a", "<Cmd>lua require('jdtls').code_action()<CR>", keymap_opts)
+  buf_set_keymap("x", "<leader>a", "<Esc><Cmd>lua require('jdtls').code_action(true)<CR>", keymap_opts)
   -- overwrite default vimspector launch mapping
   buf_set_keymap("n", "<Bslash>l", "<Cmd>lua start_vimspector_java()<CR>", keymap_opts)
   -- require'formatter'.setup{
@@ -662,83 +691,47 @@ function setup_java_lsp()
       table.insert(ws_folders_jdtls, string.format("file://%s", ws))
   end
 
-  local capabilities = {
-      eclipse_workspace_root = root_dir,
-      workspace = {
-          configuration = true
-      },
-      textDocument = {
-          completion = {
-              completionItem = {
-                  snippetSupport = true
-              }
-          }
-      }
-  }
+  local capabilities = vim.lsp.protocol.make_client_capabilities()
 
-  local config = {
-    handlers = {
-      ["textDocument/publishDiagnostics"] = vim.lsp.with(
-        vim.lsp.diagnostic.on_publish_diagnostics, {
-          -- Enable underline, use default values
-          underline = true,
-          -- Enable virtual text, override spacing to 4
-          virtual_text = {
-            spacing = 4,
-          },
-          -- Use a function to dynamically turn signs off
-          -- and on, using buffer local variables
-          --signs = function(bufnr, client_id)
-            --return vim.bo[bufnr].show_signs == false
-          --end,
-          -- Disable a feature
-          update_in_insert = false,
+  capabilities.workspace.configuration = true
+  capabilities.textDocument.completion.completionItem.snippetSupport = true
+
+  local config = mk_config()
+  config.settings = {
+    -- ['java.format.settings.url'] = home .. "/.config/nvim/language-servers/java-google-formatter.xml",
+    -- ['java.format.settings.profile'] = "GoogleStyle",
+    java = {
+      signatureHelp = { enabled = true },
+      contentProvider = { preferred = 'fernflower' },
+      completion = {
+        favoriteStaticMembers = {
+          "org.hamcrest.MatcherAssert.assertThat",
+          "org.hamcrest.Matchers.*",
+          "org.hamcrest.CoreMatchers.*",
+          "org.junit.jupiter.api.Assertions.*",
+          "java.util.Objects.requireNonNull",
+          "java.util.Objects.requireNonNullElse",
+          "org.mockito.Mockito.*"
         }
-      ),
-    },
-    flags = {
-      allow_incremental_sync = true,
-    },
-    capabilities = capabilities,
-    settings = {
-      -- ['java.format.settings.url'] = home .. "/.config/nvim/language-servers/java-google-formatter.xml",
-      -- ['java.format.settings.profile'] = "GoogleStyle",
-      java = {
-        signatureHelp = { enabled = true },
-        contentProvider = { preferred = 'fernflower' },
-        completion = {
-          favoriteStaticMembers = {
-            "org.hamcrest.MatcherAssert.assertThat",
-            "org.hamcrest.Matchers.*",
-            "org.hamcrest.CoreMatchers.*",
-            "org.junit.jupiter.api.Assertions.*",
-            "java.util.Objects.requireNonNull",
-            "java.util.Objects.requireNonNullElse",
-            "org.mockito.Mockito.*"
-          }
-        },
-        sources = {
-          organizeImports = {
-            starThreshold = 9999,
-            staticStarThreshold = 9999
-          }
-        },
-        codeGeneration = {
-          toString = {
-            template = "${object.className}{${member.name()}=${member.value}, ${otherMembers}}"
-          }
+      },
+      sources = {
+        organizeImports = {
+          starThreshold = 9999,
+          staticStarThreshold = 9999
+        }
+      },
+      codeGeneration = {
+        toString = {
+          template = "${object.className}{${member.name()}=${member.value}, ${otherMembers}}"
         }
       }
-    },
-    cmd = {'jdtls', eclipse_workspace},
-    on_attach = on_java_attach,
-    on_init = (function(client, _)
-      client.notify('workspace/didChangeConfiguration', { settings = config.settings })
-    end),
-    -- SUPER IMPORTANT, this will prevent lsp from launching in
-    -- every workspaces
-    root_dir = root_dir
+    }
   }
+  config.cmd = {'jdtls', eclipse_workspace}
+  config.on_attach = on_java_attach
+  -- SUPER IMPORTANT, this will prevent lsp from launching in
+  -- every workspaces
+  config.root_dir = root_dir
 
   local extendedClientCapabilities = require'jdtls'.extendedClientCapabilities
   extendedClientCapabilities.resolveAdditionalTextEditsSupport = true
