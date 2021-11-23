@@ -272,6 +272,10 @@ nnoremap <leader>na :tabnew <bar> :edit ~/.config/nvim/additional<cr>
 inoremap <M-l> <del>
 inoremap <M-h> <bs>
 
+" pre/a-ppend line without moving cursor
+nnoremap <silent> <leader>o :<C-u>call append(line("."),   repeat([""], v:count1))<CR>
+nnoremap <silent> <leader>O :<C-u>call append(line(".")-1, repeat([""], v:count1))<CR>
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Command mode related
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -581,10 +585,12 @@ local configure_lsp = function(lsp_opts)
   buf_set_keymap('n', '<C-Y>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', keymap_opts)
   buf_set_keymap('n', 'gr', '<cmd>lua require"telescope.builtin".lsp_references()<CR>', keymap_opts)
   buf_set_keymap('n', '<leader>gr', '<cmd>lua require"telescope.builtin".lsp_references()<CR>', keymap_opts)
+  buf_set_keymap('n', '<leader>lci', '<cmd>lua vim.lsp.buf.incoming_calls()<CR>', keymap_opts)
+  buf_set_keymap('n', '<leader>lco', '<cmd>lua vim.lsp.buf.outgoing_calls()<CR>', keymap_opts)
 
-  buf_set_keymap('n', '<space>wa', '<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>', keymap_opts)
-  buf_set_keymap('n', '<space>wr', '<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>', keymap_opts)
-  buf_set_keymap('n', '<space>wl', '<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>', keymap_opts)
+  buf_set_keymap('n', '<leader>wa', '<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>', keymap_opts)
+  buf_set_keymap('n', '<leader>wr', '<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>', keymap_opts)
+  buf_set_keymap('n', '<leader>wl', '<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>', keymap_opts)
 
   buf_set_keymap('n', '<leader>a', '<cmd>lua require("telescope.builtin").lsp_code_actions()<CR>', keymap_opts)
 
@@ -607,16 +613,16 @@ local configure_lsp = function(lsp_opts)
     if old_on_attach then
       old_on_attach(client, bufnr)
     end
-    vim.api.nvim_exec([[
-        hi LspReferenceRead cterm=bold ctermbg=red guibg=LightYellow
-        hi LspReferenceText cterm=bold ctermbg=red guibg=LightYellow
-        hi LspReferenceWrite cterm=bold ctermbg=red guibg=LightYellow
-        augroup lsp_document_highlight
-          autocmd!
-          autocmd CursorHold <buffer> lua vim.lsp.buf.document_highlight()
-          autocmd CursorMoved <buffer> lua vim.lsp.buf.clear_references()
-        augroup END
-    ]], false)
+    -- vim.api.nvim_exec([[
+    --     hi LspReferenceRead cterm=bold ctermbg=red guibg=LightYellow
+    --     hi LspReferenceText cterm=bold ctermbg=red guibg=LightYellow
+    --     hi LspReferenceWrite cterm=bold ctermbg=red guibg=LightYellow
+    --     augroup lsp_document_highlight
+    --       autocmd!
+    --       autocmd CursorHold <buffer> lua vim.lsp.buf.document_highlight()
+    --       autocmd CursorMoved <buffer> lua vim.lsp.buf.clear_references()
+    --     augroup END
+    -- ]], false)
   end
 
   return coq.lsp_ensure_capabilities(lsp_opts)
