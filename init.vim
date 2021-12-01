@@ -639,6 +639,10 @@ end)
 local on_java_attach = function(client, bufnr)
   require'jdtls.setup'.add_commands()
 
+  -- checkstyle error format
+  vim.api.nvim_command('set makeprg=java')
+  vim.api.nvim_command('set errorformat=[%.%#]\ %f:%l:%c:\ %m')
+
   -- Java specific mappings
   buf_set_keymap("n", "<leader>li", "<Cmd>lua require'jdtls'.organize_imports()<CR>", keymap_opts)
   buf_set_keymap("v", "<leader>le", "<Esc><Cmd>lua require('jdtls').extract_variable(true)<CR>", keymap_opts)
