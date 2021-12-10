@@ -460,9 +460,13 @@ Plug 'gabrielpoca/replacer.nvim'
 " improved text objects
 Plug 'wellle/targets.vim'
 
+" color guides
+Plug 'rrethy/vim-hexokinase', { 'do': 'make hexokinase' }
+
 Plug 'dsych/solarized.nvim', {'branch': 'feature/additional_plugins'}
 
 call plug#end()
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => treesitter text objects
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -695,7 +699,6 @@ end
 local on_java_attach = function(client, bufnr)
   require'jdtls.setup'.add_commands()
 
-
   -- Java specific mappings
   buf_set_keymap("n", "<leader>lc", "<Cmd>lua run_checkstyle()<CR>", keymap_opts)
   buf_set_keymap("n", "<leader>li", "<Cmd>lua require'jdtls'.organize_imports()<CR>", keymap_opts)
@@ -863,14 +866,6 @@ require'nvim-tree'.setup {
   }
 }
 EOF
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => syntastic config
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let g:syntastic_always_populate_loc_list = 1
-let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 0
-let g:syntastic_check_on_wq = 0
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Indentation highlighting with blankline
@@ -1370,23 +1365,13 @@ local icons = {
   },
 }
 
-local colors = {
-    bg = '#282c34',
-    line_bg = '#353644',
-    fg = '#8FBCBB',
-    fg_green = '#65a380',
+local theme_colors = require'solarized.colors'.getColors()
 
-    yellow = '#fabd2f',
-    cyan = '#008080',
-    darkblue = '#081633',
-    green = '#afd700',
-    orange = '#FF8800',
-    purple = '#5d4d7a',
-    magenta = '#c678dd',
-    blue = '#51afef',
-    red = '#ec5f67',
-    white = '#FFFFFF'
+local color_overrides = {
+    bg = theme_colors.base02,
 }
+
+local colors = vim.tbl_deep_extend('force', theme_colors, color_overrides)
 
 local get_mode = function()
   local mode_colors = {
@@ -1394,9 +1379,9 @@ local get_mode = function()
     [105] = { 'INSERT', colors.cyan, colors.bg },
     [99] = { 'COMMAND', colors.orange, colors.bg },
     [116] = { 'TERMINAL', colors.blue, colors.bg },
-    [118] = { 'VISUAL', colors.purple, colors.bg },
-    [22] = { 'V-BLOCK', colors.purple, colors.bg },
-    [86] = { 'V-LINE', colors.purple, colors.bg },
+    [118] = { 'VISUAL', colors.violet, colors.bg },
+    [22] = { 'V-BLOCK', colors.violet, colors.bg },
+    [86] = { 'V-LINE', colors.violet, colors.bg },
     [82] = { 'REPLACE', colors.red, colors.bg },
     [115] = { 'SELECT', colors.red, colors.bg },
     [83] = { 'S-LINE', colors.red, colors.bg },
@@ -1691,8 +1676,8 @@ highlight('GalaxyDiagnosticErrorInv', colors.bg, colors.red)
 highlight('GalaxyDiagnosticWarn', colors.yellow, colors.bg)
 highlight('GalaxyDiagnosticWarnInv', colors.bg, colors.yellow)
 
-highlight('GalaxyDiagnosticInfo', colors.purple, colors.bg)
-highlight('GalaxyDiagnosticInfoInv', colors.bg, colors.purple)
+highlight('GalaxyDiagnosticInfo', colors.violet, colors.bg)
+highlight('GalaxyDiagnosticInfoInv', colors.bg, colors.violet)
 
 local LineColumnProvider = function()
   local line_column = fileinfo.line_column()
@@ -1816,19 +1801,19 @@ gls.short_line_left = {
   {
     GhostLeftBracketShort = {
       provider = BracketProvider(icons.rounded_left_filled, true),
-      highlight = { colors.white, colors.bg },
+      highlight = { colors.base3, colors.bg },
     },
   },
   {
     GhostShort = {
       provider = BracketProvider(icons.ghost, true),
-      highlight = { colors.bg, colors.white },
+      highlight = { colors.bg, colors.base3 },
     },
   },
   {
     GhostRightBracketShort = {
       provider = BracketProvider(icons.rounded_right_filled, true),
-      highlight = { colors.white, colors.bg },
+      highlight = { colors.base3, colors.bg },
     },
   },
   {
@@ -1850,14 +1835,14 @@ gls.short_line_left = {
     FilePathShort = {
       provider = FilePathShortProvider,
       condition = condition.buffer_not_empty,
-      highlight = { colors.white, colors.bg },
+      highlight = { colors.base3, colors.bg },
     },
   },
   {
     FileNameShort = {
       provider = 'FileName',
       condition = condition.buffer_not_empty,
-      highlight = { colors.white, colors.bg },
+      highlight = { colors.base3, colors.bg },
     },
   },
 }
@@ -1871,7 +1856,7 @@ gls.short_line_right = {
           return ' '
         end,
       },
-      highlight = { colors.white, colors.bg },
+      highlight = { colors.base3, colors.bg },
     },
   },
   {
@@ -1880,7 +1865,7 @@ gls.short_line_right = {
         PercentProvider,
       },
       separator = icons.arrow_left .. ' ',
-      highlight = { colors.white, colors.bg },
+      highlight = { colors.base3, colors.bg },
     },
   },
 }
