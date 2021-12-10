@@ -460,6 +460,8 @@ Plug 'gabrielpoca/replacer.nvim'
 " improved text objects
 Plug 'wellle/targets.vim'
 
+Plug 'dsych/solarized.nvim', {'branch': 'feature/additional_plugins'}
+
 call plug#end()
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => treesitter text objects
@@ -486,7 +488,6 @@ require'nvim-treesitter.configs'.setup {
   }
 }
 EOF
-
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => kommentary
@@ -1150,7 +1151,16 @@ autocmd! BufRead,BufNewFile *sqc,*HPP,*CPP set filetype=cpp
 " OH HOW THINGS HAVE CHANGED)
 set termguicolors
 
-colorscheme rose-pine
+lua <<EOF
+local color_scheme = require('solarized')
+color_scheme.load{
+    theme = 'dark',  -- or 'light'
+    italic_comments = true,
+    italic_strings = true
+}
+EOF
+
+" colorscheme rose-pine
 autocmd ColorScheme tokyonight highlight! link LineNr Question
 autocmd ColorScheme tokyonight highlight! link CursorLineNr Question
 " Update bracket matching highlight group to something sane that can be read
