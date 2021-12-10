@@ -256,14 +256,18 @@ fun! CleanExtraSpaces()
     call setreg('/', old_query)
 endfun
 
-if has("autocmd")
-    autocmd BufWritePre * :call CleanExtraSpaces()
-endif
-
+autocmd BufWritePre * :call CleanExtraSpaces()
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => convenience mappings
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+augroup git_commit
+    autocmd!
+    autocmd FileType gitcommit :set spell
+augroup end
+
+nnoremap <silent> <leader>z :set spell!<cr>
+
 " for configs
 nnoremap <leader>ne :edit $MYVIMRC<cr>
 nnoremap <leader>na :tabnew <bar> :edit ~/.config/nvim/additional<cr>
@@ -275,6 +279,12 @@ inoremap <M-h> <bs>
 " pre/a-ppend line without moving cursor
 nnoremap <silent> <leader>o :<C-u>call append(line("."),   repeat([""], v:count1))<CR>
 nnoremap <silent> <leader>O :<C-u>call append(line(".")-1, repeat([""], v:count1))<CR>
+
+" navigate quickfix with ease
+nnoremap ]q :cnext<cr>
+nnoremap [q :cprev<cr>
+nnoremap qo :copen<cr>
+nnoremap qc :cclose<cr>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Command mode related
@@ -514,10 +524,16 @@ local is_inside = function(target, src)
   return false
 end
 
+function tablelength(T)
+  local count = 0
+  for _ in pairs(T) do count = count + 1 end
+  return count
+end
+
 show_documentation = function()
   if is_inside(vim.api.nvim_buf_get_option(0, 'filetype'), { 'vim', 'help' }) then
     vim.api.nvim_command('h '..vim.api.nvim_eval('expand("<cword>")'))
-  elseif #vim.lsp.buf_get_clients() > 0 then
+  elseif not vim.tbl_isempty(vim.lsp.buf_get_clients()) then
     vim.lsp.buf.hover()
   else
     vim.api.nvim_command('!'..vim.api.nvim_eval('"&keywordprg"')..' '..vim.api.nvim_eval('expand("<cword>")'))
@@ -602,8 +618,8 @@ local configure_lsp = function(lsp_opts)
   buf_set_keymap('n', ']e', '<cmd>lua vim.lsp.diagnostic.goto_next({severity = "Error"})<CR>', keymap_opts)
 
   buf_set_keymap('n', '<M-F>', '<cmd>lua vim.lsp.buf.formatting()<CR>', keymap_opts)
-  -- buf_set_keymap('v', '<M-F>', '<cmd>lua vim.lsp.buf.range_formatting({})<CR>', opts)
-  -- buf_set_keymap('x', '<M-F>', '<cmd>lua vim.lsp.buf.range_formatting({})<CR>', opts)
+  buf_set_keymap('v', '<M-F>', '<cmd>lua vim.lsp.buf.range_formatting({})<CR>', keymap_opts)
+  buf_set_keymap('x', '<M-F>', '<cmd>lua vim.lsp.buf.range_formatting({})<CR>', keymap_opts)
 
   local old_on_attach = lsp_opts.on_attach
 
@@ -628,10 +644,49 @@ local configure_lsp = function(lsp_opts)
   return coq.lsp_ensure_capabilities(lsp_opts)
 end
 
+local server_configs = {
+  ["sumneko_lua"] = function()
+    local runtime_path = vim.split(package.path, ';')
+    table.insert(runtime_path, "lua/?.lua")
+    table.insert(runtime_path, "lua/?/init.lua")
+
+    return {
+        settings = {
+            Lua = {
+              runtime = {
+                version = "LuaJIT"
+              },
+              diagnostics = {
+                -- Get the language server to recognize the 'vim', 'use' global
+                globals = {'vim', 'use'},
+              },
+              workspace = {
+                -- Make the server aware of Neovim runtime files
+                library = vim.api.nvim_get_runtime_file("", true)
+              },
+              -- Do not send telemetry data containing a randomized but unique identifier
+              telemetry = {
+                enable = false,
+              },
+            },
+        }
+    }
+  end
+}
+
 -- actually start the languare server
 lsp_installer.on_server_ready(function(server)
-  server:setup(configure_lsp(mk_config()))
+  local config = vim.tbl_deep_extend("force", mk_config(), server_configs[server.name] and server_configs[server.name]() or {})
+  server:setup(configure_lsp(config))
 end)
+
+run_checkstyle = function()
+  -- checkstyle error format
+  vim.api.nvim_command('set makeprg=brazil-build')
+  vim.api.nvim_command('set errorformat=[ant:checkstyle]\\ [%.%#]\\ %f:%l:%c:\\ %m,[ant:checkstyle]\\ [%.%#]\\ %f:%l:\\ %m')
+  vim.api.nvim_command('set shellpipe=2>&1\\ \\|\\ tee\\ /tmp/checkstyle-errors.txt\\ \\|\\ grep\\ ERROR\\ &>\\ %s')
+  vim.api.nvim_command('make check --rerun-tasks')
+end
 
 --------------------------------------------------------------
 -- > JAVA SPECIFIC LSP CONFIG
@@ -639,11 +694,9 @@ end)
 local on_java_attach = function(client, bufnr)
   require'jdtls.setup'.add_commands()
 
-  -- checkstyle error format
-  vim.api.nvim_command('set makeprg=java')
-  vim.api.nvim_command('set errorformat=[%.%#]\ %f:%l:%c:\ %m')
 
   -- Java specific mappings
+  buf_set_keymap("n", "<leader>lc", "<Cmd>lua run_checkstyle()<CR>", keymap_opts)
   buf_set_keymap("n", "<leader>li", "<Cmd>lua require'jdtls'.organize_imports()<CR>", keymap_opts)
   buf_set_keymap("v", "<leader>le", "<Esc><Cmd>lua require('jdtls').extract_variable(true)<CR>", keymap_opts)
   buf_set_keymap("n", "<leader>le", "<Cmd>lua require('jdtls').extract_variable()<CR>", keymap_opts)
@@ -748,7 +801,8 @@ function setup_java_lsp()
   config.init_options = {
     -- jdtls extensions e.g. debugging
     bundles = {
-      home .. "/.local/source/java-debug/com.microsoft.java.debug.plugin/target/com.microsoft.java.debug.plugin-0.33.0.jar"
+      home .. "/.local/source/java-debug/com.microsoft.java.debug.plugin/target/com.microsoft.java.debug.plugin-0.33.0.jar",
+      home .. "/.local/source/vscode-java-decompiler/server/dg.jdt.ls.decompiler.fernflower-0.0.2-201802221740.jar"
     };
     extendedClientCapabilities = extendedClientCapabilities;
     workspaceFolders = ws_folders_jdtls,
