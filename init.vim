@@ -440,6 +440,7 @@ Plug 'JoosepAlviste/nvim-ts-context-commentstring'
 " additional text objects
 Plug 'nvim-treesitter/nvim-treesitter-textobjects'
 
+" filetype
 Plug 'satabin/hocon-vim'
 
 " markdown preview
@@ -448,9 +449,6 @@ Plug 'ellisonleao/glow.nvim'
 
 " search and replace inside quickfix window
 Plug 'gabrielpoca/replacer.nvim'
-
-" improved text objects
-Plug 'wellle/targets.vim'
 
 " color guides
 Plug 'rrethy/vim-hexokinase', { 'do': 'make hexokinase' }
@@ -462,24 +460,38 @@ call plug#end()
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 lua <<EOF
 require'nvim-treesitter.configs'.setup {
-  textobjects = {
-    select = {
-      enable = true,
+    textobjects = {
+        select = {
+            enable = true,
 
-      -- Automatically jump forward to textobj, similar to targets.vim
-      lookahead = true,
+            -- Automatically jump forward to textobj, similar to targets.vim
+            lookahead = true,
 
-      keymaps = {
-        -- You can use the capture groups defined in textobjects.scm
-        ["af"] = "@function.outer",
-        ["if"] = "@function.inner",
-        ["ac"] = "@class.outer",
-        ["ic"] = "@class.inner",
-        ["ii"] = "@conditional.inner",
-        ["ai"] = "@conditional.outer"
-      },
-    }
-  }
+            keymaps = {
+                -- You can use the capture groups defined in textobjects.scm
+                ["af"] = "@function.outer",
+                ["if"] = "@function.inner",
+                ["ac"] = "@class.outer",
+                ["ic"] = "@class.inner",
+                ["ia"] = "@parameter.inner",
+                ["aa"] = "@parameter.outer",
+            },
+        },
+        move = {
+            enable = true,
+            set_jumps = true, -- whether to set jumps in the jumplist
+            goto_next_start = {
+                ["]m"] = "@function.outer",
+                ["]]"] = "@class.outer",
+                ["]a"] = "@parameter.inner"
+            },
+            goto_previous_start = {
+                ["[m"] = "@function.outer",
+                ["[["] = "@class.outer",
+                ["[a"] = "@parameter.inner"
+            },
+        },
+    },
 }
 EOF
 
