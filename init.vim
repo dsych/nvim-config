@@ -408,6 +408,7 @@ Plug 'Rigellute/shades-of-purple.vim'
 Plug 'folke/tokyonight.nvim'
 Plug 'rose-pine/neovim'
 Plug 'dsych/solarized.nvim', {'branch': 'feature/additional_plugins'}
+Plug 'ishan9299/nvim-solarized-lua'
 
 " git signs
 Plug 'lewis6991/gitsigns.nvim'
@@ -886,6 +887,10 @@ EOF
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => treesitter config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" custom fold method based on treesitter
+set foldmethod=expr
+set foldexpr=nvim_treesitter#foldexpr()
+set foldlevelstart=2
 lua << EOF
 require('nvim-treesitter.configs').setup {
   ensure_installed = "maintained",
@@ -1148,16 +1153,16 @@ autocmd! BufRead,BufNewFile *sqc,*HPP,*CPP set filetype=cpp
 " OH HOW THINGS HAVE CHANGED)
 set termguicolors
 
-lua <<EOF
-local color_scheme = require('solarized')
-color_scheme.load{
-    theme = 'dark',  -- or 'light'
-    italic_comments = true,
-    italic_strings = true
-}
-EOF
+" lua <<EOF
+" local color_scheme = require('solarized')
+" color_scheme.load{
+"     theme = 'dark',  -- or 'light'
+"     italic_comments = true,
+"     italic_strings = true
+" }
+" EOF
 
-" colorscheme rose-pine
+colorscheme solarized
 autocmd ColorScheme tokyonight highlight! link LineNr Question
 autocmd ColorScheme tokyonight highlight! link CursorLineNr Question
 " Update bracket matching highlight group to something sane that can be read
