@@ -266,6 +266,11 @@ augroup git_commit
     autocmd FileType gitcommit :set spell
 augroup end
 
+augroup markdown
+  autocmd!
+  autocmd FileType markdown :set textwidth=120
+augroup END
+
 nnoremap <silent> <leader>z :set spell!<cr>
 
 " for configs
@@ -452,7 +457,7 @@ Plug 'ellisonleao/glow.nvim'
 Plug 'gabrielpoca/replacer.nvim'
 
 " color guides
-Plug 'rrethy/vim-hexokinase', { 'do': 'make hexokinase' }
+" Plug 'rrethy/vim-hexokinase', { 'do': 'make hexokinase' }
 
 call plug#end()
 
