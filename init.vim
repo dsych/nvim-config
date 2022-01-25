@@ -218,6 +218,8 @@ map <silent> <leader>t<leader> :tabnext<cr>
 " Super useful when editing files in the same directory
 map <leader>te :tabedit <C-r>=expand("%:p:h")<cr>/
 
+nnoremap <leader>tne :tabedit % <cr>
+
 " Let 'tl' toggle between this and the last accessed tab
 let g:lasttab = 1
 nmap <Leader>tl :exe "tabn ".g:lasttab<CR>
@@ -263,6 +265,7 @@ autocmd BufWritePre * :call CleanExtraSpaces()
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 augroup git_commit
     autocmd!
+    autocmd FileType * :set spelloptions=camel | :set spellcapcheck=
     autocmd FileType gitcommit :set spell
 augroup end
 
@@ -315,7 +318,7 @@ let g:nvim_tree_group_empty = 1 " 0 by default, compact folders that only contai
 let g:nvim_tree_special_files = { 'README.md': 1, 'Makefile': 1, 'MAKEFILE': 1, 'Config': 1, 'build.gradle': 1, '.vimspector.json': 1 } " List of filenames that gets highlighted with NvimTreeSpecialFile
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Vimspector
+" => Vimspector.1, see below for autocommands
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 " for normal mode - the word under the cursor
@@ -338,23 +341,6 @@ nmap <Bslash>i        <Plug>VimspectorStepInto
 nmap <Bslash>o        <Plug>VimspectorStepOut
 nmap <Bslash>d        :VimspectorReset<cr>
 
-function! s:save_vimspector_session() abort
-  if filereadable('./.vimspector.json')
-    execute VimspectorMkSession
-  endif
-endfunction
-
-function! s:load_vimspector_session() abort
-  if filereadable('./.vimspector.session')
-    execute VimspectorLoadSession
-  endif
-endfunction
-
-augroup vimspector_session
-  autocmd!
-  autocmd VimLeave * :call s:save_vimspector_session()
-  autocmd VimEnter * :call s:load_vimspector_session()
-augroup END
 
 function! s:Debugpy() abort
   py3 __import__( 'vimspector',
@@ -374,13 +360,18 @@ Plug 'kyazdani42/nvim-web-devicons' " Recommended (for coloured icons)
 " language server
 Plug 'neovim/nvim-lspconfig'
 Plug 'williamboman/nvim-lsp-installer'
+" current function/lsp status
 Plug 'nvim-lua/lsp-status.nvim'
+" icons
 Plug 'onsails/lspkind-nvim'
+" signature help for functions lsp
+Plug 'ray-x/lsp_signature.nvim'
 
 Plug 'ms-jpq/coq_nvim', {'branch': 'coq'}
 Plug 'ms-jpq/coq.artifacts', {'branch': 'artifacts'}
 Plug 'ms-jpq/coq.thirdparty', {'branch': '3p'}
 
+" java lsp client
 Plug 'mfussenegger/nvim-jdtls'
 
 " bufferline line
@@ -393,6 +384,7 @@ Plug 'puremourning/vimspector'
 Plug 'nvim-lua/popup.nvim'
 Plug 'nvim-lua/plenary.nvim'
 Plug 'nvim-telescope/telescope.nvim'
+Plug 'nvim-telescope/telescope-ui-select.nvim'
 
 Plug 'tpope/vim-fugitive'
 
@@ -458,8 +450,34 @@ Plug 'gabrielpoca/replacer.nvim'
 
 " color guides
 " Plug 'rrethy/vim-hexokinase', { 'do': 'make hexokinase' }
+" coverage guide
+Plug 'dsych/blanket.nvim'
 
 call plug#end()
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => vimspector.2, attempt to load vimspector session only AFTER plugin has
+" been loaded
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! s:save_vimspector_session() abort
+  if filereadable('./.vimspector.json')
+    silent! VimspectorMkSession
+  endif
+endfunction
+
+function! s:load_vimspector_session() abort
+  if filereadable('./.vimspector.session')
+    silent! VimspectorLoadSession
+  endif
+endfunction
+
+augroup vimspector_session
+  autocmd!
+  autocmd VimLeave * :call s:save_vimspector_session()
+  autocmd VimEnter * :call s:load_vimspector_session()
+augroup END
+
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => treesitter text objects
@@ -621,14 +639,14 @@ local configure_lsp = function(lsp_opts)
   buf_set_keymap('n', '<leader>wr', '<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>', keymap_opts)
   buf_set_keymap('n', '<leader>wl', '<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>', keymap_opts)
 
-  buf_set_keymap('n', '<leader>a', '<cmd>lua require("telescope.builtin").lsp_code_actions()<CR>', keymap_opts)
+  buf_set_keymap('n', '<leader>a', '<cmd>lua vim.lsp.buf.code_action()<CR>', keymap_opts)
 
   buf_set_keymap('n', '<leader>de', '<cmd>lua require"telescope.builtin".lsp_document_diagnostics({severity = "ERROR"})<CR>', keymap_opts)
   buf_set_keymap('n', '<leader>dd', '<cmd>lua require"telescope.builtin".lsp_document_diagnostics()<CR>', keymap_opts)
-  buf_set_keymap('n', '[d', '<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>', keymap_opts)
-  buf_set_keymap('n', ']d', '<cmd>lua vim.lsp.diagnostic.goto_next()<CR>', keymap_opts)
-  buf_set_keymap('n', '[e', '<cmd>lua vim.lsp.diagnostic.goto_prev({severity = "Error"})<CR>', keymap_opts)
-  buf_set_keymap('n', ']e', '<cmd>lua vim.lsp.diagnostic.goto_next({severity = "Error"})<CR>', keymap_opts)
+  buf_set_keymap('n', '[d', '<cmd>lua vim.diagnostic.goto_prev()<CR>', keymap_opts)
+  buf_set_keymap('n', ']d', '<cmd>lua vim.diagnostic.goto_next()<CR>', keymap_opts)
+  buf_set_keymap('n', '[e', '<cmd>lua vim.diagnostic.goto_prev({severity = "Error"})<CR>', keymap_opts)
+  buf_set_keymap('n', ']e', '<cmd>lua vim.diagnostic.goto_next({severity = "Error"})<CR>', keymap_opts)
 
   buf_set_keymap('n', '<M-F>', '<cmd>lua vim.lsp.buf.formatting()<CR>', keymap_opts)
   buf_set_keymap('v', '<M-F>', '<cmd>lua vim.lsp.buf.range_formatting({})<CR>', keymap_opts)
@@ -638,6 +656,11 @@ local configure_lsp = function(lsp_opts)
 
   lsp_opts.on_attach = function(client, bufnr)
     lsp_status.on_attach(client)
+
+    require"lsp_signature".on_attach({
+        hint_prefix = "⇵",
+        floating_window = false,
+    })
 
     if old_on_attach then
       old_on_attach(client, bufnr)
@@ -694,11 +717,22 @@ lsp_installer.on_server_ready(function(server)
 end)
 
 run_checkstyle = function()
+  -- record the pwd before changing
+  local cwd = vim.fn.getcwd()
+
+  -- get pacakge directory of the current file,
+  -- so that we don't need to change the directory manually
+  local package_path = vim.fn.fnamemodify(vim.fn.findfile("Config", "./;~"), ":p:h")
+  vim.api.nvim_command('cd '..package_path)
+
   -- checkstyle error format
   vim.api.nvim_command('set makeprg=brazil-build')
   vim.api.nvim_command('set errorformat=[ant:checkstyle]\\ [%.%#]\\ %f:%l:%c:\\ %m,[ant:checkstyle]\\ [%.%#]\\ %f:%l:\\ %m')
   vim.api.nvim_command('set shellpipe=2>&1\\ \\|\\ tee\\ /tmp/checkstyle-errors.txt\\ \\|\\ grep\\ ERROR\\ &>\\ %s')
   vim.api.nvim_command('make check --rerun-tasks')
+
+  -- go back to the old cwd
+  vim.api.nvim_command('cd '..cwd)
 end
 
 --------------------------------------------------------------
@@ -713,8 +747,6 @@ local on_java_attach = function(client, bufnr)
   buf_set_keymap("v", "<leader>le", "<Esc><Cmd>lua require('jdtls').extract_variable(true)<CR>", keymap_opts)
   buf_set_keymap("n", "<leader>le", "<Cmd>lua require('jdtls').extract_variable()<CR>", keymap_opts)
   buf_set_keymap("v", "<leader>lm", "<Esc><Cmd>lua require('jdtls').extract_method(true)<CR>", keymap_opts)
-  buf_set_keymap("n", "<leader>a", "<Cmd>lua require('jdtls').code_action()<CR>", keymap_opts)
-  buf_set_keymap("x", "<leader>a", "<Esc><Cmd>lua require('jdtls').code_action(true)<CR>", keymap_opts)
   -- overwrite default vimspector launch mapping
   buf_set_keymap("n", "<Bslash>l", "<Cmd>lua start_vimspector_java()<CR>", keymap_opts)
   -- require'formatter'.setup{
@@ -893,9 +925,9 @@ EOF
 " => treesitter config
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " custom fold method based on treesitter
+" set foldexpr=nvim_treesitter#foldexpr()
+" set foldlevelstart=-1
 set foldmethod=expr
-set foldexpr=nvim_treesitter#foldexpr()
-set foldlevelstart=2
 lua << EOF
 require('nvim-treesitter.configs').setup {
   ensure_installed = "maintained",
@@ -963,20 +995,34 @@ require'telescope'.setup {
     find_files = {
       previewer = false,
       theme = "dropdown",
-      path_display={"smart", "shorten"}
+      path_display={"smart", "shorten"},
+      hidden = true
     },
     live_grep = {
-      previewer = false,
       theme = "ivy",
-      path_display={"smart", "shorten"},
+      path_display = {
+        shorten = { len = 1, exclude = {1, -1} }
+      },
       only_sort_text=true
     },
     buffers = {
+      previewer = false,
       theme = "ivy",
-      path_display={"smart", "shorten"}
+      path_display = {
+        shorten = { len = 1, exclude = {1, -1} }
+      },
+    }
+  },
+  extensions = {
+    ["ui-select"] = {
+      require("telescope.themes").get_dropdown()
     }
   }
 }
+
+-- To get fzf loaded and working with telescope, you need to call
+-- load_extension, somewhere after setup function:
+require("telescope").load_extension("ui-select")
 EOF
 
 " file navigation
