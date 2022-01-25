@@ -1033,8 +1033,8 @@ nnoremap <leader>bb :lua require("telescope.builtin").buffers()<cr>
 nnoremap <leader>fg :lua require("telescope.builtin").live_grep()<cr>
 
 " git helpers
-nnoremap <leader>vb :lua require("telescope.builtin").git_branches()<cr>
-nnoremap <leader>vb :lua require("telescope.builtin").git_stash()<cr>
+nnoremap <leader>vb :lua require("telescope.builtin").git_branches{cwd = vim.fn.fnamemodify(vim.fn.finddir(".git", "./;~"), ":p:h:h")}<cr>
+nnoremap <leader>vs :lua require("telescope.builtin").git_stash{cwd = vim.fn.fnamemodify(vim.fn.finddir(".git", "./;~"), ":p:h:h")}<cr>
 
 " general pickers
 nnoremap <leader>gc :lua require("telescope.builtin").commands()<cr>
