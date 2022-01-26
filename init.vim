@@ -60,8 +60,6 @@ let mapleader=" "
 " Sets how many lines of history VIM has to remember
 set history=500
 
-nnoremap <silent> <leader>z  :stop<cr>
-
 " escape insert mode with jk
 imap <silent> jk <esc>
 
@@ -263,10 +261,13 @@ autocmd BufWritePre * :call CleanExtraSpaces()
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => convenience mappings
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-augroup git_commit
+augroup code_spell
     autocmd!
-    autocmd FileType * :set spelloptions=camel | :set spellcapcheck=
-    autocmd FileType gitcommit :set spell
+    " turn on spell checking for all file types
+    autocmd FileType * :set spelloptions=camel | :set spellcapcheck= | :set spell
+    " except for the following file types
+    " vim ft has poor dictionary
+    autocmd FileType startify,vim :set nospell
 augroup end
 
 augroup markdown
@@ -274,7 +275,15 @@ augroup markdown
   autocmd FileType markdown :set textwidth=120
 augroup END
 
-nnoremap <silent> <leader>z :set spell!<cr>
+function! s:load_spell_file()
+    let syntax_spell_file = spell#GetSyntaxFile(&filetype)
+
+    if &l:spell && filereadable(syntax_spell_file)
+        call spell#LoadSyntaxFile()
+    endif
+endfunction
+
+nnoremap <silent> <leader>z :set spell! <bar> call <SID>load_spell_file() <cr>
 
 " for configs
 nnoremap <leader>ne :edit $MYVIMRC<cr>
@@ -452,6 +461,9 @@ Plug 'gabrielpoca/replacer.nvim'
 " Plug 'rrethy/vim-hexokinase', { 'do': 'make hexokinase' }
 " coverage guide
 Plug 'dsych/blanket.nvim'
+
+" enhance vim's native spell checker
+Plug 'dsych/vim-spell'
 
 call plug#end()
 
