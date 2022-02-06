@@ -178,8 +178,8 @@ vim.opt.smarttab=true
 ------------------------------------------------------------
 -- Visual mode pressing * or # searches for the current selection
 -- Super useful! From an idea by Michael Naumann
-map_key("v", "*", "<cmd><C-u>call VisualSelection('', '')<CR>/<C-R>=@/<CR><CR>")
-map_key("v", "#", "<cmd><C-u>call VisualSelection('', '')<CR>?<C-R>=@/<CR><CR>")
+map_key("v", "*", ":<C-u>call VisualSelection('', '')<CR>/<C-R>=@/<CR><CR>")
+map_key("v", "#", ":<C-u>call VisualSelection('', '')<CR>?<C-R>=@/<CR><CR>")
 
 ------------------------------------------------------------------------------------------------------------------------------
 -- => Moving around, tabs, windows and buffers
