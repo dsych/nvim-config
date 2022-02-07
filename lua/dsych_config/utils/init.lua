@@ -127,4 +127,14 @@ M.load_spell_file = function()
 end
 
 
+M.show_documentation = function()
+  if vim.tbl_contains({ 'vim', 'help' }, vim.opt.filetype:get()) then
+    vim.api.nvim_command('h '..vim.api.nvim_eval('expand("<cword>")'))
+  elseif not vim.tbl_isempty(vim.lsp.buf_get_clients()) then
+    vim.lsp.buf.hover()
+  else
+    vim.api.nvim_command('!'..vim.opt.keywordprg..' '..vim.fn.expand("<cword>"))
+  end
+end
+
 return M

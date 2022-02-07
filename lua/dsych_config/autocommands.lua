@@ -16,17 +16,6 @@ vim.cmd([[
 ]])
 
 vim.cmd([[
-    augroup code_spell
-        autocmd!
-        " turn on spell checking for all file types
-        autocmd FileType * :set spelloptions=camel | :set spellcapcheck= | :set spell
-        " except for the following file types
-        " vim ft has poor dictionary
-        autocmd FileType startify,vim :set nospell
-    augroup end
-]])
-
-vim.cmd([[
     augroup markdown
       autocmd!
       autocmd FileType markdown :set textwidth=120
