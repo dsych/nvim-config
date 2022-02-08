@@ -29,14 +29,9 @@ M.mk_config = function()
   }
 end
 
-M.configure_lsp = function(lsp_opts)
-  lsp_opts = lsp_opts or {}
-  local lsp_status = require'lsp-status'
-
+M.define_mappings = function()
   local map_key = require'dsych_config.utils'.map_key
   local utils = require'dsych_config.utils'
-  lsp_status.register_progress()
-
   -- See `:help vim.lsp.*` for documentation on any of the below functions
   map_key('n', 'gD', vim.lsp.buf.declaration)
   map_key('n', 'gd', require"telescope.builtin".lsp_definitions)
@@ -67,9 +62,17 @@ M.configure_lsp = function(lsp_opts)
 
   map_key('n', '<M-F>', vim.lsp.buf.formatting)
   map_key({ 'v', 'x' }, '<M-F>', vim.lsp.buf.range_formatting)
+end
+
+M.configure_lsp = function(lsp_opts)
+  lsp_opts = lsp_opts or {}
+
+  local lsp_status = require'lsp-status'
+  lsp_status.register_progress()
+
+  require'dsych_config.lsp.utils'.define_mappings()
 
   local old_on_attach = lsp_opts.on_attach
-
   lsp_opts.on_attach = function(client, bufnr)
     lsp_status.on_attach(client)
 
