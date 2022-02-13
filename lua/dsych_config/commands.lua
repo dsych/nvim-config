@@ -1,4 +1,4 @@
-require'dsych_config.utils'
+require("dsych_config.utils")
 
 vim.cmd([[
 command! SpringStartDebug call s:start_spring_boot_app_in_debug_mode(1)

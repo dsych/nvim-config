@@ -1,39 +1,41 @@
 local M = {}
 
-M.source_all_additional_files = function (dir_path)
-  if vim.fn.isdirectory(dir_path) then
-      local directory_content = vim.fn.readdir(dir_path, function(n) return string.match(n, ".+%.lua") ~= nil end)
-      for _, d in ipairs(directory_content) do
-        local filename = dir_path..'/'..d
-        if vim.fn.filereadable(filename) then
-            vim.api.nvim_command('source '..filename)
-        end
-    end
-  end
+M.source_all_additional_files = function(dir_path)
+	if vim.fn.isdirectory(dir_path) then
+		local directory_content = vim.fn.readdir(dir_path, function(n)
+			return string.match(n, ".+%.lua") ~= nil
+		end)
+		for _, d in ipairs(directory_content) do
+			local filename = dir_path .. "/" .. d
+			if vim.fn.filereadable(filename) then
+				vim.api.nvim_command("source " .. filename)
+			end
+		end
+	end
 end
 
 M.map_key = function(mode, lhs, rhs, opts)
-    opts = opts or {}
-    vim.keymap.set(mode, lhs, rhs, vim.tbl_deep_extend("force", { noremap = true, silent = false }, opts))
+	opts = opts or {}
+	vim.keymap.set(mode, lhs, rhs, vim.tbl_deep_extend("force", { noremap = true, silent = false }, opts))
 end
 
 -- toggle to absolute line numbers in insert mode and when buffer loses focus
 M.toggle_relative_numbers = function(mode)
-    if mode then
-        vim.cmd([[
+	if mode then
+		vim.cmd([[
             augroup number_toggle
                 autocmd!
                 autocmd BufEnter,FocusGained,InsertLeave * set relativenumber
                 autocmd BufLeave,FocusLost,InsertEnter   * set norelativenumber
             augroup END
         ]])
-    else
-        vim.cmd([[
+	else
+		vim.cmd([[
             augroup number_toggle
                 autocmd!
             augroup END
         ]])
-    end
+	end
 end
 
 -- too cumbersome to migrate...
@@ -108,33 +110,31 @@ function! Redir(cmd)
 endfunction
 ]])
 
-
 -- Delete trailing white space on save, useful for some filetypes ;)
 function CleanExtraSpaces()
-    local save_cursor = vim.fn.getpos(".")
-    local old_query = vim.fn.getreg('/')
-    vim.api.nvim_command("silent! %s/\\s\\+$//e")
-    vim.fn.setpos('.', save_cursor)
-    vim.fn.setreg('/', old_query)
+	local save_cursor = vim.fn.getpos(".")
+	local old_query = vim.fn.getreg("/")
+	vim.api.nvim_command("silent! %s/\\s\\+$//e")
+	vim.fn.setpos(".", save_cursor)
+	vim.fn.setreg("/", old_query)
 end
 
 M.load_spell_file = function()
-    local syntax_spell_file = vim.fn["spell#GetSyntaxFile"](vim.opt.filetype:get())
+	local syntax_spell_file = vim.fn["spell#GetSyntaxFile"](vim.opt.filetype:get())
 
-    if vim.opt.spell:get() and vim.fn.filereadable(syntax_spell_file) then
-        vim.fn["spell#LoadSyntaxFile"]()
-    end
+	if vim.opt.spell:get() and vim.fn.filereadable(syntax_spell_file) then
+		vim.fn["spell#LoadSyntaxFile"]()
+	end
 end
 
-
 M.show_documentation = function()
-  if vim.tbl_contains({ 'vim', 'help' }, vim.opt.filetype:get()) then
-    vim.api.nvim_command('h '..vim.api.nvim_eval('expand("<cword>")'))
-  elseif not vim.tbl_isempty(vim.lsp.buf_get_clients()) then
-    vim.lsp.buf.hover()
-  else
-    vim.api.nvim_command('!'..vim.opt.keywordprg..' '..vim.fn.expand("<cword>"))
-  end
+	if vim.tbl_contains({ "vim", "help" }, vim.opt.filetype:get()) then
+		vim.api.nvim_command("h " .. vim.api.nvim_eval('expand("<cword>")'))
+	elseif not vim.tbl_isempty(vim.lsp.buf_get_clients()) then
+		vim.lsp.buf.hover()
+	else
+		vim.api.nvim_command("!" .. vim.opt.keywordprg .. " " .. vim.fn.expand("<cword>"))
+	end
 end
 
 return M

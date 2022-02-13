@@ -1,5 +1,5 @@
-local map_key = require'dsych_config.utils'.map_key
-local utils = require'dsych_config.utils'
+local map_key = require("dsych_config.utils").map_key
+local utils = require("dsych_config.utils")
 
 -- escape insert mode with jk
 map_key("i", "jk", "<esc>")
@@ -28,7 +28,6 @@ map_key("n", "<C-j>", "<C-W>j")
 map_key("n", "<C-k>", "<C-W>k")
 map_key("n", "<C-h>", "<C-W>h")
 map_key("n", "<C-l>", "<C-W>l")
-
 
 -- Useful mappings for managing tabs
 map_key("n", "<leader>tn", ":tabnew<cr>")
@@ -60,7 +59,10 @@ map_key("v", "<M-k>", ":m'<-2<cr>`>my`<mzgv`yo`z")
 ------------------------------------------------------------------------------------------------------------------------------
 -- => convenience mappings
 ------------------------------------------------------------------------------------------------------------------------------
-map_key("n", "<leader>z", function() vim.opt.spell = not vim.opt.spell:get(); utils.load_spell_file() end)
+map_key("n", "<leader>z", function()
+	vim.opt.spell = not vim.opt.spell:get()
+	utils.load_spell_file()
+end)
 
 -- for configs
 map_key("n", "<leader>ne", "<cmd>edit $MYVIMRC<cr>")
@@ -90,4 +92,3 @@ map_key("c", "<C-K>", "<C-U>")
 
 map_key("c", "<C-P>", "<Up>")
 map_key("c", "<C-N>", "<Down>")
-

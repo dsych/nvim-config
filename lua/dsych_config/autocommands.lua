@@ -1,4 +1,3 @@
-
 -- Return to last edit position when opening files
 vim.cmd([[
     augroup last_cursor_position
@@ -6,7 +5,6 @@ vim.cmd([[
         autocmd BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
     augroup END
 ]])
-
 
 vim.cmd([[
     augroup remove_whitespace
@@ -21,4 +19,3 @@ vim.cmd([[
       autocmd FileType markdown :set textwidth=120
     augroup END
 ]])
-
