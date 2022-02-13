@@ -71,6 +71,24 @@ return require('packer').startup(function(use)
         requires = {'williamboman/nvim-lsp-installer'},
         config = require'dsych_config.lsp.jdtls'.setup
     }
+
+    use{
+        "jose-elias-alvarez/null-ls.nvim",
+        requires = { "nvim-lua/plenary.nvim" },
+        config = function()
+            local null_ls = require("null-ls")
+            null_ls.setup{
+                sources = {
+                    null_ls.builtins.formatting.stylua,
+                    null_ls.builtins.formatting.clang_format,
+                    null_ls.builtins.formatting.prettier,
+
+                    null_ls.builtins.diagnostics.write_good,
+                    null_ls.builtins.diagnostics.cppcheck
+                }
+            }
+        end,
+    }
     -- }}}
 
     -- bufferline {{{
