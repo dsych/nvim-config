@@ -59,6 +59,13 @@ return require('packer').startup(function(use)
     }
 
     use{
+        'b0o/schemastore.nvim',
+        requires = {
+            'williamboman/nvim-lsp-installer'
+        }
+    }
+
+    use{
         -- java lsp client
         'mfussenegger/nvim-jdtls',
         requires = {'williamboman/nvim-lsp-installer'},
@@ -608,7 +615,7 @@ return require('packer').startup(function(use)
         requires = {'nvim-treesitter/nvim-treesitter'},
         config = function()
             require'nvim-treesitter.configs'.setup {
-              context_commenting = {
+              context_commentstring = {
                 enable = true,
                 autocmd = false
               }
@@ -701,7 +708,7 @@ return require('packer').startup(function(use)
                     autocmd FileType * :set spelloptions=camel | :set spellcapcheck= | :set spell
                     " except for the following file types
                     " vim ft has poor dictionary
-                    autocmd FileType startify,vim :set nospell
+                    autocmd FileType startify,vim,Telescope*,help :set nospell
                 augroup end
             ]])
         end

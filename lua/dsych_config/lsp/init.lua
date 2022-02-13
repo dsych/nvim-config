@@ -27,7 +27,16 @@ M.language_server_configs = {
             },
         }
     }
-  end
+  end,
+    ["jsonls"] = function()
+        return {
+            settings = {
+                json = {
+                  schemas = require('schemastore').json.schemas(),
+                },
+            }
+        }
+    end
 }
 
 M.enable_lsp_status = function()
@@ -44,8 +53,31 @@ M.setup = function ()
 
     require'dsych_config.lsp'.enable_lsp_status()
 
-    local lsp_utils = require'dsych_config.lsp.utils'
     local lsp_installer = require("nvim-lsp-installer")
+    -- automatically install these language servers
+    local servers = {
+        "clangd",
+        "cssls",
+        "html",
+        "jsonls",
+        "lemminx",
+        "pyright",
+        "sumneko_lua",
+        "tsserver",
+        "vimls",
+        "bashls",
+        "yamlls",
+    }
+
+    for _, name in pairs(servers) do
+      local server_is_found, server = lsp_installer.get_server(name)
+      if server_is_found and not server:is_installed() then
+        print("Installing " .. name)
+        server:install()
+      end
+    end
+
+    local lsp_utils = require'dsych_config.lsp.utils'
     -- actually start the language server
     lsp_installer.on_server_ready(function(server)
       local config = vim.tbl_deep_extend("force", lsp_utils.mk_config(), server_configs[server.name] and server_configs[server.name]() or {})
