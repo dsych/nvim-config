@@ -45,6 +45,7 @@ M.enable_lsp_status = function()
 	lsp_status.config({
 		diagnostics = false,
 		show_filename = false,
+        status_symbol = ""
 	})
 end
 
