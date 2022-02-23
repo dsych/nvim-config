@@ -209,7 +209,7 @@ return require("packer").startup(function(use)
 				},
 
 				diagnostics = {
-					enable = true,
+					enable = false,
 					show_on_dirs = true,
 					icons = {
 						hint = "",
@@ -244,6 +244,7 @@ return require("packer").startup(function(use)
 			map_key("n", "<Bslash>bf", "<Plug>VimspectorAddFunctionBreakpoint")
 			map_key("n", "<Bslash>br", "<Plug>VimspectorRunToCursor")
 			map_key("n", "<Bslash>bda", "<cmd>call vimspector#ClearBreakpoints()<cr>")
+			map_key("n", "<Bslash>bdl", "<cmd>call vimspector#ListBreakpoints()<cr>")
 			map_key("n", "<Bslash>s", "<Plug>VimspectorStepOver")
 			map_key("n", "<Bslash>i", "<Plug>VimspectorStepInto")
 			map_key("n", "<Bslash>o", "<Plug>VimspectorStepOut")
@@ -527,11 +528,11 @@ return require("packer").startup(function(use)
 		config = function()
 			local map_key = require("dsych_config.utils").map_key
 
-			map_key("n", "<leader>in", "<cmd>execute('TestNearest '.g:test_extra_flags)")
-			map_key("n", "<leader>if", "<cmd>execute('TestFile '.g:test_extra_flags)")
-			map_key("n", "<leader>is", "<cmd>execute('TestSuite '.g:test_extra_flags)")
-			map_key("n", "<leader>il", "<cmd>execute('TestLast '.g:test_extra_flags)")
-			map_key("n", "<leader>ig", "<cmd>execute('TestVisit '.g:test_extra_flags)")
+            map_key("n", "<leader>in", "<cmd>execute('TestNearest '.g:test_extra_flags)<cr>")
+            map_key("n", "<leader>if", "<cmd>execute('TestFile '.g:test_extra_flags)<cr>")
+            map_key("n", "<leader>is", "<cmd>execute('TestSuite '.g:test_extra_flags)<cr>")
+            map_key("n", "<leader>il", "<cmd>execute('TestLast '.g:test_extra_flags)<cr>")
+            map_key("n", "<leader>ig", "<cmd>execute('TestVisit '.g:test_extra_flags)<cr>")
 			-- for maven set to something like this:
 			--  -Dtests.additional.jvmargs=--'-Xdebug -Xrunjdwp:transport=dt_socket,address=localhost:5005,server=y,suspend=y'--
 			-- for gradle use:
@@ -544,8 +545,8 @@ return require("packer").startup(function(use)
 			map_key("n", "<leader>ie", function()
 				vim.g.test_debug_flags = ""
 			end)
-			map_key("n", "<leader>id", "<cmd>execute('TestNearest '.g:test_extra_flags.' '.g:test_debug_flags)")
-			map_key("n", "<leader>ids", "<cmd>execute('TestSuite '.g:test_extra_flags.' '.g:test_debug_flags)")
+            map_key("n", "<leader>id", "<cmd>execute('TestNearest '.g:test_extra_flags.' '.g:test_debug_flags)<cr>")
+            map_key("n", "<leader>ids", "<cmd>execute('TestSuite '.g:test_extra_flags.' '.g:test_debug_flags)<cr>")
 
 			vim.g["test#strategy"] = "neovim"
 		end,
@@ -582,191 +583,190 @@ return require("packer").startup(function(use)
     }
     -- }}}
 
-                -- git diff view {{{
-                use({
-                    "sindrets/diffview.nvim",
-                    config = function()
-                        require("diffview").setup()
+    -- git diff view {{{
+    use({
+        "sindrets/diffview.nvim",
+        config = function()
+            require("diffview").setup()
 
-                        vim.cmd([[
-                        augroup file_types
-                            autocmd!
-                            autocmd BufRead,BufNewFile *.json set filetype=jsonc
-                            autocmd BufRead,BufNewFile *sqc,*HPP,*CPP set filetype=cpp
-                        augroup END
-                        ]])
-                    end,
-                })
-                -- }}}
+            vim.cmd([[
+            augroup file_types
+                autocmd!
+                autocmd BufRead,BufNewFile *.json set filetype=jsonc
+                autocmd BufRead,BufNewFile *sqc,*HPP,*CPP set filetype=cpp
+            augroup END
+            ]])
+        end,
+    })
+    -- }}}
 
-                -- literate movements and surround {{{
-                use({ "tpope/vim-surround" })
+    -- literate movements and surround {{{
+    use({ "tpope/vim-surround" })
 
-                use({
-                    "justinmk/vim-sneak",
+    use({
+        "justinmk/vim-sneak",
 
-                    config = function()
-                        local map_key = require("dsych_config.utils").map_key
-                        -- remap default keybindings to sneak
-                        map_key("n", "f", "<Plug>Sneak_f")
-                        map_key("n", "F", "<Plug>Sneak_F")
-                        map_key("n", "t", "<Plug>Sneak_t")
-                        map_key("n", "T", "<Plug>Sneak_T")
-                    end,
-                })
-                -- }}}
+        config = function()
+            local map_key = require("dsych_config.utils").map_key
+            -- remap default keybindings to sneak
+            map_key("n", "f", "<Plug>Sneak_f")
+            map_key("n", "F", "<Plug>Sneak_F")
+            map_key("n", "t", "<Plug>Sneak_t")
+            map_key("n", "T", "<Plug>Sneak_T")
+        end,
+    })
+    -- }}}
 
-                -- terminal {{{
-                use({
-                    "akinsho/nvim-toggleterm.lua",
-                    config = function()
-                        local map_key = require("dsych_config.utils").map_key
+    -- terminal {{{
+    use({
+        "akinsho/nvim-toggleterm.lua",
+        config = function()
+            local map_key = require("dsych_config.utils").map_key
 
-                        require("toggleterm").setup({
-                            open_mapping = [[<c-\>]],
-                        })
-                        -- turn terminal to normal mode with escape
-                        map_key("t", "<Esc>", "<C-\\><C-n>")
-                        -- start terminal in insert mode
-                        -- and do not show terminal buffers in buffer list
-                        vim.cmd([[
-                        augroup terminal
-                            autocmd!
-                            autocmd TermOpen * setlocal nobuflisted
-                            " au BufEnter * if &buftype == 'terminal' | :startinsert | endif
-                        augroup END
-                        ]])
-                    end,
-                })
-                -- }}}
+            require("toggleterm").setup({
+                open_mapping = [[<c-\>]],
+            })
+            -- turn terminal to normal mode with escape
+            map_key("t", "<Esc>", "<C-\\><C-n>")
+            -- start terminal in insert mode
+            -- and do not show terminal buffers in buffer list
+            vim.cmd([[
+            augroup terminal
+                autocmd!
+                autocmd TermOpen * setlocal nobuflisted
+                " au BufEnter * if &buftype == 'terminal' | :startinsert | endif
+            augroup END
+            ]])
+        end,
+    })
+    -- }}}
 
-                -- treesitter syntax highlighting and more {{{
-                use({
-                    "nvim-treesitter/nvim-treesitter",
-                    run = ":TSUpdate",
-                    config = function()
-                        require("nvim-treesitter.configs").setup({
-                            ensure_installed = "maintained",
-                            indent = {
-                                enable = true,
-                            },
-                            highlight = {
-                                enable = true,
-                                additional_vim_regex_highlighting = false,
-                            },
-                        })
-                    end,
-                })
-                -- }}}
+    -- treesitter syntax highlighting and more {{{
+    use({
+        "nvim-treesitter/nvim-treesitter",
+        run = ":TSUpdate",
+        config = function()
+            require("nvim-treesitter.configs").setup({
+                ensure_installed = "maintained",
+                indent = {
+                    enable = true,
+                },
+                highlight = {
+                    enable = true,
+                    additional_vim_regex_highlighting = false,
+                },
+            })
+        end,
+    })
+    -- }}}
 
-                -- intelligent comments based on treesitter {{{
-                use({
-                    "JoosepAlviste/nvim-ts-context-commentstring",
-                    requires = { "nvim-treesitter/nvim-treesitter" },
-                    config = function()
-                        require("nvim-treesitter.configs").setup({
-                            context_commentstring = {
-                                enable = true,
-                                autocmd = false,
-                            },
-                        })
-                    end,
-                })
-                -- }}}
+    -- intelligent comments based on treesitter {{{
+    use({
+        "JoosepAlviste/nvim-ts-context-commentstring",
+        requires = { "nvim-treesitter/nvim-treesitter" },
+        config = function()
+            require("nvim-treesitter.configs").setup({
+                context_commentstring = {
+                    enable = true,
+                    autocmd = false,
+                },
+            })
+        end,
+    })
+    -- }}}
 
-                -- additional text objects based on treesitter {{{
-                use({
-                    "nvim-treesitter/nvim-treesitter-textobjects",
-                    requires = { "nvim-treesitter/nvim-treesitter" },
-                    config = function()
-                        require("nvim-treesitter.configs").setup({
-                            textobjects = {
-                                select = {
-                                    enable = true,
+    -- additional text objects based on treesitter {{{
+    use({
+        "nvim-treesitter/nvim-treesitter-textobjects",
+        requires = { "nvim-treesitter/nvim-treesitter" },
+        config = function()
+            require("nvim-treesitter.configs").setup({
+                textobjects = {
+                    select = {
+                        enable = true,
 
-                                    -- Automatically jump forward to textobj, similar to targets.vim
-                                    lookahead = true,
+                        -- Automatically jump forward to textobj, similar to targets.vim
+                        lookahead = true,
 
-                                    keymaps = {
-                                        -- You can use the capture groups defined in textobjects.scm
-                                        ["af"] = "@function.outer",
-                                        ["if"] = "@function.inner",
-                                        ["ac"] = "@class.outer",
-                                        ["ic"] = "@class.inner",
-                                        ["ia"] = "@parameter.inner",
-                                        ["aa"] = "@parameter.outer",
-                                    },
-                                },
-                                move = {
-                                    enable = true,
-                                    set_jumps = true, -- whether to set jumps in the jumplist
-                                    goto_next_start = {
-                                        ["]m"] = "@function.outer",
-                                        ["]]"] = "@class.outer",
-                                        ["]a"] = "@parameter.inner",
-                                    },
-                                    goto_previous_start = {
-                                        ["[m"] = "@function.outer",
-                                        ["[["] = "@class.outer",
-                                        ["[a"] = "@parameter.inner",
-                                    },
-                                },
-                            },
-                        })
-                    end,
-                })
-                -- }}}
+                        keymaps = {
+                            -- You can use the capture groups defined in textobjects.scm
+                            ["af"] = "@function.outer",
+                            ["if"] = "@function.inner",
+                            ["ac"] = "@class.outer",
+                            ["ic"] = "@class.inner",
+                            ["ia"] = "@parameter.inner",
+                            ["aa"] = "@parameter.outer",
+                        },
+                    },
+                    move = {
+                        enable = true,
+                        set_jumps = true, -- whether to set jumps in the jumplist
+                        goto_next_start = {
+                            ["]m"] = "@function.outer",
+                            ["]]"] = "@class.outer",
+                            ["]a"] = "@parameter.inner",
+                        },
+                        goto_previous_start = {
+                            ["[m"] = "@function.outer",
+                            ["[["] = "@class.outer",
+                            ["[a"] = "@parameter.inner",
+                        },
+                    },
+                },
+            })
+        end,
+    })
+    -- }}}
 
-                -- hocon filetype {{{
-                use({
-                    "satabin/hocon-vim",
-                })
-                -- }}}
+    -- hocon filetype {{{
+    use({
+        "satabin/hocon-vim",
+    })
+    -- }}}
 
-                -- markdown preview {{{
-                use({
-                    -- depends on https://github.com/charmbracelet/glow
-                    "ellisonleao/glow.nvim",
-                })
-                -- }}}
+    -- markdown preview {{{
+    use({
+        -- depends on https://github.com/charmbracelet/glow
+        "ellisonleao/glow.nvim",
+    })
+    -- }}}
 
-                -- search and replace inside quickfix window {{{
-                use({
-                    "gabrielpoca/replacer.nvim",
-                    config = function()
-                        local map_key = require("dsych_config.utils").map_key
-                        map_key("n", "<leader>rq", require("replacer").run)
-                    end,
-                })
-                -- }}}
+    -- search and replace inside quickfix window {{{
+    use({
+        "gabrielpoca/replacer.nvim",
+        config = function()
+            local map_key = require("dsych_config.utils").map_key
+            map_key("n", "<leader>rq", require("replacer").run)
+        end,
+    })
+    -- }}}
 
-                -- coverage guide {{{
-                use({
-                    "dsych/blanket.nvim",
-                })
-                -- }}}
+    -- coverage guide {{{
+    use({
+        "dsych/blanket.nvim",
+    })
+    -- }}}
 
-                -- enhance vim's native spell checker {{{
-                use({
-                    "dsych/vim-spell",
-                    config = function()
-                        vim.cmd([[
-                            augroup code_spell
-                                autocmd!
-                                " turn on spell checking for all file types
-                                autocmd FileType * :set spelloptions=camel | :set spellcapcheck= | :set spell
-                                " except for the following file types
-                                " vim ft has poor dictionary
-                                autocmd FileType startify,vim,Telescope*,help :set nospell
-                            augroup end
-                        ]])
-                    end,
-                })
-                -- }}}
-
-                -- Automatically set up your configuration after cloning packer.nvim
-                -- Put this at the end after all plugins
-                if packer_bootstrap then
-                    require("packer").sync()
-                end
-            end)
+    -- enhance vim's native spell checker {{{
+    use({
+        "dsych/vim-spell",
+        config = function()
+            vim.cmd([[
+                augroup code_spell
+                    autocmd!
+                    " turn on spell checking for all file types
+                    autocmd FileType * :set spelloptions=camel | :set spellcapcheck= | :set spell
+                    " except for the following file types
+                    " vim ft has poor dictionary
+                    autocmd FileType startify,vim,Telescope*,help :set nospell
+                augroup end
+            ]])
+        end,
+    })
+    -- }}}
+    -- Automatically set up your configuration after cloning packer.nvim
+    -- Put this at the end after all plugins
+    if packer_bootstrap then
+        require("packer").sync()
+    end
+end)
