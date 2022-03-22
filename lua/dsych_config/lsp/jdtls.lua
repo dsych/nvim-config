@@ -10,25 +10,6 @@ M.start_vimspector_java = function()
 	end, 0)
 end
 
-M.run_checkstyle = function()
-	-- record the pwd before changing
-	local cwd = vim.fn.getcwd()
-
-	-- get pacakge directory of the current file,
-	-- so that we don't need to change the directory manually
-	local package_path = vim.fn.fnamemodify(vim.fn.findfile("Config", "./;~"), ":p:h")
-	vim.api.nvim_command("cd " .. package_path)
-
-	-- checkstyle error format
-	vim.opt.makeprg = "brazil-build"
-	vim.opt.errorformat = "[ant:checkstyle]\\ [%.%#]\\ %f:%l:%c:\\ %m,[ant:checkstyle]\\ [%.%#]\\ %f:%l:\\ %m"
-	vim.opt.shellpipe = "2>&1\\ \\|\\ tee\\ /tmp/checkstyle-errors.txt\\ \\|\\ grep\\ ERROR\\ &>\\ %s"
-	vim.api.nvim_command("make check --rerun-tasks")
-
-	-- go back to the old cwd
-	vim.api.nvim_command("cd " .. cwd)
-end
-
 M.setup = function()
 	local map_key = require("dsych_config.utils").map_key
 	local lsp_utils = require("dsych_config.lsp.utils")
@@ -37,7 +18,6 @@ M.setup = function()
 		require("jdtls.setup").add_commands()
 
 		-- Java specific mappings
-		map_key("n", "<leader>lc", require("dsych_config.lsp.jdtls").run_checkstyle)
 		map_key("n", "<leader>li", require("jdtls").organize_imports)
 		map_key("v", "<leader>le", "<Esc><Cmd>lua require('jdtls').extract_variable(true)<CR>")
 		map_key("n", "<leader>le", "<Cmd>lua require('jdtls').extract_variable()<CR>")
