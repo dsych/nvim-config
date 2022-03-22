@@ -87,7 +87,9 @@ return require("packer").startup(function(use)
 			null_ls.setup({
 				sources = {
 					null_ls.builtins.formatting.stylua,
-					null_ls.builtins.formatting.clang_format,
+					null_ls.builtins.formatting.clang_format.with({
+                        disabled_filetypes = { "java" }
+                    }),
 					null_ls.builtins.formatting.prettier,
 
 					null_ls.builtins.diagnostics.write_good,
@@ -176,7 +178,6 @@ return require("packer").startup(function(use)
 			map_key("n", "<leader>ef", "<cmd>NvimTreeFindFile<cr>")
 
 			vim.g.nvim_tree_auto_ignore_ft = { "startify", "dashboard" } --empty by default, don't auto open tree on specific filetypes.
-			vim.g.nvim_tree_quit_on_open = 1 --0 by default, closes the tree when you open a file
 			vim.g.nvim_tree_indent_markers = 1 --0 by default, this option shows indent markers when folders are open=true
 			vim.g.nvim_tree_add_trailing = 1 --0 by default, append a trailing slash to folder names
 			vim.g.nvim_tree_group_empty = 1 -- 0 by default, compact folders that only contain a single folder into one node in the file tree
@@ -207,6 +208,12 @@ return require("packer").startup(function(use)
 				filters = {
 					custom = { ".git", ".cache" },
 				},
+
+                actions = {
+                    open_file = {
+                        quit_on_open = true
+                    }
+                },
 
 				diagnostics = {
 					enable = false,
@@ -244,7 +251,7 @@ return require("packer").startup(function(use)
 			map_key("n", "<Bslash>bf", "<Plug>VimspectorAddFunctionBreakpoint")
 			map_key("n", "<Bslash>br", "<Plug>VimspectorRunToCursor")
 			map_key("n", "<Bslash>bda", "<cmd>call vimspector#ClearBreakpoints()<cr>")
-			map_key("n", "<Bslash>bdl", "<cmd>call vimspector#ListBreakpoints()<cr>")
+			map_key("n", "<Bslash>bl", "<cmd>VimspectorBreakpoints<cr>")
 			map_key("n", "<Bslash>s", "<Plug>VimspectorStepOver")
 			map_key("n", "<Bslash>i", "<Plug>VimspectorStepInto")
 			map_key("n", "<Bslash>o", "<Plug>VimspectorStepOut")
@@ -289,6 +296,12 @@ return require("packer").startup(function(use)
 
 			-- global search, useful with qf + replacer
 			map_key("n", "<leader>fg", require("telescope.builtin").live_grep)
+			map_key("n", "<leader>fw", require"telescope.builtin".grep_string)
+			map_key({"v", "x"}, "<leader>fw", function()
+                vim.cmd([[normal gv"xy]])
+                local search_query = vim.fn.getreg("x")
+                require("telescope.builtin").grep_string({search = search_query, sort_only_text = true})
+            end)
 
 			-- git helpers
 			map_key("n", "<leader>vb", function()
@@ -306,6 +319,7 @@ return require("packer").startup(function(use)
 			map_key("n", "<leader>gc", require("telescope.builtin").commands)
 			map_key("n", "<leader>gh", require("telescope.builtin").help_tags)
 			map_key("n", "<leader>gm", require("telescope.builtin").keymaps)
+			map_key("n", "z=", require("telescope.builtin").spell_suggest)
 
 			-- resume prev picker with state
 			map_key("n", "<leader>rr", require("telescope.builtin").resume)
@@ -313,8 +327,15 @@ return require("packer").startup(function(use)
 			require("telescope").setup({
 				defaults = {
 					prompt_prefix = "🔍",
+                    path_display = {
+                        shorten = { len = 1, exclude = { 1, -1 } },
+                    },
 				},
 				pickers = {
+                    spell_suggest = {
+						previewer = false,
+						theme = "dropdown",
+                    },
 					find_files = {
 						previewer = false,
 						theme = "dropdown",
@@ -323,17 +344,15 @@ return require("packer").startup(function(use)
 					},
 					live_grep = {
 						theme = "ivy",
-						path_display = {
-							shorten = { len = 1, exclude = { 1, -1 } },
-						},
 						only_sort_text = true,
 					},
+                    grep_string = {
+						theme = "ivy",
+						only_sort_text = true,
+                    },
 					buffers = {
 						previewer = false,
 						theme = "ivy",
-						path_display = {
-							shorten = { len = 1, exclude = { 1, -1 } },
-						},
 					},
 				},
 				extensions = {
@@ -649,7 +668,7 @@ return require("packer").startup(function(use)
             require("nvim-treesitter.configs").setup({
                 ensure_installed = "maintained",
                 indent = {
-                    enable = true,
+                    enable = false,
                 },
                 highlight = {
                     enable = true,

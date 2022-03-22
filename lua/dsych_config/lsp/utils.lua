@@ -76,7 +76,7 @@ M.define_mappings = function()
 	end)
 
 	map_key("n", "<M-F>", vim.lsp.buf.formatting)
-	map_key({ "v", "x" }, "<M-F>", vim.lsp.buf.range_formatting)
+	map_key({ "v", "x" }, "<M-F>", ":<c-u>lua vim.lsp.buf.range_formatting({})<cr>")
 end
 
 M.configure_lsp = function(lsp_opts)

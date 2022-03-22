@@ -42,7 +42,7 @@ map_key("n", "<leader>te", ":tabedit <C-r>=expand('%:p:h')<cr>/")
 map_key("n", "<leader>tne", "<cmd>tabedit % <cr>")
 
 -- Switch CWD to the directory of the open buffer
-map_key("n", "<leader>cd", "<cmd>cd %:p:h<cr>:pwd<cr>")
+map_key("n", "<leader>cd", "<cmd>lcd %:p:h<cr>:pwd<cr>")
 
 ------------------------------------------------------------------------------------------------------------------------------
 -- => Editing mappings
@@ -66,6 +66,7 @@ end)
 
 -- for configs
 map_key("n", "<leader>ne", "<cmd>edit $MYVIMRC<cr>")
+map_key("n", "<leader>nE", ":tabnew <bar> :edit $MYVIMRC<cr>")
 map_key("n", "<leader>na", ":tabnew <bar> :edit ~/.config/nvim/additional<cr>")
 
 -- insert mode deletion
