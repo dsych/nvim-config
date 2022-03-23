@@ -26,15 +26,24 @@ return require("packer").startup(function(use)
 	use({
 		"ms-jpq/coq_nvim",
 		branch = "coq",
-		requires = { "ms-jpq/coq.artifacts", "ms-jpq/coq.thirdparty" },
+		requires = { "ms-jpq/coq.artifacts", "ms-jpq/coq.thirdparty", "danymat/neogen" },
 		run = ":COQdeps",
 		config = function()
 			vim.g.coq_settings = {
 				auto_start = "shut-up",
 				["display.icons.mode"] = "short",
 				["display.icons.mappings"] = require("lspkind").presets.default,
-				["keymap.jump_to_mark"] = "<C-S>",
+				["keymap.jump_to_mark"] = nil,
 			}
+
+			local map_key = require("dsych_config.utils").map_key
+			map_key({ "n", "i" }, "<c-s>", function ()
+                if require"neogen".jumpable() then
+                    require"neogen".jump_next()
+                else
+                    vim.cmd("normal! " .. vim.api.nvim_replace_termcodes([[<C-\><C-N><cmd>lua COQ.Nav_mark()<CR>]], true, true, true))
+                end
+             end)
 		end,
 	})
 	-- }}}
@@ -778,6 +787,38 @@ return require("packer").startup(function(use)
             require"blanket".setup{ silent = true }
         end
     })
+    -- }}}
+
+    -- generate documentation {{{
+    use {
+        "danymat/neogen",
+        config = function()
+            require('neogen').setup {}
+
+            local map_key = require("dsych_config.utils").map_key
+            map_key("n", "<leader>k", function()
+                require('neogen').generate({
+                    type = "func"
+                })
+            end)
+            map_key("n", "<leader>kc", function()
+                require('neogen').generate({
+                    type = "class"
+                })
+            end)
+            map_key("n", "<leader>kt", function()
+                require('neogen').generate({
+                    type = "type"
+                })
+            end)
+            map_key("n", "<leader>kf", function()
+                require('neogen').generate({
+                    type = "file"
+                })
+            end)
+        end,
+        requires = "nvim-treesitter/nvim-treesitter",
+    }
     -- }}}
 
     -- enhance vim's native spell checker {{{
