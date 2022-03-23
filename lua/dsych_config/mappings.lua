@@ -29,6 +29,12 @@ map_key("n", "<C-k>", "<C-W>k")
 map_key("n", "<C-h>", "<C-W>h")
 map_key("n", "<C-l>", "<C-W>l")
 
+-- resize windows
+map_key("n", "<M-{>", ":<c-u>resize -5<cr>")
+map_key("n", "<M-}>", ":<c-u>resize +5<cr>")
+map_key("n", "<M-lt>", ":<c-u>vertical resize -5<cr>")
+map_key("n", "<M->>", ":<c-u>vertical resize +5<cr>")
+
 -- Useful mappings for managing tabs
 map_key("n", "<leader>tn", ":tabnew<cr>")
 map_key("n", "<leader>to", ":tabonly<cr>")
