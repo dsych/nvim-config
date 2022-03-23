@@ -292,13 +292,13 @@ return require("packer").startup(function(use)
 			local map_key = require("dsych_config.utils").map_key
 			-- file navigation
 			map_key("n", "<leader>p", require("telescope.builtin").find_files)
-			map_key("n", "<leader>bb", require("telescope.builtin").buffers)
+			map_key("n", "<leader>b", require("telescope.builtin").buffers)
 
 			-- global search, useful with qf + replacer
-			map_key("n", "<leader>fg", require("telescope.builtin").live_grep)
-			map_key("n", "<leader>fw", require"telescope.builtin".grep_string)
-			map_key({"v", "x"}, "<leader>fw", function()
-                vim.cmd([[normal gv"xy]])
+			map_key("n", "<leader>/", require("telescope.builtin").live_grep)
+			map_key("n", "<leader>/w", require"telescope.builtin".grep_string)
+			map_key({"v", "x"}, "<leader>/w", function()
+                vim.cmd([[normal "xy]])
                 local search_query = vim.fn.getreg("x")
                 require("telescope.builtin").grep_string({search = search_query, sort_only_text = true})
             end)
@@ -316,9 +316,9 @@ return require("packer").startup(function(use)
 			end)
 
 			-- general pickers
-			map_key("n", "<leader>gc", require("telescope.builtin").commands)
+			map_key("n", "<leader>c", require("telescope.builtin").commands)
 			map_key("n", "<leader>gh", require("telescope.builtin").help_tags)
-			map_key("n", "<leader>gm", require("telescope.builtin").keymaps)
+			map_key("n", "<leader>m", require("telescope.builtin").keymaps)
 			map_key("n", "z=", require("telescope.builtin").spell_suggest)
 
 			-- resume prev picker with state
@@ -341,6 +341,7 @@ return require("packer").startup(function(use)
 						theme = "dropdown",
 						path_display = { "smart", "shorten" },
 						hidden = true,
+                        follow = true
 					},
 					live_grep = {
 						theme = "ivy",
@@ -607,7 +608,11 @@ return require("packer").startup(function(use)
         "sindrets/diffview.nvim",
         config = function()
             require("diffview").setup()
+			local map_key = require("dsych_config.utils").map_key
 
+            map_key("n", "<leader>vo", ":DiffviewOpen ")
+            map_key("n", "<leader>vc", "<cmd>DiffviewClose<cr>")
+            map_key("n", "<leader>vf", "<cmd>DiffviewFileHistory<cr>")
             vim.cmd([[
             augroup file_types
                 autocmd!
@@ -763,6 +768,15 @@ return require("packer").startup(function(use)
     -- coverage guide {{{
     use({
         "dsych/blanket.nvim",
+        config = function()
+            local map_key = require("dsych_config.utils").map_key
+            map_key("n", "<leader>cr", require("blanket").refresh)
+            map_key("n", "<leader>cs", require("blanket").stop)
+            map_key("n", "<leader>ca", require("blanket").start)
+            map_key("n", "<leader>cf", require("blanket").pick_report_path)
+
+            require"blanket".setup{ silent = true }
+        end
     })
     -- }}}
 
