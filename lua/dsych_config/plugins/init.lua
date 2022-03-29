@@ -33,7 +33,7 @@ return require("packer").startup(function(use)
 				auto_start = "shut-up",
 				["display.icons.mode"] = "short",
 				["display.icons.mappings"] = require("lspkind").presets.default,
-				["keymap.jump_to_mark"] = nil,
+				["keymap.jump_to_mark"] = "<nop>",
 			}
 
 			local map_key = require("dsych_config.utils").map_key
@@ -838,6 +838,26 @@ return require("packer").startup(function(use)
         end,
     })
     -- }}}
+
+    -- treesitter playground for checking TS queries {{{
+    use{
+        'nvim-treesitter/playground',
+        requires = { "nvim-treesitter/nvim-treesitter" },
+        config = function()
+            require "nvim-treesitter.configs".setup {
+                playground = {
+                    enable = true,
+                },
+                query_linter = {
+                    enable = true,
+                    use_virtual_text = true,
+                    lint_events = {"BufWrite", "CursorHold"},
+                },
+            }
+        end
+    }
+    -- }}}
+
     -- Automatically set up your configuration after cloning packer.nvim
     -- Put this at the end after all plugins
     if packer_bootstrap then
