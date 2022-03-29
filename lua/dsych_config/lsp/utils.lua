@@ -20,7 +20,7 @@ M.mk_config = function()
 				update_in_insert = false,
 			}),
 		},
-		capabilities = capabilities,
+		capabilities = require('cmp_nvim_lsp').update_capabilities(capabilities),
 		on_init = function(client)
 			client.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
 		end,
@@ -91,11 +91,6 @@ M.configure_lsp = function(lsp_opts)
 	lsp_opts.on_attach = function(client, bufnr)
 		lsp_status.on_attach(client)
 
-		require("lsp_signature").on_attach({
-			hint_prefix = "⇵",
-			floating_window = false,
-		})
-
 		if old_on_attach then
 			old_on_attach(client, bufnr)
 		end
@@ -114,7 +109,7 @@ M.configure_lsp = function(lsp_opts)
 		--   end
 	end
 
-	return coq.lsp_ensure_capabilities(lsp_opts)
+	return lsp_opts
 end
 
 return M

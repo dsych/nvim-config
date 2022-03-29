@@ -20,30 +20,128 @@ return require("packer").startup(function(use)
 		"kyazdani42/nvim-web-devicons",
 	})
 
-	-- autocompleteion {{{
-	use({ "ms-jpq/coq.artifacts", branch = "artifacts" })
-	use({ "ms-jpq/coq.thirdparty", branch = "3p" })
+	-- autocompletion {{{
 	use({
-		"ms-jpq/coq_nvim",
-		branch = "coq",
-		requires = { "ms-jpq/coq.artifacts", "ms-jpq/coq.thirdparty", "danymat/neogen" },
-		run = ":COQdeps",
+		"hrsh7th/nvim-cmp",
+		requires = {
+			"neovim/nvim-lspconfig",
+			"hrsh7th/cmp-nvim-lsp",
+			"hrsh7th/cmp-buffer",
+			"hrsh7th/cmp-path",
+			"hrsh7th/cmp-cmdline",
+			"hrsh7th/cmp-nvim-lsp-signature-help",
+			"andersevenrud/cmp-tmux",
+			"ray-x/cmp-treesitter",
+			"saadparwaiz1/cmp_luasnip",
+			-- snippets
+			"L3MON4D3/LuaSnip",
+		},
 		config = function()
-			vim.g.coq_settings = {
-				auto_start = "shut-up",
-				["display.icons.mode"] = "short",
-				["display.icons.mappings"] = require("lspkind").presets.default,
-				["keymap.jump_to_mark"] = "<nop>",
-			}
+			-- Setup nvim-cmp.
+			local cmp = require("cmp")
 
-			local map_key = require("dsych_config.utils").map_key
-			map_key({ "n", "i" }, "<c-s>", function ()
-                if require"neogen".jumpable() then
-                    require"neogen".jump_next()
-                else
-                    vim.cmd("normal! " .. vim.api.nvim_replace_termcodes([[<C-\><C-N><cmd>lua COQ.Nav_mark()<CR>]], true, true, true))
-                end
-             end)
+			cmp.setup({
+				snippet = {
+					-- REQUIRED - you must specify a snippet engine
+					expand = function(args)
+						-- vim.fn["vsnip#anonymous"](args.body) -- For `vsnip` users.
+						require("luasnip").lsp_expand(args.body) -- For `luasnip` users.
+						-- require('snippy').expand_snippet(args.body) -- For `snippy` users.
+						-- vim.fn["UltiSnips#Anon"](args.body) -- For `ultisnips` users.
+					end,
+				},
+				mapping = {
+					["<C-b>"] = cmp.mapping(cmp.mapping.scroll_docs(-4), { "i", "c" }),
+					["<C-f>"] = cmp.mapping(cmp.mapping.scroll_docs(4), { "i", "c" }),
+					["<C-Space>"] = cmp.mapping(cmp.mapping.complete(), { "i", "c" }),
+					["<C-e>"] = cmp.mapping({
+						i = cmp.mapping.abort(),
+						c = cmp.mapping.close(),
+					}),
+					["<C-n>"] = cmp.mapping({
+						i = cmp.select_next_item(),
+						c = cmp.config.disable,
+					}),
+					["<C-p>"] = cmp.mapping({
+						i = cmp.select_prev_item(),
+						c = cmp.config.disable,
+					}),
+					["<CR>"] = cmp.mapping.confirm({ select = false, behavior = cmp.ConfirmBehavior.Replace }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+					["<Tab>"] = cmp.mapping(function(fallback)
+						local has_words_before = function()
+							local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+							return col ~= 0
+								and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s")
+									== nil
+						end
+
+						local luasnip = require("luasnip")
+						if cmp.visible() then
+							cmp.select_next_item()
+						elseif luasnip.expand_or_jumpable() then
+							luasnip.expand_or_jump()
+						elseif has_words_before() then
+							cmp.complete()
+						else
+							fallback()
+						end
+					end, { "i", "s" }),
+
+					["<S-Tab>"] = cmp.mapping(function(fallback)
+						local luasnip = require("luasnip")
+						if cmp.visible() then
+							cmp.select_prev_item()
+						elseif luasnip.jumpable(-1) then
+							luasnip.jump(-1)
+						else
+							fallback()
+						end
+					end, { "i", "s" }),
+				},
+				sources = cmp.config.sources({
+					{ name = "nvim_lsp" },
+					{ name = "nvim_lsp_signature_help" },
+					{ name = "tmux", all_panes = true },
+					{ name = "treesitter" },
+					{ name = "luasnip" }, -- For luasnip users.
+				}, {
+					{ name = "buffer" },
+				}),
+				formatting = {
+					format = function(entry, vim_item)
+						local kind_icons = require("lspkind").presets.default
+						-- Kind icons
+						vim_item.kind = string.format("%s %s", kind_icons[vim_item.kind], vim_item.kind) -- This concatonates the icons with the name of the item kind
+						-- Source
+						vim_item.menu = ({
+							buffer = "[Buffer]",
+							nvim_lsp = "[LSP]",
+							luasnip = "[LuaSnip]",
+							nvim_lua = "[Lua]",
+							latex_symbols = "[LaTeX]",
+						})[entry.source.name]
+						return vim_item
+					end,
+				},
+			})
+
+			-- Set configuration for specific filetype.
+			cmp.setup.filetype("gitcommit", {
+				sources = cmp.config.sources({
+					{ name = "cmp_git" }, -- You can specify the `cmp_git` source if you were installed it.
+				}, {
+					{ name = "buffer" },
+				}),
+			})
+
+			-- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
+			cmp.setup.cmdline(":", {
+				sources = cmp.config.sources({
+					{ name = "path" },
+				}, {
+					{ name = "cmdline" },
+				}),
+			})
 		end,
 	})
 	-- }}}
@@ -54,8 +152,6 @@ return require("packer").startup(function(use)
 		"nvim-lua/lsp-status.nvim",
 		-- icons
 		"onsails/lspkind-nvim",
-		-- signature help for functions lsp
-		"ray-x/lsp_signature.nvim",
 		"neovim/nvim-lspconfig",
 	})
 
@@ -66,8 +162,6 @@ return require("packer").startup(function(use)
 			"nvim-lua/lsp-status.nvim",
 			-- icons
 			"onsails/lspkind-nvim",
-			-- signature help for functions lsp
-			"ray-x/lsp_signature.nvim",
 			"neovim/nvim-lspconfig",
 			"ms-jpq/coq_nvim",
 		},
@@ -97,8 +191,8 @@ return require("packer").startup(function(use)
 				sources = {
 					null_ls.builtins.formatting.stylua,
 					null_ls.builtins.formatting.clang_format.with({
-                        disabled_filetypes = { "java" }
-                    }),
+						disabled_filetypes = { "java" },
+					}),
 					null_ls.builtins.formatting.prettier,
 
 					null_ls.builtins.diagnostics.write_good,
@@ -218,11 +312,11 @@ return require("packer").startup(function(use)
 					custom = { ".git", ".cache" },
 				},
 
-                actions = {
-                    open_file = {
-                        quit_on_open = true
-                    }
-                },
+				actions = {
+					open_file = {
+						quit_on_open = true,
+					},
+				},
 
 				diagnostics = {
 					enable = false,
@@ -305,12 +399,12 @@ return require("packer").startup(function(use)
 
 			-- global search, useful with qf + replacer
 			map_key("n", "<leader>/", require("telescope.builtin").live_grep)
-			map_key("n", "<leader>/w", require"telescope.builtin".grep_string)
-			map_key({"v", "x"}, "<leader>/w", function()
-                vim.cmd([[normal "xy]])
-                local search_query = vim.fn.getreg("x")
-                require("telescope.builtin").grep_string({search = search_query, sort_only_text = true})
-            end)
+			map_key("n", "<leader>/w", require("telescope.builtin").grep_string)
+			map_key({ "v", "x" }, "<leader>/w", function()
+				vim.cmd([[normal "xy]])
+				local search_query = vim.fn.getreg("x")
+				require("telescope.builtin").grep_string({ search = search_query, sort_only_text = true })
+			end)
 
 			-- git helpers
 			map_key("n", "<leader>vb", function()
@@ -336,30 +430,30 @@ return require("packer").startup(function(use)
 			require("telescope").setup({
 				defaults = {
 					prompt_prefix = "🔍",
-                    path_display = {
-                        shorten = { len = 1, exclude = { 1, -1 } },
-                    },
+					path_display = {
+						shorten = { len = 1, exclude = { 1, -1 } },
+					},
 				},
 				pickers = {
-                    spell_suggest = {
+					spell_suggest = {
 						previewer = false,
 						theme = "dropdown",
-                    },
+					},
 					find_files = {
 						previewer = false,
 						theme = "dropdown",
 						path_display = { "smart", "shorten" },
 						hidden = true,
-                        follow = true
+						follow = true,
 					},
 					live_grep = {
 						theme = "ivy",
 						only_sort_text = true,
 					},
-                    grep_string = {
+					grep_string = {
 						theme = "ivy",
 						only_sort_text = true,
-                    },
+					},
 					buffers = {
 						previewer = false,
 						theme = "ivy",
@@ -557,11 +651,11 @@ return require("packer").startup(function(use)
 		config = function()
 			local map_key = require("dsych_config.utils").map_key
 
-            map_key("n", "<leader>in", "<cmd>execute('TestNearest '.g:test_extra_flags)<cr>")
-            map_key("n", "<leader>if", "<cmd>execute('TestFile '.g:test_extra_flags)<cr>")
-            map_key("n", "<leader>is", "<cmd>execute('TestSuite '.g:test_extra_flags)<cr>")
-            map_key("n", "<leader>il", "<cmd>execute('TestLast '.g:test_extra_flags)<cr>")
-            map_key("n", "<leader>ig", "<cmd>execute('TestVisit '.g:test_extra_flags)<cr>")
+			map_key("n", "<leader>in", "<cmd>execute('TestNearest '.g:test_extra_flags)<cr>")
+			map_key("n", "<leader>if", "<cmd>execute('TestFile '.g:test_extra_flags)<cr>")
+			map_key("n", "<leader>is", "<cmd>execute('TestSuite '.g:test_extra_flags)<cr>")
+			map_key("n", "<leader>il", "<cmd>execute('TestLast '.g:test_extra_flags)<cr>")
+			map_key("n", "<leader>ig", "<cmd>execute('TestVisit '.g:test_extra_flags)<cr>")
 			-- for maven set to something like this:
 			--  -Dtests.additional.jvmargs=--'-Xdebug -Xrunjdwp:transport=dt_socket,address=localhost:5005,server=y,suspend=y'--
 			-- for gradle use:
@@ -574,8 +668,8 @@ return require("packer").startup(function(use)
 			map_key("n", "<leader>ie", function()
 				vim.g.test_debug_flags = ""
 			end)
-            map_key("n", "<leader>id", "<cmd>execute('TestNearest '.g:test_extra_flags.' '.g:test_debug_flags)<cr>")
-            map_key("n", "<leader>ids", "<cmd>execute('TestSuite '.g:test_extra_flags.' '.g:test_debug_flags)<cr>")
+			map_key("n", "<leader>id", "<cmd>execute('TestNearest '.g:test_extra_flags.' '.g:test_debug_flags)<cr>")
+			map_key("n", "<leader>ids", "<cmd>execute('TestSuite '.g:test_extra_flags.' '.g:test_debug_flags)<cr>")
 
 			vim.g["test#strategy"] = "neovim"
 		end,
@@ -599,233 +693,233 @@ return require("packer").startup(function(use)
 	-- }}}
 
 	-- status line {{{
-    use{
-        "dsych/galaxyline.nvim",
+	use({
+		"dsych/galaxyline.nvim",
 		branch = "bugfix/diagnostics",
-    }
-	use{
-        "dsych/nerd-galaxyline",
-        requires = {
-            "dsych/galaxyline.nvim",
+	})
+	use({
+		"dsych/nerd-galaxyline",
+		requires = {
+			"dsych/galaxyline.nvim",
 			"nvim-lua/lsp-status.nvim",
-        },
-    }
-    -- }}}
+		},
+	})
+	-- }}}
 
-    -- git diff view {{{
-    use({
-        "sindrets/diffview.nvim",
-        config = function()
-            require("diffview").setup()
+	-- git diff view {{{
+	use({
+		"sindrets/diffview.nvim",
+		config = function()
+			require("diffview").setup()
 			local map_key = require("dsych_config.utils").map_key
 
-            map_key("n", "<leader>vo", ":DiffviewOpen ")
-            map_key("n", "<leader>vc", "<cmd>DiffviewClose<cr>")
-            map_key("n", "<leader>vf", "<cmd>DiffviewFileHistory<cr>")
-            vim.cmd([[
+			map_key("n", "<leader>vo", ":DiffviewOpen ")
+			map_key("n", "<leader>vc", "<cmd>DiffviewClose<cr>")
+			map_key("n", "<leader>vf", "<cmd>DiffviewFileHistory<cr>")
+			vim.cmd([[
             augroup file_types
                 autocmd!
                 autocmd BufRead,BufNewFile *.json set filetype=jsonc
                 autocmd BufRead,BufNewFile *sqc,*HPP,*CPP set filetype=cpp
             augroup END
             ]])
-        end,
-    })
-    -- }}}
+		end,
+	})
+	-- }}}
 
-    -- literate movements and surround {{{
-    use({ "tpope/vim-surround" })
+	-- literate movements and surround {{{
+	use({ "tpope/vim-surround" })
 
-    use({
-        "justinmk/vim-sneak",
+	use({
+		"justinmk/vim-sneak",
 
-        config = function()
-            local map_key = require("dsych_config.utils").map_key
-            -- remap default keybindings to sneak
-            map_key("n", "f", "<Plug>Sneak_f")
-            map_key("n", "F", "<Plug>Sneak_F")
-            map_key("n", "t", "<Plug>Sneak_t")
-            map_key("n", "T", "<Plug>Sneak_T")
-        end,
-    })
-    -- }}}
+		config = function()
+			local map_key = require("dsych_config.utils").map_key
+			-- remap default keybindings to sneak
+			map_key("n", "f", "<Plug>Sneak_f")
+			map_key("n", "F", "<Plug>Sneak_F")
+			map_key("n", "t", "<Plug>Sneak_t")
+			map_key("n", "T", "<Plug>Sneak_T")
+		end,
+	})
+	-- }}}
 
-    -- terminal {{{
-    use({
-        "akinsho/nvim-toggleterm.lua",
-        config = function()
-            local map_key = require("dsych_config.utils").map_key
+	-- terminal {{{
+	use({
+		"akinsho/nvim-toggleterm.lua",
+		config = function()
+			local map_key = require("dsych_config.utils").map_key
 
-            require("toggleterm").setup({
-                open_mapping = [[<c-\>]],
-            })
-            -- turn terminal to normal mode with escape
-            map_key("t", "<Esc>", "<C-\\><C-n>")
-            -- start terminal in insert mode
-            -- and do not show terminal buffers in buffer list
-            vim.cmd([[
+			require("toggleterm").setup({
+				open_mapping = [[<c-\>]],
+			})
+			-- turn terminal to normal mode with escape
+			map_key("t", "<Esc>", "<C-\\><C-n>")
+			-- start terminal in insert mode
+			-- and do not show terminal buffers in buffer list
+			vim.cmd([[
             augroup terminal
                 autocmd!
                 autocmd TermOpen * setlocal nobuflisted
                 " au BufEnter * if &buftype == 'terminal' | :startinsert | endif
             augroup END
             ]])
-        end,
-    })
-    -- }}}
+		end,
+	})
+	-- }}}
 
-    -- treesitter syntax highlighting and more {{{
-    use({
-        "nvim-treesitter/nvim-treesitter",
-        run = ":TSUpdate",
-        config = function()
-            require("nvim-treesitter.configs").setup({
-                ensure_installed = "maintained",
-                indent = {
-                    enable = false,
-                },
-                highlight = {
-                    enable = true,
-                    additional_vim_regex_highlighting = false,
-                },
-            })
-        end,
-    })
-    -- }}}
+	-- treesitter syntax highlighting and more {{{
+	use({
+		"nvim-treesitter/nvim-treesitter",
+		run = ":TSUpdate",
+		config = function()
+			require("nvim-treesitter.configs").setup({
+				ensure_installed = "maintained",
+				indent = {
+					enable = false,
+				},
+				highlight = {
+					enable = true,
+					additional_vim_regex_highlighting = false,
+				},
+			})
+		end,
+	})
+	-- }}}
 
-    -- intelligent comments based on treesitter {{{
-    use({
-        "JoosepAlviste/nvim-ts-context-commentstring",
-        requires = { "nvim-treesitter/nvim-treesitter" },
-        config = function()
-            require("nvim-treesitter.configs").setup({
-                context_commentstring = {
-                    enable = true,
-                    autocmd = false,
-                },
-            })
-        end,
-    })
-    -- }}}
+	-- intelligent comments based on treesitter {{{
+	use({
+		"JoosepAlviste/nvim-ts-context-commentstring",
+		requires = { "nvim-treesitter/nvim-treesitter" },
+		config = function()
+			require("nvim-treesitter.configs").setup({
+				context_commentstring = {
+					enable = true,
+					autocmd = false,
+				},
+			})
+		end,
+	})
+	-- }}}
 
-    -- additional text objects based on treesitter {{{
-    use({
-        "nvim-treesitter/nvim-treesitter-textobjects",
-        requires = { "nvim-treesitter/nvim-treesitter" },
-        config = function()
-            require("nvim-treesitter.configs").setup({
-                textobjects = {
-                    select = {
-                        enable = true,
+	-- additional text objects based on treesitter {{{
+	use({
+		"nvim-treesitter/nvim-treesitter-textobjects",
+		requires = { "nvim-treesitter/nvim-treesitter" },
+		config = function()
+			require("nvim-treesitter.configs").setup({
+				textobjects = {
+					select = {
+						enable = true,
 
-                        -- Automatically jump forward to textobj, similar to targets.vim
-                        lookahead = true,
+						-- Automatically jump forward to textobj, similar to targets.vim
+						lookahead = true,
 
-                        keymaps = {
-                            -- You can use the capture groups defined in textobjects.scm
-                            ["af"] = "@function.outer",
-                            ["if"] = "@function.inner",
-                            ["ac"] = "@class.outer",
-                            ["ic"] = "@class.inner",
-                            ["ia"] = "@parameter.inner",
-                            ["aa"] = "@parameter.outer",
-                        },
-                    },
-                    move = {
-                        enable = true,
-                        set_jumps = true, -- whether to set jumps in the jumplist
-                        goto_next_start = {
-                            ["]m"] = "@function.outer",
-                            ["]]"] = "@class.outer",
-                            ["]a"] = "@parameter.inner",
-                        },
-                        goto_previous_start = {
-                            ["[m"] = "@function.outer",
-                            ["[["] = "@class.outer",
-                            ["[a"] = "@parameter.inner",
-                        },
-                    },
-                },
-            })
-        end,
-    })
-    -- }}}
+						keymaps = {
+							-- You can use the capture groups defined in textobjects.scm
+							["af"] = "@function.outer",
+							["if"] = "@function.inner",
+							["ac"] = "@class.outer",
+							["ic"] = "@class.inner",
+							["ia"] = "@parameter.inner",
+							["aa"] = "@parameter.outer",
+						},
+					},
+					move = {
+						enable = true,
+						set_jumps = true, -- whether to set jumps in the jumplist
+						goto_next_start = {
+							["]m"] = "@function.outer",
+							["]]"] = "@class.outer",
+							["]a"] = "@parameter.inner",
+						},
+						goto_previous_start = {
+							["[m"] = "@function.outer",
+							["[["] = "@class.outer",
+							["[a"] = "@parameter.inner",
+						},
+					},
+				},
+			})
+		end,
+	})
+	-- }}}
 
-    -- hocon filetype {{{
-    use({
-        "satabin/hocon-vim",
-    })
-    -- }}}
+	-- hocon filetype {{{
+	use({
+		"satabin/hocon-vim",
+	})
+	-- }}}
 
-    -- markdown preview {{{
-    use({
-        -- depends on https://github.com/charmbracelet/glow
-        "ellisonleao/glow.nvim",
-    })
-    -- }}}
+	-- markdown preview {{{
+	use({
+		-- depends on https://github.com/charmbracelet/glow
+		"ellisonleao/glow.nvim",
+	})
+	-- }}}
 
-    -- search and replace inside quickfix window {{{
-    use({
-        "gabrielpoca/replacer.nvim",
-        config = function()
-            local map_key = require("dsych_config.utils").map_key
-            map_key("n", "<leader>rq", require("replacer").run)
-        end,
-    })
-    -- }}}
+	-- search and replace inside quickfix window {{{
+	use({
+		"gabrielpoca/replacer.nvim",
+		config = function()
+			local map_key = require("dsych_config.utils").map_key
+			map_key("n", "<leader>rq", require("replacer").run)
+		end,
+	})
+	-- }}}
 
-    -- coverage guide {{{
-    use({
-        "dsych/blanket.nvim",
-        config = function()
-            local map_key = require("dsych_config.utils").map_key
-            map_key("n", "<leader>cr", require("blanket").refresh)
-            map_key("n", "<leader>cs", require("blanket").stop)
-            map_key("n", "<leader>ca", require("blanket").start)
-            map_key("n", "<leader>cf", require("blanket").pick_report_path)
+	-- coverage guide {{{
+	use({
+		"dsych/blanket.nvim",
+		config = function()
+			local map_key = require("dsych_config.utils").map_key
+			map_key("n", "<leader>cr", require("blanket").refresh)
+			map_key("n", "<leader>cs", require("blanket").stop)
+			map_key("n", "<leader>ca", require("blanket").start)
+			map_key("n", "<leader>cf", require("blanket").pick_report_path)
 
-            require"blanket".setup{ silent = true }
-        end
-    })
-    -- }}}
+			require("blanket").setup({ silent = true })
+		end,
+	})
+	-- }}}
 
-    -- generate documentation {{{
-    use {
-        "danymat/neogen",
-        config = function()
-            require('neogen').setup {}
+	-- generate documentation {{{
+	use({
+		"danymat/neogen",
+		config = function()
+			require("neogen").setup({})
 
-            local map_key = require("dsych_config.utils").map_key
-            map_key("n", "<leader>k", function()
-                require('neogen').generate({
-                    type = "func"
-                })
-            end)
-            map_key("n", "<leader>kc", function()
-                require('neogen').generate({
-                    type = "class"
-                })
-            end)
-            map_key("n", "<leader>kt", function()
-                require('neogen').generate({
-                    type = "type"
-                })
-            end)
-            map_key("n", "<leader>kf", function()
-                require('neogen').generate({
-                    type = "file"
-                })
-            end)
-        end,
-        requires = "nvim-treesitter/nvim-treesitter",
-    }
-    -- }}}
+			local map_key = require("dsych_config.utils").map_key
+			map_key("n", "<leader>k", function()
+				require("neogen").generate({
+					type = "func",
+				})
+			end)
+			map_key("n", "<leader>kc", function()
+				require("neogen").generate({
+					type = "class",
+				})
+			end)
+			map_key("n", "<leader>kt", function()
+				require("neogen").generate({
+					type = "type",
+				})
+			end)
+			map_key("n", "<leader>kf", function()
+				require("neogen").generate({
+					type = "file",
+				})
+			end)
+		end,
+		requires = "nvim-treesitter/nvim-treesitter",
+	})
+	-- }}}
 
-    -- enhance vim's native spell checker {{{
-    use({
-        "dsych/vim-spell",
-        config = function()
-            vim.cmd([[
+	-- enhance vim's native spell checker {{{
+	use({
+		"dsych/vim-spell",
+		config = function()
+			vim.cmd([[
                 augroup code_spell
                     autocmd!
                     " turn on spell checking for all file types
@@ -835,32 +929,32 @@ return require("packer").startup(function(use)
                     autocmd FileType startify,vim,Telescope*,help :set nospell
                 augroup end
             ]])
-        end,
-    })
-    -- }}}
+		end,
+	})
+	-- }}}
 
-    -- treesitter playground for checking TS queries {{{
-    use{
-        'nvim-treesitter/playground',
-        requires = { "nvim-treesitter/nvim-treesitter" },
-        config = function()
-            require "nvim-treesitter.configs".setup {
-                playground = {
-                    enable = true,
-                },
-                query_linter = {
-                    enable = true,
-                    use_virtual_text = true,
-                    lint_events = {"BufWrite", "CursorHold"},
-                },
-            }
-        end
-    }
-    -- }}}
+	-- treesitter playground for checking TS queries {{{
+	use({
+		"nvim-treesitter/playground",
+		requires = { "nvim-treesitter/nvim-treesitter" },
+		config = function()
+			require("nvim-treesitter.configs").setup({
+				playground = {
+					enable = true,
+				},
+				query_linter = {
+					enable = true,
+					use_virtual_text = true,
+					lint_events = { "BufWrite", "CursorHold" },
+				},
+			})
+		end,
+	})
+	-- }}}
 
-    -- Automatically set up your configuration after cloning packer.nvim
-    -- Put this at the end after all plugins
-    if packer_bootstrap then
-        require("packer").sync()
-    end
+	-- Automatically set up your configuration after cloning packer.nvim
+	-- Put this at the end after all plugins
+	if packer_bootstrap then
+		require("packer").sync()
+	end
 end)
