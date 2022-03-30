@@ -1,7 +1,7 @@
 local M = {}
 
 M.source_all_additional_files = function(dir_path)
-	if vim.fn.isdirectory(dir_path) then
+	if vim.fn.isdirectory(dir_path) > 0 then
 		local directory_content = vim.fn.readdir(dir_path, function(n)
 			return string.match(n, ".+%.lua") ~= nil
 		end)

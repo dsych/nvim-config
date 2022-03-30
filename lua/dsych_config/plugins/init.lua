@@ -163,7 +163,6 @@ return require("packer").startup(function(use)
 			-- icons
 			"onsails/lspkind-nvim",
 			"neovim/nvim-lspconfig",
-			"ms-jpq/coq_nvim",
 		},
 		config = require("dsych_config.lsp").setup,
 	})
