@@ -96,22 +96,24 @@ M.setup = function()
 				},
 			},
 		}
-		config.cmd = { "jdtls", eclipse_workspace }
+		config.cmd = { "jdtls"
+        -- , eclipse_workspace -- TODO: put this back, once jdtls-launcher supports configurable workspaces
+        }
 		config.on_attach = on_java_attach
 		-- SUPER IMPORTANT, this will prevent lsp from launching in
 		-- every workspaces
 		config.root_dir = root_dir
 
+        local bundles = {
+          vim.fn.glob(home .. "/.local/source/jdtls-launcher/java-debug/com.microsoft.java.debug.plugin/target/com.microsoft.java.debug.plugin-*.jar"),
+        };
+        vim.list_extend(bundles, vim.split(vim.fn.glob(home .. "/.local/source/jdtls-launcher/vscode-java-decompiler/server/*.jar"), "\n"))
+
 		local extendedClientCapabilities = require("jdtls").extendedClientCapabilities
 		extendedClientCapabilities.resolveAdditionalTextEditsSupport = true
 		config.init_options = {
 			-- jdtls extensions e.g. debugging
-			bundles = {
-				home
-					.. "/.local/source/java-debug/com.microsoft.java.debug.plugin/target/com.microsoft.java.debug.plugin-0.33.0.jar",
-				home
-					.. "/.local/source/vscode-java-decompiler/server/dg.jdt.ls.decompiler.fernflower-0.0.2-201802221740.jar",
-			},
+			bundles = bundles,
 			extendedClientCapabilities = extendedClientCapabilities,
 			workspaceFolders = ws_folders_jdtls,
 		}
