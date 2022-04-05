@@ -96,9 +96,7 @@ M.setup = function()
 				},
 			},
 		}
-		config.cmd = { "jdtls"
-        -- , eclipse_workspace -- TODO: put this back, once jdtls-launcher supports configurable workspaces
-        }
+		config.cmd = { "jdtls" , "--run", "--workspace", eclipse_workspace }
 		config.on_attach = on_java_attach
 		-- SUPER IMPORTANT, this will prevent lsp from launching in
 		-- every workspaces
