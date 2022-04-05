@@ -51,8 +51,8 @@ return require("packer").startup(function(use)
 					end,
 				},
 				mapping = {
-					["<C-b>"] = cmp.mapping(cmp.mapping.scroll_docs(-4), { "i", "c" }),
-					["<C-f>"] = cmp.mapping(cmp.mapping.scroll_docs(4), { "i", "c" }),
+					["<C-u>"] = cmp.mapping(cmp.mapping.scroll_docs(-4), { "i", "c" }),
+					["<C-d>"] = cmp.mapping(cmp.mapping.scroll_docs(4), { "i", "c" }),
 					["<C-Space>"] = cmp.mapping(cmp.mapping.complete(), { "i", "c" }),
 					["<C-e>"] = cmp.mapping({
 						i = cmp.mapping.abort(),
@@ -66,6 +66,15 @@ return require("packer").startup(function(use)
 						i = cmp.select_prev_item(),
 						c = cmp.config.disable,
 					}),
+                    ["<C-s>"] = cmp.mapping(function()
+						local luasnip = require("luasnip")
+
+						if luasnip.expand_or_jumpable() then
+                            require("luasnip").expand_or_jump()
+                        else
+                            print("No more snippet positions available")
+                        end
+                    end, { "n" }),
 					["<CR>"] = cmp.mapping.confirm({ select = false, behavior = cmp.ConfirmBehavior.Replace }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
 					["<Tab>"] = cmp.mapping(function(fallback)
 						local has_words_before = function()
@@ -562,7 +571,7 @@ return require("packer").startup(function(use)
 			-- OH HOW THINGS HAVE CHANGED)
 			vim.opt.termguicolors = true
 
-			vim.cmd("colorscheme solarized")
+			vim.cmd("colorscheme gruvbox")
 
 			-- Enable syntax highlighting
 			vim.cmd("syntax enable")
