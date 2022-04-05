@@ -549,6 +549,10 @@ return require("packer").startup(function(use)
 			-- group when color scheme changes
 			vim.cmd("autocmd ColorScheme shades_of_purple highlight! link MatchParen Search")
 
+
+            -- make vertical split divider more legible
+            vim.cmd[[autocmd ColorScheme * highlight! link VertSplit IncSearch]]
+
 			------------------------------------------------------------------------------------------------------------------------------
 			-- => Rose-pint
 			------------------------------------------------------------------------------------------------------------------------------
