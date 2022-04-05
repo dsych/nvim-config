@@ -70,7 +70,7 @@ function link_config {
 function install_jdtls {
     printf "INFO: Cloning jdtls\n"
     rm -rf "jdtls-launcher"
-    git clone "https://github.com/eruizc-dev/jdtls-launcher.git"
+    git clone "https://github.com/dsych/jdtls-launcher.git"
 
     cd "jdtls-launcher"
     install_location="$(pwd)/jdtls-launcher.sh"
