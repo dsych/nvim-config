@@ -19,6 +19,11 @@ function run_inside_directory {
     dir_path=$1
     shift
 
+    if [[ ! -d  "$dir_path" ]]; then
+        printf "WARN: Skipping $dir_path has to point to a directory\n"
+        return 1
+    fi
+
     curr_dir=$(pwd)
     cd $dir_path
 
@@ -44,6 +49,7 @@ function save_old_config {
     mv "$file_path" "$file_path.old"
     return 0
 }
+
 function link_config {
     check_num_of_args 2 $#
     if [[ $? -ne 0 ]]; then
@@ -59,6 +65,38 @@ function link_config {
     fi
 
     ln -s "$source_path" "$dest_path"
+}
+
+function install_jdtls {
+    printf "INFO: Cloning jdtls\n"
+    rm -rf "jdtls-launcher"
+    git clone "https://github.com/eruizc-dev/jdtls-launcher.git"
+
+    cd "jdtls-launcher"
+    install_location="$(pwd)/jdtls-launcher.sh"
+    link_location="$HOME/.local/bin/jdtls"
+
+    printf "INFO: Creating symlink at ${link_location}\n"
+    chmod -R 755 "$install_location"
+    rm "$link_location" 2> /dev/null
+    ln -s "$install_location" "$link_location"
+
+    printf "INFO: Installing jdtls dependencies\n"
+    jdtls --install
+}
+
+function install_java_debug {
+    printf "INFO: Cloning java-debug\n"
+    rm -rf "java-debug"
+    git clone "https://github.com/microsoft/java-debug.git"
+
+    mvn -f "$(pwd)/java-debug/pom.xml" clean package
+}
+
+function install_java_decompiler {
+    printf "INFO: Cloning vscode-java-decompiler\n"
+    rm -rf "vscode-java-decompiler"
+    git clone "https://github.com/dgileadi/vscode-java-decompiler.git"
 }
 
 configDir=$HOME/.config/nvim
@@ -80,4 +118,10 @@ for path in ${all_configs[@]}; do
     link_config "$scriptDir/$source_path" $path
 done
 
-echo "Done"
+printf "Begin installing dependencies\n"
+
+run_inside_directory "$HOME/.local/source" install_jdtls
+run_inside_directory "$HOME/.local/source/jdtls-launcher" install_java_debug
+run_inside_directory "$HOME/.local/source/jdtls-launcher" install_java_decompiler
+
+printf "Done!!!\n"
