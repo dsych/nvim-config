@@ -71,6 +71,7 @@ M.setup = function()
 		"vimls",
 		"bashls",
 		"yamlls",
+        "jdtls"
 	}
 
 	for _, name in pairs(servers) do
@@ -84,6 +85,11 @@ M.setup = function()
 	local lsp_utils = require("dsych_config.lsp.utils")
 	-- actually start the language server
 	lsp_installer.on_server_ready(function(server)
+        -- use jdtls.nvim extension for java instead of lsp-config
+        if server.name == "jdtls" then
+            return
+        end
+
 		local config = vim.tbl_deep_extend(
 			"force",
 			lsp_utils.mk_config(),

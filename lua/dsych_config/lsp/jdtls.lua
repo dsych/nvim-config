@@ -124,7 +124,7 @@ M.setup = function()
 			vim.lsp.buf.add_workspace_folder(line)
 		end
 
-		vim.api.nvim_add_user_command(
+		vim.api.nvim_create_user_command(
 			"CleanJavaWorkspace",
 			":!rm -rf '" .. eclipse_workspace .. "' <bar> :StopLsp <bar> :StartJavaLsp",
 			{}
@@ -132,10 +132,10 @@ M.setup = function()
 		map_key("n", "<leader>lr", "<Cmd>CleanJavaWorkspace<CR>")
 	end
 
-	vim.api.nvim_add_user_command("StopLsp", function()
+	vim.api.nvim_create_user_command("StopLsp", function()
 		vim.lsp.stop_client(vim.lsp.get_active_clients())
 	end, {})
-	vim.api.nvim_add_user_command("StartJavaLsp", setup_java_lsp, {})
+	vim.api.nvim_create_user_command("StartJavaLsp", setup_java_lsp, {})
 	map_key("n", "<leader>lj", "<cmd>StartJavaLsp<cr>")
 
 	vim.cmd([[

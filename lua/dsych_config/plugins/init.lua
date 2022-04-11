@@ -35,6 +35,7 @@ return require("packer").startup(function(use)
 			"saadparwaiz1/cmp_luasnip",
 			-- snippets
 			"L3MON4D3/LuaSnip",
+			"saadparwaiz1/cmp_luasnip",
 		},
 		config = function()
 			-- Setup nvim-cmp.
@@ -66,15 +67,15 @@ return require("packer").startup(function(use)
 						i = cmp.select_prev_item(),
 						c = cmp.config.disable,
 					}),
-                    ["<C-s>"] = cmp.mapping(function()
+					["<C-s>"] = cmp.mapping(function()
 						local luasnip = require("luasnip")
 
 						if luasnip.expand_or_jumpable() then
-                            require("luasnip").expand_or_jump()
-                        else
-                            print("No more snippet positions available")
-                        end
-                    end, { "n" }),
+							require("luasnip").expand_or_jump()
+						else
+							print("No more snippet positions available")
+						end
+					end, { "n" }),
 					["<CR>"] = cmp.mapping.confirm({ select = false, behavior = cmp.ConfirmBehavior.Replace }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
 					["<Tab>"] = cmp.mapping(function(fallback)
 						local has_words_before = function()
@@ -533,7 +534,7 @@ return require("packer").startup(function(use)
 
 	-- themes {{{
 	use({
-		"morhetz/gruvbox",
+		"ellisonleao/gruvbox.nvim",
 		"Rigellute/shades-of-purple.vim",
 		"folke/tokyonight.nvim",
 		"rose-pine/neovim",
@@ -549,9 +550,8 @@ return require("packer").startup(function(use)
 			-- group when color scheme changes
 			vim.cmd("autocmd ColorScheme shades_of_purple highlight! link MatchParen Search")
 
-
-            -- make vertical split divider more legible
-            vim.cmd[[autocmd ColorScheme * highlight! link VertSplit IncSearch]]
+			-- make vertical split divider more legible
+			vim.cmd([[autocmd ColorScheme * highlight! link VertSplit IncSearch]])
 
 			------------------------------------------------------------------------------------------------------------------------------
 			-- => Rose-pint
@@ -652,7 +652,7 @@ return require("packer").startup(function(use)
 					vim.cmd("Limelight")
 				end
 			end
-			vim.api.nvim_add_user_command("Zen", toggle_zen, {})
+			vim.api.nvim_create_user_command("Zen", toggle_zen, {})
 		end,
 	})
 	-- }}}
@@ -761,18 +761,32 @@ return require("packer").startup(function(use)
 		"akinsho/nvim-toggleterm.lua",
 		config = function()
 			local map_key = require("dsych_config.utils").map_key
+			function _G.set_terminal_keymaps()
+				local opts = { buffer = true }
+				map_key("t", "<esc>", [[<C-\><C-n>]], opts)
+				map_key("t", "jk", [[<C-\><C-n>]], opts)
+				map_key("t", "<C-h>", [[<C-\><C-n><C-W>h]], opts)
+				map_key("t", "<C-j>", [[<C-\><C-n><C-W>j]], opts)
+				map_key("t", "<C-k>", [[<C-\><C-n><C-W>k]], opts)
+				map_key("t", "<C-l>", [[<C-\><C-n><C-W>l]], opts)
+			end
 
 			require("toggleterm").setup({
 				open_mapping = [[<c-\>]],
+				size = function(term)
+					if term.direction == "horizontal" then
+						return 15
+					elseif term.direction == "vertical" then
+						return vim.o.columns * 0.4
+					end
+				end,
 			})
-			-- turn terminal to normal mode with escape
-			map_key("t", "<Esc>", "<C-\\><C-n>")
 			-- start terminal in insert mode
 			-- and do not show terminal buffers in buffer list
 			vim.cmd([[
             augroup terminal
                 autocmd!
-                autocmd TermOpen * setlocal nobuflisted
+                autocmd TermOpen * setlocal nobuflisted | lua set_terminal_keymaps()
                 " au BufEnter * if &buftype == 'terminal' | :startinsert | endif
             augroup END
             ]])
