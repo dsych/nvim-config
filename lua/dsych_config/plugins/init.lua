@@ -765,10 +765,8 @@ return require("packer").startup(function(use)
 				local opts = { buffer = true }
 				map_key("t", "<esc>", [[<C-\><C-n>]], opts)
 				map_key("t", "jk", [[<C-\><C-n>]], opts)
-				map_key("t", "<C-h>", [[<C-\><C-n><C-W>h]], opts)
 				map_key("t", "<C-j>", [[<C-\><C-n><C-W>j]], opts)
 				map_key("t", "<C-k>", [[<C-\><C-n><C-W>k]], opts)
-				map_key("t", "<C-l>", [[<C-\><C-n><C-W>l]], opts)
 			end
 
 			require("toggleterm").setup({

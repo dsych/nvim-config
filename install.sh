@@ -100,14 +100,19 @@ function install_java_decompiler {
 }
 
 configDir=$HOME/.config/nvim
-kittyDir=$HOME/.config/kitty
-warpdDir=$HOME/.config/warpd
 scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 # create the nvim directory
 mkdir -p $configDir
 
-all_configs=("$configDir/init.vim" "$configDir/init.lua" "$configDir/lua" "$configDir/coc-settings.json" "$kittyDir" "$warpdDir")
+all_configs=(
+    "$configDir/init.lua"
+    "$configDir/lua"
+    "$configDir/coc-settings.json"
+    "$HOME/.config/kitty"
+    "$HOME/.config/warpd"
+    "$HOME/.config/lsd"
+)
 
 for path in ${all_configs[@]}; do
     save_old_config $path
