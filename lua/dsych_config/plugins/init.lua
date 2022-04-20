@@ -290,7 +290,6 @@ return require("packer").startup(function(use)
 			map_key("n", "<leader>ef", "<cmd>NvimTreeFindFile<cr>")
 
 			vim.g.nvim_tree_auto_ignore_ft = { "startify", "dashboard" } --empty by default, don't auto open tree on specific filetypes.
-			vim.g.nvim_tree_indent_markers = 1 --0 by default, this option shows indent markers when folders are open=true
 			vim.g.nvim_tree_add_trailing = 1 --0 by default, append a trailing slash to folder names
 			vim.g.nvim_tree_group_empty = 1 -- 0 by default, compact folders that only contain a single folder into one node in the file tree
 			vim.g.nvim_tree_special_files = {
@@ -308,6 +307,12 @@ return require("packer").startup(function(use)
 					number = true,
 					relativenumber = true,
 				},
+
+                renderer = {
+                    indent_markers = {
+                        enable = true
+                    }
+                },
 
 				-- updates the root directory of the tree on `DirChanged` (when your run `:cd` usually)
 				update_cwd = true,
@@ -798,7 +803,7 @@ return require("packer").startup(function(use)
 		run = ":TSUpdate",
 		config = function()
 			require("nvim-treesitter.configs").setup({
-				ensure_installed = "maintained",
+				ensure_installed = "all",
 				indent = {
 					enable = false,
 				},
@@ -955,6 +960,57 @@ return require("packer").startup(function(use)
             ]])
 		end,
 	})
+	-- }}}
+
+	-- {{{ window picker
+	use({
+		"s1n7ax/nvim-window-picker",
+		tag = "v1.*",
+		config = function()
+            require("window-picker").setup()
+
+			local map_key = require("dsych_config.utils").map_key
+
+            local pick_win = require("window-picker").pick_window
+
+			map_key("n", "<C-w>p", function()
+                local win_id = pick_win()
+                if win_id == nil then
+                    return
+                end
+                vim.fn.win_gotoid(win_id)
+			end)
+
+			map_key("n", "<C-w>d", function()
+                local win_id = pick_win()
+                if win_id == nil then
+                    return
+                end
+                vim.api.nvim_win_close(win_id, false)
+			end)
+
+			map_key("n", "<C-w>x", function()
+                local set_buffer_in_win = function (target_win_id, target_buffer_nr)
+                    vim.fn.win_gotoid(target_win_id)
+                    vim.cmd(string.format("%sbuffer", target_buffer_nr))
+                end
+
+                local target_win_id = pick_win()
+                if target_win_id == nil then
+                    return
+                end
+                local current_win_id = vim.fn.win_getid()
+
+                local current_buffer_nr = vim.fn.winbufnr(0)
+                local target_buffer_nr = vim.fn.winbufnr(target_win_id)
+
+                set_buffer_in_win(target_win_id, current_buffer_nr)
+                set_buffer_in_win(current_win_id, target_buffer_nr)
+
+			end)
+		end,
+	})
+	--
 	-- }}}
 
 	-- treesitter playground for checking TS queries {{{
