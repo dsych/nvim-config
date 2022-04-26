@@ -76,8 +76,8 @@ map_key("n", "<leader>nE", ":tabnew <bar> :edit $MYVIMRC<cr>")
 map_key("n", "<leader>na", ":tabnew <bar> :edit ~/.config/nvim/additional<cr>")
 
 -- insert mode deletion
-map_key("i", "<M-l>", "<del>")
-map_key("i", "<M-h>", "<bs>")
+-- map_key("i", "<M-l>", "<del>")
+-- map_key("i", "<M-h>", "<bs>")
 
 -- pre/a-ppend line without moving cursor
 map_key("n", "<leader>o", ":<C-u>call append(line('.'),   repeat([''], v:count1))<CR>")

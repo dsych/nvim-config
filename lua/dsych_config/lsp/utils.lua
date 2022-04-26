@@ -12,10 +12,7 @@ M.mk_config = function()
 			["textDocument/publishDiagnostics"] = vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics, {
 				-- Enable underline, use default values
 				underline = true,
-				-- Enable virtual text, override spacing to 4
-				virtual_text = {
-					spacing = 4,
-				},
+				virtual_text = false,
 				-- Disable a feature
 				update_in_insert = false,
 			}),

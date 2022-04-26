@@ -32,7 +32,6 @@ return require("packer").startup(function(use)
 			"hrsh7th/cmp-nvim-lsp-signature-help",
 			"andersevenrud/cmp-tmux",
 			"ray-x/cmp-treesitter",
-			"saadparwaiz1/cmp_luasnip",
 			-- snippets
 			"L3MON4D3/LuaSnip",
 			"saadparwaiz1/cmp_luasnip",
@@ -45,10 +44,7 @@ return require("packer").startup(function(use)
 				snippet = {
 					-- REQUIRED - you must specify a snippet engine
 					expand = function(args)
-						-- vim.fn["vsnip#anonymous"](args.body) -- For `vsnip` users.
 						require("luasnip").lsp_expand(args.body) -- For `luasnip` users.
-						-- require('snippy').expand_snippet(args.body) -- For `snippy` users.
-						-- vim.fn["UltiSnips#Anon"](args.body) -- For `ultisnips` users.
 					end,
 				},
 				mapping = {
@@ -61,21 +57,29 @@ return require("packer").startup(function(use)
 					}),
 					["<C-n>"] = cmp.mapping({
 						i = cmp.select_next_item(),
-						c = cmp.config.disable,
 					}),
 					["<C-p>"] = cmp.mapping({
 						i = cmp.select_prev_item(),
-						c = cmp.config.disable,
 					}),
-					["<C-s>"] = cmp.mapping(function()
+					["<M-l>"] = cmp.mapping(function()
 						local luasnip = require("luasnip")
 
 						if luasnip.expand_or_jumpable() then
-							require("luasnip").expand_or_jump()
+							luasnip.expand_or_jump()
 						else
-							print("No more snippet positions available")
+							print("no more snippets to jump to")
 						end
-					end, { "n" }),
+					end, { "i", "s" }),
+					["<M-h>"] = cmp.mapping(function()
+						local luasnip = require("luasnip")
+
+						if luasnip.expand_or_jumpable(-1) then
+							luasnip.jump(-1)
+							luasnip.expand()
+						else
+							print("no more snippets to jump to")
+						end
+					end, { "i", "s", "c" }),
 					["<CR>"] = cmp.mapping.confirm({ select = false, behavior = cmp.ConfirmBehavior.Replace }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
 					["<Tab>"] = cmp.mapping(function(fallback)
 						local has_words_before = function()
@@ -85,24 +89,18 @@ return require("packer").startup(function(use)
 									== nil
 						end
 
-						local luasnip = require("luasnip")
 						if cmp.visible() then
 							cmp.select_next_item()
-						elseif luasnip.expand_or_jumpable() then
-							luasnip.expand_or_jump()
 						elseif has_words_before() then
 							cmp.complete()
 						else
 							fallback()
 						end
-					end, { "i", "s" }),
+					end, { "i", "s", "c" }),
 
 					["<S-Tab>"] = cmp.mapping(function(fallback)
-						local luasnip = require("luasnip")
 						if cmp.visible() then
 							cmp.select_prev_item()
-						elseif luasnip.jumpable(-1) then
-							luasnip.jump(-1)
 						else
 							fallback()
 						end
@@ -132,6 +130,13 @@ return require("packer").startup(function(use)
 						})[entry.source.name]
 						return vim_item
 					end,
+				},
+				window = {
+					completion = cmp.config.window.bordered(),
+					documentation = cmp.config.window.bordered(),
+				},
+				experimental = {
+					ghost_text = true,
 				},
 			})
 
@@ -175,6 +180,59 @@ return require("packer").startup(function(use)
 			"neovim/nvim-lspconfig",
 		},
 		config = require("dsych_config.lsp").setup,
+	})
+
+	use({
+		"Mofiqul/trld.nvim",
+		config = function()
+			require("trld").setup({
+				-- where to render the diagnostics. 'top' | 'bottom'
+				position = "top",
+				-- if this plugin should execute it's builtin auto commands
+				auto_cmds = true,
+
+				-- diagnostics highlight group names
+				highlights = {
+					error = "DiagnosticFloatingError",
+					warn = "DiagnosticFloatingWarn",
+					info = "DiagnosticFloatingInfo",
+					hint = "DiagnosticFloatingHint",
+				},
+
+				-- diagnostics formatter. must return
+				-- {
+				--   { "String", "Highlight Group Name"},
+				--   { "String", "Highlight Group Name"},
+				--   { "String", "Highlight Group Name"},
+				--   ...
+				-- }
+				formatter = function(diag)
+					local u = require("trld.utils")
+
+					local msg = diag.message
+					local src = diag.source
+					local code = tostring(diag.user_data.lsp.code)
+
+					-- remove dots
+					msg = msg:gsub("%.", "")
+					src = src:gsub("%.", "")
+					code = code:gsub("%.", "")
+
+					-- remove starting and trailing spaces
+					msg = msg:gsub("[ \t]+%f[\r\n%z]", "")
+					src = src:gsub("[ \t]+%f[\r\n%z]", "")
+					code = code:gsub("[ \t]+%f[\r\n%z]", "")
+
+					return {
+						{ msg, u.get_hl_by_serverity(diag.severity) },
+						{ " ", "" },
+						{ code, "Comment" },
+						{ " ", "" },
+						{ src, "Folded" },
+					}
+				end,
+			})
+		end,
 	})
 
 	use({
@@ -222,8 +280,8 @@ return require("packer").startup(function(use)
 
 			-- Close the current buffer
 			map_key("n", "<leader>bd", "<cmd>BufferClose<cr>")
-			map_key("n", "<A-l>", "<cmd>BufferNext<cr>")
-			map_key("n", "<A-h>", "<cmd>BufferPrevious<cr>")
+			map_key("n", "]b", "<cmd>BufferNext<cr>")
+			map_key("n", "[b", "<cmd>BufferPrevious<cr>")
 			-- Close all the buffers
 			map_key("n", "<leader>bda", "<cmd>bufdo bd<cr>")
 
@@ -308,11 +366,11 @@ return require("packer").startup(function(use)
 					relativenumber = true,
 				},
 
-                renderer = {
-                    indent_markers = {
-                        enable = true
-                    }
-                },
+				renderer = {
+					indent_markers = {
+						enable = true,
+					},
+				},
 
 				-- updates the root directory of the tree on `DirChanged` (when your run `:cd` usually)
 				update_cwd = true,
@@ -967,46 +1025,45 @@ return require("packer").startup(function(use)
 		"s1n7ax/nvim-window-picker",
 		tag = "v1.*",
 		config = function()
-            require("window-picker").setup()
+			require("window-picker").setup()
 
 			local map_key = require("dsych_config.utils").map_key
 
-            local pick_win = require("window-picker").pick_window
+			local pick_win = require("window-picker").pick_window
 
 			map_key("n", "<C-w>p", function()
-                local win_id = pick_win()
-                if win_id == nil then
-                    return
-                end
-                vim.fn.win_gotoid(win_id)
+				local win_id = pick_win()
+				if win_id == nil then
+					return
+				end
+				vim.fn.win_gotoid(win_id)
 			end)
 
 			map_key("n", "<C-w>d", function()
-                local win_id = pick_win()
-                if win_id == nil then
-                    return
-                end
-                vim.api.nvim_win_close(win_id, false)
+				local win_id = pick_win()
+				if win_id == nil then
+					return
+				end
+				vim.api.nvim_win_close(win_id, false)
 			end)
 
 			map_key("n", "<C-w>x", function()
-                local set_buffer_in_win = function (target_win_id, target_buffer_nr)
-                    vim.fn.win_gotoid(target_win_id)
-                    vim.cmd(string.format("%sbuffer", target_buffer_nr))
-                end
+				local set_buffer_in_win = function(target_win_id, target_buffer_nr)
+					vim.fn.win_gotoid(target_win_id)
+					vim.cmd(string.format("%sbuffer", target_buffer_nr))
+				end
 
-                local target_win_id = pick_win()
-                if target_win_id == nil then
-                    return
-                end
-                local current_win_id = vim.fn.win_getid()
+				local target_win_id = pick_win()
+				if target_win_id == nil then
+					return
+				end
+				local current_win_id = vim.fn.win_getid()
 
-                local current_buffer_nr = vim.fn.winbufnr(0)
-                local target_buffer_nr = vim.fn.winbufnr(target_win_id)
+				local current_buffer_nr = vim.fn.winbufnr(0)
+				local target_buffer_nr = vim.fn.winbufnr(target_win_id)
 
-                set_buffer_in_win(target_win_id, current_buffer_nr)
-                set_buffer_in_win(current_win_id, target_buffer_nr)
-
+				set_buffer_in_win(target_win_id, current_buffer_nr)
+				set_buffer_in_win(current_win_id, target_buffer_nr)
 			end)
 		end,
 	})
