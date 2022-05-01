@@ -548,6 +548,14 @@ return require("packer").startup(function(use)
 	use({
 		"tpope/vim-fugitive",
 	})
+    use({
+        "rhysd/git-messenger.vim",
+        config = function ()
+			local map_key = require("dsych_config.utils").map_key
+			map_key("n", "<leader>vm", "<cmd>GitMessenger<cr>")
+            vim.g.git_messenger_floating_win_opts = { border = "rounded" }
+        end
+    })
 	-- }}}
 
 	-- start screen {{{
@@ -601,6 +609,8 @@ return require("packer").startup(function(use)
 		"Rigellute/shades-of-purple.vim",
 		"folke/tokyonight.nvim",
 		"rose-pine/neovim",
+        -- missing lsp highlights for diagnostics, docs etc.
+        'folke/lsp-colors.nvim'
 	})
 	use({
 		"ishan9299/nvim-solarized-lua",
@@ -646,6 +656,28 @@ return require("packer").startup(function(use)
 		end,
 	})
 	-- }}}
+
+
+	-- split lines (inverse of n_J) {{{
+        use({
+            "AckslD/nvim-trevJ.lua",
+            config = function ()
+                local map_key = require("dsych_config.utils").map_key
+                map_key("n", "<leader>j", require('trevj').format_at_cursor)
+
+                require("trevj").setup({
+                    containers = {
+                        java = {
+                            argument_list = { final_separator = false, final_end_line = true },
+                            formal_parameters = { final_separator = false, final_end_line = true },
+                            parenthesized_expression = { final_separator = false, final_end_line = true },
+                            enum_body = { final_separator = ";", final_end_line = false }
+                        }
+                    }
+                })
+            end
+        })
+    -- }}}
 
 	-- git signs {{{
 	use({
