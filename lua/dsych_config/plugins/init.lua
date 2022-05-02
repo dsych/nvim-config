@@ -1121,6 +1121,19 @@ return require("packer").startup(function(use)
 	})
 	-- }}}
 
+
+	-- treesitter-based text object hints for visual and operator pending mode
+    use({
+        "mfussenegger/nvim-treehopper",
+        config = function ()
+            vim.cmd[[
+                omap     <silent> m :<C-U>lua require('tsht').nodes()<CR>
+                vnoremap <silent> m :lua require('tsht').nodes()<CR>
+            ]]
+        end
+    })
+    -- }}}
+
 	-- Automatically set up your configuration after cloning packer.nvim
 	-- Put this at the end after all plugins
 	if packer_bootstrap then
