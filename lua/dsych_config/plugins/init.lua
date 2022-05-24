@@ -183,59 +183,6 @@ return require("packer").startup(function(use)
 	})
 
 	use({
-		"Mofiqul/trld.nvim",
-		config = function()
-			require("trld").setup({
-				-- where to render the diagnostics. 'top' | 'bottom'
-				position = "top",
-				-- if this plugin should execute it's builtin auto commands
-				auto_cmds = true,
-
-				-- diagnostics highlight group names
-				highlights = {
-					error = "DiagnosticFloatingError",
-					warn = "DiagnosticFloatingWarn",
-					info = "DiagnosticFloatingInfo",
-					hint = "DiagnosticFloatingHint",
-				},
-
-				-- diagnostics formatter. must return
-				-- {
-				--   { "String", "Highlight Group Name"},
-				--   { "String", "Highlight Group Name"},
-				--   { "String", "Highlight Group Name"},
-				--   ...
-				-- }
-				formatter = function(diag)
-					local u = require("trld.utils")
-
-					local msg = diag.message
-					local src = diag.source
-					local code = tostring(diag.user_data.lsp.code)
-
-					-- remove dots
-					msg = msg:gsub("%.", "")
-					src = src:gsub("%.", "")
-					code = code:gsub("%.", "")
-
-					-- remove starting and trailing spaces
-					msg = msg:gsub("[ \t]+%f[\r\n%z]", "")
-					src = src:gsub("[ \t]+%f[\r\n%z]", "")
-					code = code:gsub("[ \t]+%f[\r\n%z]", "")
-
-					return {
-						{ msg, u.get_hl_by_serverity(diag.severity) },
-						{ " ", "" },
-						{ code, "Comment" },
-						{ " ", "" },
-						{ src, "Folded" },
-					}
-				end,
-			})
-		end,
-	})
-
-	use({
 		"b0o/schemastore.nvim",
 		requires = {
 			"williamboman/nvim-lsp-installer",
@@ -906,6 +853,25 @@ return require("packer").startup(function(use)
 	})
 	-- }}}
 
+	-- bracket colorizer based on treesitter {{{
+	use({
+		"p00f/nvim-ts-rainbow",
+		requires = { "nvim-treesitter/nvim-treesitter" },
+		config = function()
+			require("nvim-treesitter.configs").setup({
+                rainbow = {
+                    enable = true,
+                    -- disable = { "jsx", "cpp" }, list of languages you want to disable the plugin for
+                    extended_mode = true, -- Also highlight non-bracket delimiters like html tags, boolean or table: lang -> boolean
+                    -- max_file_lines = nil, -- Do not enable for files with more than n lines, int
+                    -- colors = {}, -- table of hex strings
+                    -- termcolors = {} -- table of colour name strings
+                }
+			})
+		end,
+	})
+	-- }}}
+
 	-- intelligent comments based on treesitter {{{
 	use({
 		"JoosepAlviste/nvim-ts-context-commentstring",
@@ -1121,8 +1087,7 @@ return require("packer").startup(function(use)
 	})
 	-- }}}
 
-
-	-- treesitter-based text object hints for visual and operator pending mode
+	-- treesitter-based text object hints for visual and operator pending mode {{{
     use({
         "mfussenegger/nvim-treehopper",
         config = function ()
