@@ -35,10 +35,12 @@ return require("packer").startup(function(use)
 			-- snippets
 			"L3MON4D3/LuaSnip",
 			"saadparwaiz1/cmp_luasnip",
+            "rafamadriz/friendly-snippets"
 		},
 		config = function()
 			-- Setup nvim-cmp.
 			local cmp = require("cmp")
+            require("luasnip/loaders/from_vscode").lazy_load()
 
 			cmp.setup({
 				snippet = {
@@ -502,8 +504,10 @@ return require("packer").startup(function(use)
 			-- group when color scheme changes
 			vim.cmd("autocmd ColorScheme shades_of_purple highlight! link MatchParen Search")
 
-			-- make vertical split divider more legible
-			vim.cmd([[autocmd ColorScheme * highlight! link VertSplit IncSearch]])
+
+            -- make vertical split divider more legible
+            vim.cmd[[autocmd ColorScheme * highlight! link VertSplit IncSearch]]
+            vim.cmd[[autocmd ColorScheme * highlight! link StatusLine IncSearch]]
 
 			------------------------------------------------------------------------------------------------------------------------------
 			-- => Rose-pint
@@ -844,6 +848,7 @@ return require("packer").startup(function(use)
 			})
 		end,
 	})
+
 	-- }}}
 
 	-- git diff view {{{
