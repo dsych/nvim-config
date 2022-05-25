@@ -217,75 +217,6 @@ return require("packer").startup(function(use)
 	})
 	-- }}}
 
-	-- bufferline {{{
-	use({
-		"romgrk/barbar.nvim",
-		requires = { "kyazdani42/nvim-web-devicons" },
-		config = function()
-			local map_key = require("dsych_config.utils").map_key
-			map_key("n", "<leader>bp", "<cmd>BufferPick<cr>")
-
-			-- Close the current buffer
-			map_key("n", "<leader>bd", "<cmd>BufferClose<cr>")
-			map_key("n", "]b", "<cmd>BufferNext<cr>")
-			map_key("n", "[b", "<cmd>BufferPrevious<cr>")
-			-- Close all the buffers
-			map_key("n", "<leader>bda", "<cmd>bufdo bd<cr>")
-
-			-- Close all buffers but the current one
-			-- command! BufOnly silent! execute --%bd|e#|db#--
-			map_key("n", "<leader>bdo", "<cmd>BufferCloseAllButCurrent<cr>")
-			vim.g.bufferline = {
-				-- Enable/disable animations
-				animation = true,
-
-				-- Enable/disable auto-hiding the tab bar when there is a single buffer
-				auto_hide = false,
-
-				-- Enable/disable current/total tabpages indicator (top right corner)
-				tabpages = true,
-
-				-- Enable/disable close button
-				closable = true,
-
-				-- Enables/disable clickable tabs
-				--  - left-click: go to buffer
-				--  - middle-click: delete buffer
-				clickable = true,
-
-				-- Enable/disable icons
-				-- if set to 'numbers', will show buffer index in the tabline
-				-- if set to 'both', will show buffer index and icons in the tabline
-				icons = true,
-
-				-- Sets the icon's highlight group.
-				-- If false, will use nvim-web-devicons colors
-				icon_custom_colors = false,
-
-				-- Configure icons on the bufferline.
-				icon_separator_active = "▎",
-				icon_separator_inactive = "▎",
-				icon_close_tab = "",
-				icon_close_tab_modified = "●",
-
-				-- Sets the maximum padding width with which to surround each tab
-				maximum_padding = 4,
-
-				-- If set, the letters for each buffer in buffer-pick mode will be
-				-- assigned based on their name. Otherwise or in case all letters are
-				-- already assigned, the behavior is to assign letters in order of
-				-- usability (see order below)
-				semantic_letters = true,
-
-				-- New buffer letters are assigned in this order. This order is
-				-- optimal for the qwerty keyboard layout but might need adjustement
-				-- for other layouts.
-				letters = "asdfjkl;ghnmxcvbziowerutyqpASDFJKLGHNMXCVBZIOWERUTYQP",
-			}
-		end,
-	})
-	-- }}}
-
 	-- file explorer {{{
 	use({
 		"kyazdani42/nvim-tree.lua",
@@ -495,14 +426,14 @@ return require("packer").startup(function(use)
 	use({
 		"tpope/vim-fugitive",
 	})
-    use({
-        "rhysd/git-messenger.vim",
-        config = function ()
+	use({
+		"rhysd/git-messenger.vim",
+		config = function()
 			local map_key = require("dsych_config.utils").map_key
 			map_key("n", "<leader>vm", "<cmd>GitMessenger<cr>")
-            vim.g.git_messenger_floating_win_opts = { border = "rounded" }
-        end
-    })
+			vim.g.git_messenger_floating_win_opts = { border = "rounded" }
+		end,
+	})
 	-- }}}
 
 	-- start screen {{{
@@ -552,15 +483,16 @@ return require("packer").startup(function(use)
 
 	-- themes {{{
 	use({
-		"ellisonleao/gruvbox.nvim",
-		"Rigellute/shades-of-purple.vim",
-		"folke/tokyonight.nvim",
-		"rose-pine/neovim",
-        -- missing lsp highlights for diagnostics, docs etc.
-        'folke/lsp-colors.nvim'
-	})
-	use({
 		"ishan9299/nvim-solarized-lua",
+		requires = {
+			"ellisonleao/gruvbox.nvim",
+			"Rigellute/shades-of-purple.vim",
+			"folke/tokyonight.nvim",
+			"rose-pine/neovim",
+			-- missing lsp highlights for diagnostics, docs etc.
+			"folke/lsp-colors.nvim",
+		},
+		as = "themes",
 		setup = function()
 			vim.cmd("autocmd ColorScheme tokyonight highlight! link LineNr Question")
 			vim.cmd("autocmd ColorScheme tokyonight highlight! link CursorLineNr Question")
@@ -593,7 +525,7 @@ return require("packer").startup(function(use)
 			-- screws up all of the terminal colors, completely.
 			-- going to leave it here is a reminder...
 			-- OH HOW THINGS HAVE CHANGED)
-			vim.opt.termguicolors = true
+			vim.go.termguicolors = true
 
 			vim.cmd("colorscheme gruvbox")
 
@@ -604,27 +536,26 @@ return require("packer").startup(function(use)
 	})
 	-- }}}
 
-
 	-- split lines (inverse of n_J) {{{
-        use({
-            "AckslD/nvim-trevJ.lua",
-            config = function ()
-                local map_key = require("dsych_config.utils").map_key
-                map_key("n", "<leader>j", require('trevj').format_at_cursor)
+	use({
+		"AckslD/nvim-trevJ.lua",
+		config = function()
+			local map_key = require("dsych_config.utils").map_key
+			map_key("n", "<leader>j", require("trevj").format_at_cursor)
 
-                require("trevj").setup({
-                    containers = {
-                        java = {
-                            argument_list = { final_separator = false, final_end_line = true },
-                            formal_parameters = { final_separator = false, final_end_line = true },
-                            parenthesized_expression = { final_separator = false, final_end_line = true },
-                            enum_body = { final_separator = ";", final_end_line = false }
-                        }
-                    }
-                })
-            end
-        })
-    -- }}}
+			require("trevj").setup({
+				containers = {
+					java = {
+						argument_list = { final_separator = false, final_end_line = true },
+						formal_parameters = { final_separator = false, final_end_line = true },
+						parenthesized_expression = { final_separator = false, final_end_line = true },
+						enum_body = { final_separator = ";", final_end_line = false },
+					},
+				},
+			})
+		end,
+	})
+	-- }}}
 
 	-- git signs {{{
 	use({
@@ -748,15 +679,170 @@ return require("packer").startup(function(use)
 
 	-- status line {{{
 	use({
-		"dsych/galaxyline.nvim",
-		branch = "bugfix/diagnostics",
-	})
-	use({
-		"dsych/nerd-galaxyline",
-		requires = {
-			"dsych/galaxyline.nvim",
-			"nvim-lua/lsp-status.nvim",
-		},
+		"feline-nvim/feline.nvim",
+		after = "themes",
+		config = function()
+			local status_line_components = {
+				active = {},
+			}
+
+			local empty_space = {
+				provider = "  ",
+			}
+
+			local left_component = {
+				empty_space,
+				{
+					provider = "vi_mode",
+					hl = function()
+						return {
+							name = require("feline.providers.vi_mode").get_mode_highlight_name(),
+							style = "bold",
+						}
+					end,
+					-- Uncomment the next line to disable icons for this component and use the mode name instead
+					icon = "",
+					left_sep = {
+						str = "[ ",
+						hl = {
+							fg = "fg",
+							bg = "bg",
+							style = "bold",
+						},
+					},
+					right_sep = {
+
+						str = " ]",
+						hl = {
+							fg = "fg",
+							bg = "bg",
+							style = "bold",
+						},
+					},
+				},
+				{ provider = "diagnostic_errors" },
+				{ provider = "diagnostic_warnings" },
+				{ provider = "diagnostic_hints" },
+				{ provider = "diagnostic_info" },
+				{
+                    left_sep = " ",
+					right_sep = {
+						hl = {
+							fg = "fg",
+							bg = "bg",
+							style = "bold",
+						},
+						str = "vertical_bar",
+						always_visible = true,
+					},
+				},
+			}
+			table.insert(status_line_components.active, left_component)
+
+			local middle_component = {
+				{
+					provider = function()
+						return require("lsp-status").status()
+					end,
+
+					right_sep = {
+						hl = {
+							fg = "fg",
+							bg = "bg",
+							style = "bold",
+						},
+						str = " %% ",
+						always_visible = true,
+					},
+					left_sep = {
+						hl = {
+							fg = "fg",
+							bg = "bg",
+							style = "bold",
+						},
+						str = " %% ",
+						always_visible = true,
+					},
+				},
+			}
+			table.insert(status_line_components.active, middle_component)
+
+			local right_component = {
+				{
+					provider = "git_diff_added",
+					left_sep = {
+						hl = {
+							fg = "fg",
+							bg = "bg",
+							style = "bold",
+						},
+						str = "vertical_bar",
+						always_visible = true,
+					},
+				},
+				{
+					provider = "git_diff_removed",
+				},
+				{
+					provider = "git_diff_changed",
+				},
+				{
+					provider = "git_branch",
+
+					left_sep = {
+						hl = {
+							fg = "fg",
+							bg = "bg",
+							style = "bold",
+						},
+						str = " - ",
+					},
+					right_sep = " ",
+				},
+				{
+					provider = " L/C",
+					left_sep = {
+						hl = {
+							fg = "fg",
+							bg = "bg",
+							style = "bold",
+						},
+						str = "vertical_bar",
+					},
+					right_sep = " ",
+				},
+				{
+					provider = "position",
+				},
+				empty_space,
+				{ provider = "--%p%%--" },
+				empty_space,
+			}
+			table.insert(status_line_components.active, right_component)
+
+			require("feline").setup({ components = status_line_components })
+			vim.go.laststatus = 3
+
+			local winbar = {
+				{
+					{
+						provider = {
+							name = "file_info",
+							opts = {
+								type = "unique",
+							},
+						},
+					},
+				},
+			}
+
+			require("feline").winbar.setup({
+				components = {
+					active = winbar,
+					inactive = winbar,
+				},
+			})
+		end,
 	})
 	-- }}}
 
@@ -859,14 +945,14 @@ return require("packer").startup(function(use)
 		requires = { "nvim-treesitter/nvim-treesitter" },
 		config = function()
 			require("nvim-treesitter.configs").setup({
-                rainbow = {
-                    enable = true,
-                    -- disable = { "jsx", "cpp" }, list of languages you want to disable the plugin for
-                    extended_mode = true, -- Also highlight non-bracket delimiters like html tags, boolean or table: lang -> boolean
-                    -- max_file_lines = nil, -- Do not enable for files with more than n lines, int
-                    -- colors = {}, -- table of hex strings
-                    -- termcolors = {} -- table of colour name strings
-                }
+				rainbow = {
+					enable = true,
+					-- disable = { "jsx", "cpp" }, list of languages you want to disable the plugin for
+					extended_mode = true, -- Also highlight non-bracket delimiters like html tags, boolean or table: lang -> boolean
+					-- max_file_lines = nil, -- Do not enable for files with more than n lines, int
+					-- colors = {}, -- table of hex strings
+					-- termcolors = {} -- table of colour name strings
+				},
 			})
 		end,
 	})
@@ -1088,16 +1174,16 @@ return require("packer").startup(function(use)
 	-- }}}
 
 	-- treesitter-based text object hints for visual and operator pending mode {{{
-    use({
-        "mfussenegger/nvim-treehopper",
-        config = function ()
-            vim.cmd[[
+	use({
+		"mfussenegger/nvim-treehopper",
+		config = function()
+			vim.cmd([[
                 omap     <silent> m :<C-U>lua require('tsht').nodes()<CR>
                 vnoremap <silent> m :lua require('tsht').nodes()<CR>
-            ]]
-        end
-    })
-    -- }}}
+            ]])
+		end,
+	})
+	-- }}}
 
 	-- Automatically set up your configuration after cloning packer.nvim
 	-- Put this at the end after all plugins

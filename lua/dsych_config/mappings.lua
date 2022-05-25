@@ -99,3 +99,16 @@ map_key("c", "<C-K>", "<C-U>")
 
 map_key("c", "<C-P>", "<Up>")
 map_key("c", "<C-N>", "<Down>")
+
+-- map_key("n", "<leader>bp", "<cmd>BufferPick<cr>")
+
+-- -- Close the current buffer
+-- map_key("n", "<leader>bd", "<cmd>BufferClose<cr>")
+-- map_key("n", "]b", "<cmd>BufferNext<cr>")
+-- map_key("n", "[b", "<cmd>BufferPrevious<cr>")
+-- -- Close all the buffers
+-- map_key("n", "<leader>bda", "<cmd>bufdo bd<cr>")
+
+-- -- Close all buffers but the current one
+-- -- command! BufOnly silent! execute --%bd|e#|db#--
+-- map_key("n", "<leader>bdo", "<cmd>BufferCloseAllButCurrent<cr>")
