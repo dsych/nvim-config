@@ -35,12 +35,12 @@ return require("packer").startup(function(use)
 			-- snippets
 			"L3MON4D3/LuaSnip",
 			"saadparwaiz1/cmp_luasnip",
-            "rafamadriz/friendly-snippets"
+			"rafamadriz/friendly-snippets",
 		},
 		config = function()
 			-- Setup nvim-cmp.
 			local cmp = require("cmp")
-            require("luasnip/loaders/from_vscode").lazy_load()
+			require("luasnip/loaders/from_vscode").lazy_load()
 
 			cmp.setup({
 				snippet = {
@@ -504,10 +504,9 @@ return require("packer").startup(function(use)
 			-- group when color scheme changes
 			vim.cmd("autocmd ColorScheme shades_of_purple highlight! link MatchParen Search")
 
-
-            -- make vertical split divider more legible
-            vim.cmd[[autocmd ColorScheme * highlight! link VertSplit IncSearch]]
-            vim.cmd[[autocmd ColorScheme * highlight! link StatusLine IncSearch]]
+			-- make vertical split divider more legible
+			vim.cmd([[autocmd ColorScheme * highlight! link VertSplit IncSearch]])
+			vim.cmd([[autocmd ColorScheme * highlight! link StatusLine IncSearch]])
 
 			------------------------------------------------------------------------------------------------------------------------------
 			-- => Rose-pint
@@ -686,10 +685,18 @@ return require("packer").startup(function(use)
 		"feline-nvim/feline.nvim",
 		after = "themes",
 		config = function()
+			local get_color_from_group = function(group_name, attribute)
+				return vim.api.nvim_exec(
+					string.format([[echo synIDattr(synIDtrans(hlID("%s")), "%s#")]], group_name, attribute),
+					true
+				)
+			end
 
-            get_color_from_group = function(group_name, attribute)
-                return vim.api.nvim_exec(string.format([[echo synIDattr(synIDtrans(hlID("%s")), "%s#")]], group_name, attribute), true)
-            end
+			local get_severity_count = function(severity)
+				return function()
+					return tostring(require("feline.providers.lsp").get_diagnostics_count(severity))
+				end
+			end
 
 			local status_line_components = {
 				active = {},
@@ -729,12 +736,50 @@ return require("packer").startup(function(use)
 						},
 					},
 				},
-				{ provider = "diagnostic_errors", icon = "E", left_sep = " ", hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignError", "fg") }  },
-				{ provider = "diagnostic_warnings", icon = "W", left_sep = " ", hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignWarn", "fg") }},
-				{ provider = "diagnostic_info", icon = "I", left_sep = " ", hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignInfo", "fg") }},
-				{ provider = "diagnostic_hints", icon = "H", left_sep = " ", hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignHint", "fg") }},
 				{
-                    left_sep = " ",
+					left_sep = {
+						str = " ",
+						always_visible = true,
+					},
+					right_sep = {
+						hl = {
+							fg = "fg",
+							bg = "bg",
+							style = "bold",
+						},
+						str = "vertical_bar",
+						always_visible = true,
+					},
+				},
+				{
+					provider = get_severity_count(vim.diagnostic.severity.ERROR),
+					icon = "E-",
+					left_sep = " ",
+					hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignError", "fg") },
+				},
+				{
+					provider = get_severity_count(vim.diagnostic.severity.WARN),
+					icon = "W-",
+					left_sep = " ",
+					hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignWarn", "fg") },
+				},
+				{
+					provider = get_severity_count(vim.diagnostic.severity.INFO),
+					icon = "I-",
+					left_sep = " ",
+					hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignInfo", "fg") },
+				},
+				{
+					provider = "diagnostic_hints",
+					icon = "H-",
+					left_sep = " ",
+					hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignHint", "fg") },
+				},
+				{
+					left_sep = {
+						str = " ",
+						always_visible = true,
+					},
 					right_sep = {
 						hl = {
 							fg = "fg",
@@ -788,18 +833,18 @@ return require("packer").startup(function(use)
 						str = "vertical_bar",
 						always_visible = true,
 					},
-                    icon = "+",
-                    left_sep = " "
+					icon = "+",
+					left_sep = " ",
 				},
 				{
 					provider = "git_diff_removed",
-                    icon = "-",
-                    left_sep = " "
+					icon = "-",
+					left_sep = " ",
 				},
 				{
 					provider = "git_diff_changed",
-                    icon = "~",
-                    left_sep = " "
+					icon = "~",
+					left_sep = " ",
 				},
 				{
 					provider = "git_branch",
@@ -835,59 +880,61 @@ return require("packer").startup(function(use)
 			}
 			table.insert(status_line_components.active, right_component)
 
-            status_line_components.inactive = status_line_components.active
+			status_line_components.inactive = status_line_components.active
 
 			require("feline").setup({ components = status_line_components })
 			vim.go.laststatus = 3
 
 			local winbar = {
-                active = {
-                    {
-                        {
-                            provider = {
-                                name = "file_info",
-                                opts = {
-                                    type = "unique",
-                                }
-                            },
-                            hl = {
-                                fg = get_color_from_group("Question", "fg")
-                            },
-                        },
-                        {
-                            provider = function ()
-                                return vim.fn.expand("#:t")
-                            end,
-                            hl = {
-                                fg = get_color_from_group("Comment", "fg")
-                            },
-                            left_sep = { str = " ^ ", hl = { fg = "fg" } },
-                            right_sep = { str = " ^ ", hl = { fg = "fg" } },
-                        }
-                    },
-                },
-                inactive = {
-                    {
-                        {
-                            provider = {
-                                name = "file_info",
-                                opts = {
-                                    type = "unique",
-                                },
-                            },
-                        },
-                        {
-                            provider = function ()
-                                return vim.fn.expand("#:t")
-                            end,
-                            hl = {
-                                fg = get_color_from_group("Comment", "fg")
-                            },
-                            left_sep = { str = " ^ ", hl = { fg = "fg" } },
-                            right_sep = { str = " ^ ", hl = { fg = "fg" } },
-                        }
-                    },
-                }
+				active = {
+					{
+						{
+							provider = {
+								name = "file_info",
+								opts = {
+									type = "unique",
+								},
+							},
+							hl = {
+								fg = get_color_from_group("Question", "fg"),
+							},
+						},
+						{
+							provider = function()
+								local filename = vim.fn.expand("#:t"):gsub("%%", "%%%%")
+								return filename
+							end,
+							hl = {
+								fg = get_color_from_group("Comment", "fg"),
+							},
+							left_sep = { str = " ^ ", hl = { fg = "fg" } },
+							right_sep = { str = " ^ ", hl = { fg = "fg" } },
+						},
+					},
+				},
+				inactive = {
+					{
+						{
+							provider = {
+								name = "file_info",
+								opts = {
+									type = "unique",
+								},
+							},
+						},
+						{
+							provider = function()
+								local filename = vim.fn.expand("#:t"):gsub("%%", "%%%%")
+								return filename
+							end,
+							hl = {
+								fg = get_color_from_group("Comment", "fg"),
+							},
+							left_sep = { str = " ^ ", hl = { fg = "fg" } },
+							right_sep = { str = " ^ ", hl = { fg = "fg" } },
+						},
+					},
+				},
 			}
 
 			require("feline").winbar.setup({
@@ -1062,15 +1109,15 @@ return require("packer").startup(function(use)
 							["[a"] = "@parameter.inner",
 						},
 					},
-                    swap = {
-                        enable = true,
-                        swap_next = {
-                            ["<leader>x"] = "@parameter.inner",
-                        },
-                        swap_previous = {
-                            ["<leader>X"] = "@parameter.inner",
-                        },
-                    }
+					swap = {
+						enable = true,
+						swap_next = {
+							["<leader>x"] = "@parameter.inner",
+						},
+						swap_previous = {
+							["<leader>X"] = "@parameter.inner",
+						},
+					},
 				},
 			})
 		end,
