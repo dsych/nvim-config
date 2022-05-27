@@ -1,6 +1,7 @@
 local fn = vim.fn
 local install_path = fn.stdpath("data") .. "/site/pack/packer/start/packer.nvim"
 if fn.empty(fn.glob(install_path)) > 0 then
+	---@diagnostic disable-next-line: lowercase-global
 	packer_bootstrap = fn.system({
 		"git",
 		"clone",
@@ -312,12 +313,14 @@ return require("packer").startup(function(use)
 			map_key("n", "<Bslash>o", "<Plug>VimspectorStepOut")
 			map_key("n", "<Bslash>d", "<cmd>VimspectorReset<cr>")
 
+			---@diagnostic disable-next-line: lowercase-global
 			function save_vimspector_session()
 				if vim.fn.filereadable("./.vimspector.json") then
 					vim.api.nvim_command("silent! VimspectorMkSession")
 				end
 			end
 
+			---@diagnostic disable-next-line: lowercase-global
 			function load_vimspector_session()
 				if vim.fn.filereadable("./.vimspector.session") then
 					vim.api.nvim_command("silent! VimspectorLoadSession")
@@ -834,7 +837,6 @@ return require("packer").startup(function(use)
 						always_visible = true,
 					},
 					icon = "+",
-					left_sep = " ",
 				},
 				{
 					provider = "git_diff_removed",
@@ -875,7 +877,7 @@ return require("packer").startup(function(use)
 					provider = "position",
 				},
 				empty_space,
-				{ provider = "--%p%%--" },
+				{ provider = "-- %p%% --" },
 				empty_space,
 			}
 			table.insert(status_line_components.active, right_component)
