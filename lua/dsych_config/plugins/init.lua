@@ -686,6 +686,11 @@ return require("packer").startup(function(use)
 		"feline-nvim/feline.nvim",
 		after = "themes",
 		config = function()
+
+            get_color_from_group = function(group_name, attribute)
+                return vim.api.nvim_exec(string.format([[echo synIDattr(synIDtrans(hlID("%s")), "%s#")]], group_name, attribute), true)
+            end
+
 			local status_line_components = {
 				active = {},
 			}
@@ -724,10 +729,10 @@ return require("packer").startup(function(use)
 						},
 					},
 				},
-				{ provider = "diagnostic_errors" },
-				{ provider = "diagnostic_warnings" },
-				{ provider = "diagnostic_hints" },
-				{ provider = "diagnostic_info" },
+				{ provider = "diagnostic_errors", icon = "E", left_sep = " ", hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignError", "fg") }  },
+				{ provider = "diagnostic_warnings", icon = "W", left_sep = " ", hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignWarn", "fg") }},
+				{ provider = "diagnostic_info", icon = "I", left_sep = " ", hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignInfo", "fg") }},
+				{ provider = "diagnostic_hints", icon = "H", left_sep = " ", hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignHint", "fg") }},
 				{
                     left_sep = " ",
 					right_sep = {
@@ -783,12 +788,18 @@ return require("packer").startup(function(use)
 						str = "vertical_bar",
 						always_visible = true,
 					},
+                    icon = "+",
+                    left_sep = " "
 				},
 				{
 					provider = "git_diff_removed",
+                    icon = "-",
+                    left_sep = " "
 				},
 				{
 					provider = "git_diff_changed",
+                    icon = "~",
+                    left_sep = " "
 				},
 				{
 					provider = "git_branch",
@@ -824,27 +835,63 @@ return require("packer").startup(function(use)
 			}
 			table.insert(status_line_components.active, right_component)
 
+            status_line_components.inactive = status_line_components.active
+
 			require("feline").setup({ components = status_line_components })
 			vim.go.laststatus = 3
 
 			local winbar = {
-				{
-					{
-						provider = {
-							name = "file_info",
-							opts = {
-								type = "unique",
-							},
-						},
-					},
-				},
+                active = {
+                    {
+                        {
+                            provider = {
+                                name = "file_info",
+                                opts = {
+                                    type = "unique",
+                                }
+                            },
+                            hl = {
+                                fg = get_color_from_group("Question", "fg")
+                            },
+                        },
+                        {
+                            provider = function ()
+                                return vim.fn.expand("#:t")
+                            end,
+                            hl = {
+                                fg = get_color_from_group("Comment", "fg")
+                            },
+                            left_sep = { str = " ^ ", hl = { fg = "fg" } },
+                            right_sep = { str = " ^ ", hl = { fg = "fg" } },
+                        }
+                    },
+                },
+                inactive = {
+                    {
+                        {
+                            provider = {
+                                name = "file_info",
+                                opts = {
+                                    type = "unique",
+                                },
+                            },
+                        },
+                        {
+                            provider = function ()
+                                return vim.fn.expand("#:t")
+                            end,
+                            hl = {
+                                fg = get_color_from_group("Comment", "fg")
+                            },
+                            left_sep = { str = " ^ ", hl = { fg = "fg" } },
+                            right_sep = { str = " ^ ", hl = { fg = "fg" } },
+                        }
+                    },
+                }
 			}
 
 			require("feline").winbar.setup({
-				components = {
-					active = winbar,
-					inactive = winbar,
-				},
+				components = winbar,
 			})
 		end,
 	})
@@ -1015,6 +1062,15 @@ return require("packer").startup(function(use)
 							["[a"] = "@parameter.inner",
 						},
 					},
+                    swap = {
+                        enable = true,
+                        swap_next = {
+                            ["<leader>x"] = "@parameter.inner",
+                        },
+                        swap_previous = {
+                            ["<leader>X"] = "@parameter.inner",
+                        },
+                    }
 				},
 			})
 		end,

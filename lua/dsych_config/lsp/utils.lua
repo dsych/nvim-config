@@ -28,7 +28,7 @@ M.define_mappings = function()
 	local map_key = require("dsych_config.utils").map_key
 	local utils = require("dsych_config.utils")
 	-- See `:help vim.lsp.*` for documentation on any of the below functions
-	map_key("n", "gD", vim.lsp.buf.declaration)
+	map_key("n", "gD", require("telescope.builtin").lsp_type_definitions)
 	map_key("n", "gd", require("telescope.builtin").lsp_definitions)
 	map_key("n", "gds", function()
 		vim.cmd("split")
