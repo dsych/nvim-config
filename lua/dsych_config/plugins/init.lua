@@ -640,27 +640,65 @@ return require("packer").startup(function(use)
 	use({
 		"vim-test/vim-test",
 		config = function()
+			local execute_test = function(test_strategy, additional_args)
+				additional_args = additional_args or ""
+
+				vim.g["test#project_root"] = require("dsych_config.utils").resolve_project_root()
+				vim.api.nvim_exec(string.format([[%s %s]], test_strategy, additional_args), false)
+			end
+
 			local map_key = require("dsych_config.utils").map_key
 
-			map_key("n", "<leader>in", "<cmd>execute('TestNearest '.g:test_extra_flags)<cr>")
-			map_key("n", "<leader>if", "<cmd>execute('TestFile '.g:test_extra_flags)<cr>")
-			map_key("n", "<leader>is", "<cmd>execute('TestSuite '.g:test_extra_flags)<cr>")
-			map_key("n", "<leader>il", "<cmd>execute('TestLast '.g:test_extra_flags)<cr>")
-			map_key("n", "<leader>ig", "<cmd>execute('TestVisit '.g:test_extra_flags)<cr>")
+			map_key("n", "<leader>in", function()
+				execute_test("TestNearest", vim.g.test_extra_flags)
+			end)
+			map_key("n", "<leader>if", function()
+				execute_test("TestFile", vim.g.test_extra_flags)
+			end)
+			map_key("n", "<leader>is", function()
+				execute_test("TestSuite", vim.g.test_extra_flags)
+			end)
+			map_key("n", "<leader>il", function()
+				execute_test("TestLast", vim.g.test_extra_flags)
+			end)
+			map_key("n", "<leader>ig", function()
+				execute_test("TestVisit", vim.g.test_extra_flags)
+			end)
 			-- for maven set to something like this:
 			--  -Dtests.additional.jvmargs=--'-Xdebug -Xrunjdwp:transport=dt_socket,address=localhost:5005,server=y,suspend=y'--
 			-- for gradle use:
 			--  --debug-jvm
 			vim.g.test_debug_flags = ""
 			vim.g.test_extra_flags = ""
+
 			map_key("n", "<leader>idf", function()
 				vim.g.test_debug_flags = ""
 			end)
 			map_key("n", "<leader>ie", function()
 				vim.g.test_debug_flags = ""
 			end)
-			map_key("n", "<leader>id", "<cmd>execute('TestNearest '.g:test_extra_flags.' '.g:test_debug_flags)<cr>")
-			map_key("n", "<leader>ids", "<cmd>execute('TestSuite '.g:test_extra_flags.' '.g:test_debug_flags)<cr>")
+			map_key("n", "<leader>id", function()
+				execute_test("TestNearest", vim.g.test_extra_flags .. " " .. vim.g.test_debug_flags)
+			end)
+			map_key("n", "<leader>ids", function()
+				execute_test("TestSuite", vim.g.test_extra_flags .. " " .. vim.g.test_debug_flags)
+			end)
+
+			map_key("n", "<leader>ip", function()
+				local test_strategies = vim.tbl_extend(
+					"keep",
+					vim.g["test#enabled_runners"] or {},
+					vim.g["test#custom_runners"] or {}
+				)
+				vim.ui.select(test_strategies, { prompt = "Select current test strategy:" }, function(choice)
+					local file_type = vim.bo.filetype
+					if choice == nil or file_type == nil then
+						return
+					end
+
+					vim.g["test#" .. file_type .. "#runner"] = choice
+				end)
+			end)
 
 			vim.g["test#strategy"] = "neovim"
 		end,

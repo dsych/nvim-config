@@ -137,4 +137,8 @@ M.show_documentation = function()
 	end
 end
 
+M.resolve_project_root = function ()
+    return vim.fn.fnamemodify(vim.fn.finddir(".git", ".;"), ":p:h:h")
+end
+
 return M

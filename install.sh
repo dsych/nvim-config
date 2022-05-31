@@ -112,6 +112,7 @@ all_configs=(
     "$HOME/.config/kitty"
     "$HOME/.config/warpd"
     "$HOME/.config/lsd"
+    "$HOME/.config/fd"
 )
 
 for path in ${all_configs[@]}; do
