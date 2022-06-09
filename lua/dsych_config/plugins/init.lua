@@ -685,10 +685,18 @@ return require("packer").startup(function(use)
 			end)
 
 			map_key("n", "<leader>ip", function()
-				local test_strategies = vim.tbl_extend(
-					"keep",
-					vim.g["test#enabled_runners"] or {},
-					vim.g["test#custom_runners"] or {}
+                local unroll = function (source)
+                    return vim.tbl_flatten(
+                        vim.tbl_map(
+                            function (lang)
+                                return lang
+                            end,
+                            source))
+                end
+				local test_strategies = vim.tbl_deep_extend(
+					"force",
+					unroll(vim.g["test#enabled_runners"] or {}),
+					unroll(vim.g["test#custom_runners"] or {})
 				)
 				vim.ui.select(test_strategies, { prompt = "Select current test strategy:" }, function(choice)
 					local file_type = vim.bo.filetype
