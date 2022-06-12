@@ -229,16 +229,6 @@ return require("packer").startup(function(use)
 			map_key("n", "<leader>ef", "<cmd>NvimTreeFindFile<cr>")
 
 			vim.g.nvim_tree_auto_ignore_ft = { "startify", "dashboard" } --empty by default, don't auto open tree on specific filetypes.
-			vim.g.nvim_tree_add_trailing = 1 --0 by default, append a trailing slash to folder names
-			vim.g.nvim_tree_group_empty = 1 -- 0 by default, compact folders that only contain a single folder into one node in the file tree
-			vim.g.nvim_tree_special_files = {
-				["README.md"] = true,
-				Makefile = true,
-				MAKEFILE = true,
-				Config = true,
-				["build.gradle"] = true,
-				[".vimspector.json"] = true,
-			} -- List of filenames that gets highlighted with NvimTreeSpecialFile
 
 			require("nvim-tree").setup({
 				view = {
@@ -248,9 +238,19 @@ return require("packer").startup(function(use)
 				},
 
 				renderer = {
+                    add_trailing = true,
+                    group_empty = true,
 					indent_markers = {
 						enable = true,
 					},
+                    special_files = {
+                        ["README.md"] = true,
+                        Makefile = true,
+                        MAKEFILE = true,
+                        Config = true,
+                        ["build.gradle"] = true,
+                        [".vimspector.json"] = true,
+                    }
 				},
 
 				-- updates the root directory of the tree on `DirChanged` (when your run `:cd` usually)
@@ -281,6 +281,11 @@ return require("packer").startup(function(use)
 						error = "",
 					},
 				},
+
+                filesystem_watchers = {
+                    enable = true,
+                    interval = 1000,
+                }
 			})
 		end,
 	})
@@ -494,6 +499,8 @@ return require("packer").startup(function(use)
 			"Rigellute/shades-of-purple.vim",
 			"folke/tokyonight.nvim",
 			"rose-pine/neovim",
+            "mcchrish/zenbones.nvim",
+            "rktjmp/lush.nvim",
 			-- missing lsp highlights for diagnostics, docs etc.
 			"folke/lsp-colors.nvim",
 		},
@@ -532,12 +539,12 @@ return require("packer").startup(function(use)
 			-- going to leave it here is a reminder...
 			-- OH HOW THINGS HAVE CHANGED)
 			vim.go.termguicolors = true
+			vim.go.background = "dark"
 
-			vim.cmd("colorscheme gruvbox")
+			vim.cmd("colorscheme zenwritten")
 
 			-- Enable syntax highlighting
 			vim.cmd("syntax enable")
-			vim.g.background = "dark"
 		end,
 	})
 	-- }}}
