@@ -281,11 +281,6 @@ return require("packer").startup(function(use)
 						error = "",
 					},
 				},
-
-                filesystem_watchers = {
-                    enable = true,
-                    interval = 1000,
-                }
 			})
 		end,
 	})
@@ -344,13 +339,15 @@ return require("packer").startup(function(use)
 	-- }}}
 
 	-- files search {{{
+    use {'nvim-telescope/telescope-fzf-native.nvim', run = 'make', as = "telescope-fzf-native" }
 	use({
 		"nvim-telescope/telescope.nvim",
 		requires = {
-			"nvim-lua/popup.nvim",
-			"nvim-lua/plenary.nvim",
-			"nvim-telescope/telescope-ui-select.nvim",
-		},
+            "nvim-lua/popup.nvim",
+            "nvim-lua/plenary.nvim",
+            "nvim-telescope/telescope-ui-select.nvim",
+            "telescope-fzf-native",
+        },
 		config = function()
 			local map_key = require("dsych_config.utils").map_key
 			-- file navigation
@@ -393,6 +390,8 @@ return require("packer").startup(function(use)
 					path_display = {
 						shorten = { len = 1, exclude = { 1, -1 } },
 					},
+                    layout_strategy = 'flex',
+                    layout_config = { width = 0.9 }
 				},
 				pickers = {
 					spell_suggest = {
@@ -401,33 +400,46 @@ return require("packer").startup(function(use)
 					},
 					find_files = {
 						previewer = false,
-						theme = "dropdown",
 						path_display = { "smart", "shorten" },
 						hidden = true,
-						follow = true,
+						follow = true
 					},
 					live_grep = {
-						theme = "ivy",
+                        layout_strategy = 'vertical',
 						only_sort_text = true,
+                        additional_args = function (_)
+                            -- follow symlinks
+                            return { "-L" }
+                        end
 					},
 					grep_string = {
-						theme = "ivy",
 						only_sort_text = true,
+                        layout_strategy = 'vertical',
+                        additional_args = function (_)
+                            -- follow symlinks
+                            return { "-L" }
+                        end
 					},
-					buffers = {
-						previewer = false,
-						theme = "ivy",
-					},
+					-- buffers = {
+					-- 	previewer = false,
+					-- },
 				},
 				extensions = {
 					["ui-select"] = {
 						require("telescope.themes").get_dropdown(),
 					},
+                    fzf = {
+                        fuzzy = true,                    -- false will only do exact matching
+                        override_generic_sorter = true,  -- override the generic sorter
+                        override_file_sorter = true,     -- override the file sorter
+                        case_mode = "smart_case",        -- or "ignore_case" or "respect_case"
+                    }
 				},
 			})
 
 			-- telescope extensions
 			require("telescope").load_extension("ui-select")
+			require("telescope").load_extension("fzf")
 		end,
 	})
 	-- }}}
@@ -541,7 +553,7 @@ return require("packer").startup(function(use)
 			vim.go.termguicolors = true
 			vim.go.background = "dark"
 
-			vim.cmd("colorscheme zenwritten")
+			vim.cmd("colorscheme forestbones")
 
 			-- Enable syntax highlighting
 			vim.cmd("syntax enable")
@@ -584,9 +596,18 @@ return require("packer").startup(function(use)
 						vim.keymap.set(mode, l, r, opts)
 					end
 
-					-- Navigation
-					map("n", "]c", "&diff ? ']c' : '<cmd>Gitsigns next_hunk<CR>'", { expr = true })
-					map("n", "[c", "&diff ? '[c' : '<cmd>Gitsigns prev_hunk<CR>'", { expr = true })
+                    -- Navigation
+                    map('n', ']c', function()
+                      if vim.wo.diff then return ']c' end
+                      vim.schedule(function() gs.next_hunk() end)
+                      return '<Ignore>'
+                    end, {expr=true})
+
+                    map('n', '[c', function()
+                      if vim.wo.diff then return '[c' end
+                      vim.schedule(function() gs.prev_hunk() end)
+                      return '<Ignore>'
+                    end, {expr=true})
 
 					-- Actions
 					map({ "n", "v" }, "<leader>hs", gs.stage_hunk)
@@ -679,7 +700,7 @@ return require("packer").startup(function(use)
 			vim.g.test_extra_flags = ""
 
 			map_key("n", "<leader>idf", function()
-				vim.g.test_debug_flags = ""
+				execute_test("TestFile", vim.g.test_extra_flags .. " " .. vim.g.test_debug_flags)
 			end)
 			map_key("n", "<leader>ie", function()
 				vim.g.test_debug_flags = ""
@@ -1025,16 +1046,56 @@ return require("packer").startup(function(use)
 	use({ "tpope/vim-surround" })
 
 	use({
-		"justinmk/vim-sneak",
+        'phaazon/hop.nvim',
+        branch = 'v2',
+        config = function()
 
-		config = function()
-			local map_key = require("dsych_config.utils").map_key
-			-- remap default keybindings to sneak
-			map_key("n", "f", "<Plug>Sneak_f")
-			map_key("n", "F", "<Plug>Sneak_F")
-			map_key("n", "t", "<Plug>Sneak_t")
-			map_key("n", "T", "<Plug>Sneak_T")
-		end,
+		-- you can configure Hop the way you like here; see :h hop-config
+		local map_key = require("dsych_config.utils").map_key
+		require("hop").setup()
+		map_key({ "n", "v", "x" }, "f", function()
+			require("hop").hint_char1({
+				direction = require("hop.hint").HintDirection.AFTER_CURSOR,
+				current_line_only = true,
+			})
+		end, {})
+		map_key({ "n", "v", "x" }, "F", function()
+			require("hop").hint_char1({
+				direction = require("hop.hint").HintDirection.BEFORE_CURSOR,
+				current_line_only = true,
+			})
+		end, {})
+		map_key({ "n", "v", "x" }, "t", function()
+			require("hop").hint_char1({
+				direction = require("hop.hint").HintDirection.AFTER_CURSOR,
+				current_line_only = true,
+				hint_offset = -1,
+			})
+		end, {})
+		map_key({ "n", "v", "x" }, "T", function()
+			require("hop").hint_char1({
+				direction = require("hop.hint").HintDirection.BEFORE_CURSOR,
+				current_line_only = true,
+				hint_offset = 1,
+			})
+		end, {})
+
+		map_key({ "n", "v", "x" }, "s", function()
+			require("hop").hint_char2({
+				direction = require("hop.hint").HintDirection.AFTER_CURSOR,
+				current_line_only = false,
+			})
+		end, {})
+		map_key({ "n", "v", "x" }, "S", function()
+			require("hop").hint_char2({
+				direction = require("hop.hint").HintDirection.BEFORE_CURSOR,
+				current_line_only = false,
+			})
+		end, {})
+		map_key({ "n", "v", "x" }, "<leader>fw", function()
+			require("hop").hint_words({reverse_distribution = true, multi_windows = true })
+		end, {})
+        end
 	})
 	-- }}}
 
@@ -1335,6 +1396,18 @@ return require("packer").startup(function(use)
 		end,
 	})
 	-- }}}
+
+    -- sync system clipboard over ssh {{{
+    use({
+        'ojroques/vim-oscyank',
+        config = function ()
+            vim.cmd[[
+                autocmd TextYankPost * if v:event.operator is 'y' && v:event.regname is '+' | execute 'OSCYankReg +' | endif
+            ]]
+        end
+
+    })
+    -- }}}
 
 	-- treesitter-based text object hints for visual and operator pending mode {{{
 	use({

@@ -3,19 +3,17 @@ M.mk_config = function()
 	local capabilities = vim.lsp.protocol.make_client_capabilities()
 	capabilities.workspace.configuration = true
 	capabilities.textDocument.completion.completionItem.snippetSupport = true
+    vim.diagnostic.config({
+        virtual_text = false,
+        severity_sort = true,
+        float = {
+            source = "always"
+        }
+    })
 
 	return {
 		flags = {
 			allow_incremental_sync = true,
-		},
-		handlers = {
-			["textDocument/publishDiagnostics"] = vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics, {
-				-- Enable underline, use default values
-				underline = true,
-				virtual_text = false,
-				-- Disable a feature
-				update_in_insert = false,
-			}),
 		},
 		capabilities = require('cmp_nvim_lsp').update_capabilities(capabilities),
 		on_init = function(client)
@@ -32,11 +30,11 @@ M.define_mappings = function()
 	map_key("n", "gd", require("telescope.builtin").lsp_definitions)
 	map_key("n", "gds", function()
 		vim.cmd("split")
-		vim.lsp.buf.definition()
+        return 'gd'
 	end)
 	map_key("n", "gdv", function()
 		vim.cmd("vsplit")
-		vim.lsp.buf.definition()
+        return 'gd'
 	end)
 	map_key("n", "gi", require("telescope.builtin").lsp_implementations)
 	map_key("n", "grn", vim.lsp.buf.rename)
@@ -46,8 +44,8 @@ M.define_mappings = function()
 	map_key("n", "K", utils.show_documentation)
 	map_key({ "n", "i" }, "<C-Y>", vim.lsp.buf.signature_help)
 	map_key("n", "gr", require("telescope.builtin").lsp_references)
-	map_key("n", "gci", vim.lsp.buf.incoming_calls)
-	map_key("n", "gco", vim.lsp.buf.outgoing_calls)
+	map_key("n", "gci", require("telescope.builtin").lsp_incoming_calls)
+	map_key("n", "gco", require("telescope.builtin").lsp_outgoing_calls)
 
 	map_key("n", "<leader>wa", vim.lsp.buf.add_workspace_folder)
 	map_key("n", "<leader>wr", vim.lsp.buf.remove_workspace_folder)

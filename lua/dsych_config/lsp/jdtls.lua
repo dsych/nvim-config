@@ -119,11 +119,6 @@ M.setup = function()
 		-- start the server
 		require("jdtls").start_or_attach(lsp_utils.configure_lsp(config))
 
-		-- notify lsp about workspaces
-		for _, line in ipairs(ws_folders_lsp) do
-			vim.lsp.buf.add_workspace_folder(line)
-		end
-
 		vim.api.nvim_create_user_command(
 			"CleanJavaWorkspace",
 			":!rm -rf '" .. eclipse_workspace .. "' <bar> :StopLsp <bar> :StartJavaLsp",
