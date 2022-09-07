@@ -34,6 +34,11 @@ map_key("n", "<M-S-[>", ":<c-u>resize -5<cr>")
 map_key("n", "<M-S-]>", ":<c-u>resize +5<cr>")
 map_key("n", "<M-S-,>", ":<c-u>vertical resize -5<cr>")
 map_key("n", "<M-S-.>", ":<c-u>vertical resize +5<cr>")
+-- same but under tmux these code are different
+map_key("n", "<M-{>", ":<c-u>resize -5<cr>")
+map_key("n", "<M-}>", ":<c-u>resize +5<cr>")
+map_key("n", "<M-lt>", ":<c-u>vertical resize -5<cr>")
+map_key("n", "<M->>", ":<c-u>vertical resize +5<cr>")
 
 -- Useful mappings for managing tabs
 map_key("n", "<leader>tn", ":tabnew<cr>")
@@ -71,9 +76,18 @@ map_key("n", "<leader>z", function()
 end)
 
 -- for configs
-map_key("n", "<leader>ne", "<cmd>edit $MYVIMRC<cr>")
-map_key("n", "<leader>nE", ":tabnew <bar> :edit $MYVIMRC<cr>")
-map_key("n", "<leader>na", ":tabnew <bar> :edit ~/.config/nvim/additional<cr>")
+map_key("n", "<leader>ne", function()
+	local path = vim.fn.stdpath("config") .. "/lua/dsych_config/plugins/init.lua"
+	vim.cmd("edit " .. path)
+end)
+map_key("n", "<leader>nE", function()
+	local path = vim.fn.stdpath("config") .. "/lua/dsych_config/plugins/init.lua"
+	vim.cmd("tabnew " .. path)
+end)
+map_key("n", "<leader>na", function()
+	local path = vim.fn.stdpath("config") .. "/additional"
+	vim.cmd("tabnew " .. path)
+end)
 
 -- insert mode deletion
 -- map_key("i", "<M-l>", "<del>")
