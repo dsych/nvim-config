@@ -677,6 +677,7 @@ return require("packer").startup(function(use)
 
 			local map_key = require("dsych_config.utils").map_key
 
+            -- vanilla vim-test mappings
 			map_key("n", "<leader>in", function()
 				execute_test("TestNearest", vim.g.test_extra_flags)
 			end)
@@ -687,23 +688,15 @@ return require("packer").startup(function(use)
 				execute_test("TestSuite", vim.g.test_extra_flags)
 			end)
 			map_key("n", "<leader>il", function()
-				execute_test("TestLast", vim.g.test_extra_flags)
+				vim.cmd("TestLast")
 			end)
 			map_key("n", "<leader>ig", function()
 				execute_test("TestVisit", vim.g.test_extra_flags)
 			end)
-			-- for maven set to something like this:
-			--  -Dtests.additional.jvmargs=--'-Xdebug -Xrunjdwp:transport=dt_socket,address=localhost:5005,server=y,suspend=y'--
-			-- for gradle use:
-			--  --debug-jvm
-			vim.g.test_debug_flags = ""
-			vim.g.test_extra_flags = ""
 
+            -- mappings with debugging
 			map_key("n", "<leader>idf", function()
 				execute_test("TestFile", vim.g.test_extra_flags .. " " .. vim.g.test_debug_flags)
-			end)
-			map_key("n", "<leader>ie", function()
-				vim.g.test_debug_flags = ""
 			end)
 			map_key("n", "<leader>id", function()
 				execute_test("TestNearest", vim.g.test_extra_flags .. " " .. vim.g.test_debug_flags)
@@ -712,22 +705,25 @@ return require("packer").startup(function(use)
 				execute_test("TestSuite", vim.g.test_extra_flags .. " " .. vim.g.test_debug_flags)
 			end)
 
+            -- mappings for picking the current strategy and additional flags
 			map_key("n", "<leader>ip", function()
-                local unroll = function (source)
-                    return vim.tbl_flatten(
-                        vim.tbl_map(
-                            function (lang)
-                                return lang
-                            end,
-                            source))
+                local file_type = vim.bo.filetype
+
+                local enabled_runners = (vim.g["test#enabled_runners"] or {})[file_type]
+                local custom_runners = (vim.g["test#custom_runners"] or {})[file_type]
+
+                if enabled_runners == nil and custom_runners == nil then
+                    print("ERROR: no runners defined for filetype " .. file_type)
+                    return
                 end
+
 				local test_strategies = vim.tbl_deep_extend(
 					"force",
-					unroll(vim.g["test#enabled_runners"] or {}),
-					unroll(vim.g["test#custom_runners"] or {})
+					enabled_runners,
+					custom_runners
 				)
+
 				vim.ui.select(test_strategies, { prompt = "Select current test strategy:" }, function(choice)
-					local file_type = vim.bo.filetype
 					if choice == nil or file_type == nil then
 						return
 					end
@@ -735,8 +731,36 @@ return require("packer").startup(function(use)
 					vim.g["test#" .. file_type .. "#runner"] = choice
 				end)
 			end)
+			map_key("n", "<leader>ipd", function()
+				vim.ui.select(vim.g.test_possible_debug_flags or {""}, { prompt = "Select current debug flags:" }, function(choice)
+					if choice == nil then
+						return
+					end
+
+                    vim.g.test_debug_flags = choice
+				end)
+			end)
+			map_key("n", "<leader>ipe", function()
+				vim.ui.select(vim.g.test_possible_extra_flags or {""}, { prompt = "Select current extra flags:" }, function(choice)
+					if choice == nil then
+						return
+					end
+
+                    vim.g.test_extra_flags = choice
+				end)
+			end)
 
 			vim.g["test#strategy"] = "neovim"
+			-- for maven set to something like this:
+			--  -Dtests.additional.jvmargs=--'-Xdebug -Xrunjdwp:transport=dt_socket,address=localhost:5005,server=y,suspend=y'--
+			-- for gradle use:
+			--  --debug-jvm
+			vim.g.test_debug_flags = ""
+			vim.g.test_extra_flags = ""
+
+            if init_vim_test ~= nil then
+                init_vim_test()
+            end
 		end,
 	})
 	-- }}}
