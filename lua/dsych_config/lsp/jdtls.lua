@@ -24,6 +24,8 @@ M.setup = function()
 		map_key("v", "<leader>lm", "<Esc><Cmd>lua require('jdtls').extract_method(true)<CR>")
 		-- overwrite default vimspector launch mapping
 		map_key("n", "<Bslash>l", require("dsych_config.lsp.jdtls").start_vimspector_java)
+        map_key("n", "<M-F>", vim.lsp.buf.format({ filter = function(cl) return cl.name == "jdtls" end }))
+        map_key({ "v", "x" }, "<M-F>", vim.lsp.buf.format)
 		-- require'formatter'.setup{
 		--     filetype = {
 		--         java = {

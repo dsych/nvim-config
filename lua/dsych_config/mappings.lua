@@ -78,15 +78,15 @@ end)
 -- for configs
 map_key("n", "<leader>ne", function()
 	local path = vim.fn.stdpath("config") .. "/lua/dsych_config/plugins/init.lua"
-	vim.cmd("edit " .. path)
+	vim.cmd.edit(path)
 end)
 map_key("n", "<leader>nE", function()
 	local path = vim.fn.stdpath("config") .. "/lua/dsych_config/plugins/init.lua"
-	vim.cmd("tabnew " .. path)
+	vim.cmd.tabnew(path)
 end)
 map_key("n", "<leader>na", function()
 	local path = vim.fn.stdpath("config") .. "/additional"
-	vim.cmd("tabnew " .. path)
+	vim.cmd.tabnew(path)
 end)
 
 -- insert mode deletion

@@ -1,3 +1,7 @@
+# ---- GIT IGNORE FILES ----
+.git
+# ---- GIT IGNORE FILES ----
+
 # ---- JAVA IGNORE FILES ----
 # Compiled class file
 *.class
@@ -29,6 +33,7 @@ replay_pid*
 # ---- ECLIPSE IGNORE FILES ----
 .metadata
 bin/
+build/
 tmp/
 *.tmp
 *.bak
@@ -87,6 +92,7 @@ local.properties
 # Uncomment this line if you wish to ignore the project description file.
 # Typically, this file would be tracked if it contains build/dependency configurations:
 .project
+.classpath
 # ---- END ECLIPSE IGNORE FILES ----
 
 

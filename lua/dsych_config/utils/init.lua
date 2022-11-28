@@ -15,6 +15,10 @@ M.source_all_additional_files = function(dir_path)
 end
 
 M.map_key = function(mode, lhs, rhs, opts)
+    if not mode or not lhs or not rhs then
+        print(debug.traceback())
+        error"mode, lhs and rhs have to be present"
+    end
 	opts = opts or {}
 	vim.keymap.set(mode, lhs, rhs, vim.tbl_deep_extend("force", { noremap = true, silent = false }, opts))
 end

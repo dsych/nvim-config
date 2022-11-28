@@ -70,8 +70,22 @@ M.define_mappings = function()
 		vim.diagnostic.goto_next({ severity = "Error" })
 	end)
 
-	map_key("n", "<M-F>", vim.lsp.buf.formatting)
-	map_key({ "v", "x" }, "<M-F>", ":<c-u>lua vim.lsp.buf.range_formatting({})<cr>")
+	map_key("n", "<M-F>", vim.lsp.buf.format)
+	map_key({ "v", "x" }, "<M-F>", vim.lsp.buf.format)
+	-- map_key({ "v", "x" }, "<M-F>", function()
+ --        local start_pos = vim.fn.getpos("'<")
+ --        local end_pos = vim.fn.getpos("'>")
+ --        vim.lsp.buf.format({async=true, range={
+ --            start={
+ --                row=start_pos[2],
+ --                col=start_pos[3],
+ --            },
+ --            ["end"]={
+ --                row=end_pos[2],
+ --                col=end_pos[3],
+ --            },
+ --        }})
+ --    end)
 end
 
 M.configure_lsp = function(lsp_opts)

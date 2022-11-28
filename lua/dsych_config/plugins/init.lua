@@ -114,6 +114,7 @@ return require("packer").startup(function(use)
 					{ name = "nvim_lsp_signature_help" },
 					{ name = "tmux", all_panes = true },
 					{ name = "treesitter" },
+                    { name = "path" },
 					{ name = "luasnip" }, -- For luasnip users.
 				}, {
 					{ name = "buffer" },
@@ -151,13 +152,24 @@ return require("packer").startup(function(use)
 					{ name = "buffer" },
 				}),
 			})
-
+			cmp.setup.filetype("java", {
+                -- slow down completion not to overwhelm jdt.ls
+                performance = {
+                    throttle = 100
+                }
+			})
 			-- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
 			cmp.setup.cmdline(":", {
 				sources = cmp.config.sources({
 					{ name = "path" },
 				}, {
 					{ name = "cmdline" },
+				}),
+			})
+
+			cmp.setup.cmdline("@", {
+				sources = cmp.config.sources({
+					{ name = "path" },
 				}),
 			})
 		end,
@@ -232,7 +244,7 @@ return require("packer").startup(function(use)
 
 			require("nvim-tree").setup({
 				view = {
-					width = 50,
+					width = 65,
 					number = true,
 					relativenumber = true,
 				},
@@ -327,13 +339,13 @@ return require("packer").startup(function(use)
 				end
 			end
 
-			vim.cmd([[
-            augroup vimspector_session
-              autocmd!
-              autocmd VimLeave * :lua save_vimspector_session()
-              autocmd VimEnter * :lua load_vimspector_session()
-            augroup END
-            ]])
+			-- vim.cmd([[
+   --          augroup vimspector_session
+   --            autocmd!
+   --            autocmd VimLeave * :lua save_vimspector_session()
+   --            autocmd VimEnter * :lua load_vimspector_session()
+   --          augroup END
+   --          ]])
 		end,
 	})
 	-- }}}
@@ -377,6 +389,7 @@ return require("packer").startup(function(use)
 
 			-- general pickers
 			map_key("n", "<leader>c", require("telescope.builtin").commands)
+			map_key("n", "gm", require("telescope.builtin").marks)
 			map_key("n", "<leader>gh", require("telescope.builtin").help_tags)
 			map_key("n", "<leader>m", require("telescope.builtin").keymaps)
 			map_key("n", "z=", require("telescope.builtin").spell_suggest)
@@ -386,7 +399,7 @@ return require("packer").startup(function(use)
 
 			require("telescope").setup({
 				defaults = {
-					prompt_prefix = "🔍",
+					prompt_prefix = "==> ",
 					path_display = {
 						shorten = { len = 1, exclude = { 1, -1 } },
 					},
@@ -402,11 +415,13 @@ return require("packer").startup(function(use)
 						previewer = false,
 						path_display = { "smart", "shorten" },
 						hidden = true,
-						follow = true
+						follow = true,
+                        find_command =  { "fd", "--type", "f", "--color", "never" }
 					},
 					live_grep = {
-                        layout_strategy = 'vertical',
+                        -- layout_strategy = 'vertical',
 						only_sort_text = true,
+                        layout_strategy = 'flex',
                         additional_args = function (_)
                             -- follow symlinks
                             return { "-L" }
@@ -414,15 +429,16 @@ return require("packer").startup(function(use)
 					},
 					grep_string = {
 						only_sort_text = true,
-                        layout_strategy = 'vertical',
+                        -- layout_strategy = 'vertical',
                         additional_args = function (_)
                             -- follow symlinks
                             return { "-L" }
                         end
 					},
-					-- buffers = {
-					-- 	previewer = false,
-					-- },
+					buffers = {
+						-- previewer = false,
+                        layout_strategy = 'vertical'
+					},
 				},
 				extensions = {
 					["ui-select"] = {
@@ -513,6 +529,9 @@ return require("packer").startup(function(use)
 			"rose-pine/neovim",
             "mcchrish/zenbones.nvim",
             "rktjmp/lush.nvim",
+            "https://gitlab.com/madyanov/gruber.vim.git",
+            "sainnhe/everforest",
+            "EdenEast/nightfox.nvim",
 			-- missing lsp highlights for diagnostics, docs etc.
 			"folke/lsp-colors.nvim",
 		},
@@ -540,7 +559,7 @@ return require("packer").startup(function(use)
 			-- => Tokyonight
 			------------------------------------------------------------------------------------------------------------------------------
 			-- NOTE: has to precede the color scheme settings
-			vim.g.tokyonight_style = "storm"
+			-- vim.g.tokyonight_style = "storm"
 			vim.g.tokyonight_sidebars = { "nerdtree", "terminal", "LuaTree", "sidebarnvim" }
 			vim.g.tokyonight_hide_inactive_statusline = true
 			vim.g.tokyonight_italic_comments = true
@@ -553,7 +572,7 @@ return require("packer").startup(function(use)
 			vim.go.termguicolors = true
 			vim.go.background = "dark"
 
-			vim.cmd("colorscheme forestbones")
+			vim.cmd("colorscheme everforest")
 
 			-- Enable syntax highlighting
 			vim.cmd("syntax enable")
@@ -719,11 +738,11 @@ return require("packer").startup(function(use)
 
 				local test_strategies = vim.tbl_deep_extend(
 					"force",
-					enabled_runners,
-					custom_runners
+					enabled_runners or {},
+					custom_runners or {}
 				)
 
-				vim.ui.select(test_strategies, { prompt = "Select current test strategy:" }, function(choice)
+				vim.ui.select(test_strategies, { prompt = "Select vim-test test strategy (" .. vim.g["test#" .. file_type .. "#runner"] .. "):" }, function(choice)
 					if choice == nil or file_type == nil then
 						return
 					end
@@ -732,7 +751,7 @@ return require("packer").startup(function(use)
 				end)
 			end)
 			map_key("n", "<leader>ipd", function()
-				vim.ui.select(vim.g.test_possible_debug_flags or {""}, { prompt = "Select current debug flags:" }, function(choice)
+				vim.ui.select(vim.g.test_possible_debug_flags or {""}, { prompt = "Select vim-test debug flags (" .. vim.g.test_debug_flags .. "):" }, function(choice)
 					if choice == nil then
 						return
 					end
@@ -741,7 +760,7 @@ return require("packer").startup(function(use)
 				end)
 			end)
 			map_key("n", "<leader>ipe", function()
-				vim.ui.select(vim.g.test_possible_extra_flags or {""}, { prompt = "Select current extra flags:" }, function(choice)
+				vim.ui.select(vim.g.test_possible_extra_flags or {""}, { prompt = "Select vim-test extra flags (".. vim.g.test_extra_flags .."):" }, function(choice)
 					if choice == nil then
 						return
 					end
@@ -1140,12 +1159,13 @@ return require("packer").startup(function(use)
 				open_mapping = [[<c-\>]],
 				size = function(term)
 					if term.direction == "horizontal" then
-						return 15
+						return 30
 					elseif term.direction == "vertical" then
 						return vim.o.columns * 0.4
 					end
 				end,
 			})
+            persist_size = false,
 			-- start terminal in insert mode
 			-- and do not show terminal buffers in buffer list
 			vim.cmd([[
@@ -1167,7 +1187,7 @@ return require("packer").startup(function(use)
 			require("nvim-treesitter.configs").setup({
 				ensure_installed = "all",
 				indent = {
-					enable = false,
+					enable = true,
 				},
 				highlight = {
 					enable = true,
@@ -1297,7 +1317,11 @@ return require("packer").startup(function(use)
 			map_key("n", "<leader>ca", require("blanket").start)
 			map_key("n", "<leader>cf", require("blanket").pick_report_path)
 
-			require("blanket").setup({ silent = true })
+			require("blanket").setup({ silent = true, signs = {
+                incomplete_branch_color = "WarningMsg",
+                covered_color = "Search",
+                uncovered_color = "Error"
+            }})
 		end,
 	})
 	-- }}}
@@ -1325,12 +1349,12 @@ return require("packer").startup(function(use)
 				})
 			end)
 			map_key("n", "<leader>kf", function()
-				require("neogen").generate({
+                    require("neogen").generate({
 					type = "file",
 				})
 			end)
 		end,
-		requires = "nvim-treesitter/nvim-treesitter",
+        requires = "nvim-treesitter/nvim-treesitter",
 	})
 	-- }}}
 
@@ -1430,6 +1454,13 @@ return require("packer").startup(function(use)
             ]]
         end
 
+    })
+    -- }}}
+
+    -- use neovim as manpager {{{
+    use({
+        'lambdalisue/vim-manpager',
+        cmd = 'ASMANPAGER'
     })
     -- }}}
 
