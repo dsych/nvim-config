@@ -1,7 +1,7 @@
 local M = {}
 
 M.language_server_configs = {
-	["sumneko_lua"] = function()
+	["lua_ls"] = function()
 		local runtime_path = vim.split(package.path, ";")
 		table.insert(runtime_path, "lua/?.lua")
 		table.insert(runtime_path, "lua/?/init.lua")
@@ -50,6 +50,8 @@ M.enable_lsp_status = function()
 		show_filename = false,
         status_symbol = ""
 	})
+
+	lsp_status.register_progress()
 end
 
 M.setup = function()
@@ -57,7 +59,6 @@ M.setup = function()
 
 	require("dsych_config.lsp").enable_lsp_status()
 
-	local lsp_installer = require("nvim-lsp-installer")
 	-- automatically install these language servers
 	local servers = {
 		"clangd",
@@ -66,37 +67,31 @@ M.setup = function()
 		"jsonls",
 		"lemminx",
 		"pyright",
-		"sumneko_lua",
+		"lua_ls",
 		"tsserver",
 		"vimls",
 		"bashls",
-		"yamlls",
-        "jdtls"
+		"yamlls"
 	}
 
-	for _, name in pairs(servers) do
-		local server_is_found, server = lsp_installer.get_server(name)
-		if server_is_found and not server:is_installed() then
-			print("Installing " .. name)
-			server:install()
-		end
-	end
+    require("mason").setup()
+    require("mason-lspconfig").setup{
+        ensure_installed = servers,
+        automatic_installation = true
+    }
 
 	local lsp_utils = require("dsych_config.lsp.utils")
-	-- actually start the language server
-	lsp_installer.on_server_ready(function(server)
-        -- use jdtls.nvim extension for java instead of lsp-config
-        if server.name == "jdtls" then
-            return
-        end
+    local lsp_config = require"lspconfig"
 
+	-- actually start the language server
+    for _, server_name in ipairs(servers) do
 		local config = vim.tbl_deep_extend(
 			"force",
 			lsp_utils.mk_config(),
-			server_configs[server.name] and server_configs[server.name]() or {}
+			server_configs[server_name] and server_configs[server_name]() or {}
 		)
-		server:setup(lsp_utils.configure_lsp(config))
-	end)
+        lsp_config[server_name].setup(lsp_utils.configure_lsp(config))
+    end
 end
 
 return M

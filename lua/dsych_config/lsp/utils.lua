@@ -117,14 +117,11 @@ end
 M.configure_lsp = function(lsp_opts)
 	lsp_opts = lsp_opts or {}
 
-	local lsp_status = require("lsp-status")
-	lsp_status.register_progress()
-
 	require("dsych_config.lsp.utils").define_mappings()
 
 	local old_on_attach = lsp_opts.on_attach
 	lsp_opts.on_attach = function(client, bufnr)
-		lsp_status.on_attach(client)
+        require("lsp-status").on_attach(client)
 
 		if old_on_attach then
 			old_on_attach(client, bufnr)

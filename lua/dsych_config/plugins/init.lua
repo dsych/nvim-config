@@ -186,13 +186,17 @@ return require("packer").startup(function(use)
 	})
 
 	use({
-		"williamboman/nvim-lsp-installer",
+        "williamboman/mason.nvim",
+        as = "lsp-installer",
 		requires = {
 			-- current function/lsp status
 			"nvim-lua/lsp-status.nvim",
 			-- icons
 			"onsails/lspkind-nvim",
+
+            -- lsp config
 			"neovim/nvim-lspconfig",
+            "williamboman/mason-lspconfig.nvim"
 		},
 		config = require("dsych_config.lsp").setup,
 	})
@@ -200,14 +204,14 @@ return require("packer").startup(function(use)
 	use({
 		"b0o/schemastore.nvim",
 		requires = {
-			"williamboman/nvim-lsp-installer",
+			"lsp-installer",
 		},
 	})
 
 	use({
 		-- java lsp client
 		"mfussenegger/nvim-jdtls",
-		requires = { "williamboman/nvim-lsp-installer" },
+		requires = { "lsp-installer" },
 		config = require("dsych_config.lsp.jdtls").setup,
 	})
 
