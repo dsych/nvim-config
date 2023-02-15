@@ -89,6 +89,11 @@ map_key("n", "<leader>na", function()
 	vim.cmd.tabnew(path)
 end)
 
+map_key("n", "<leader>nz", function()
+	local path = vim.fn.expandcmd"$HOME" .. "/.zshrc"
+	vim.cmd.edit(path)
+end)
+
 -- insert mode deletion
 -- map_key("i", "<M-l>", "<del>")
 -- map_key("i", "<M-h>", "<bs>")
