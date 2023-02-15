@@ -1,11 +1,15 @@
 scroll_down: f
-scroll_up: r
-buttons: q, w, e
-oneshot_buttons: a, s, d
+scroll_up: d
+buttons: q w e
+oneshot_buttons: z x c
+screen_activation_key: A-m
+history_activation_key: A-;
 activation_key: A-n
 grid_activation_key: A-g
 hint_activation_key: A-p
-hint_oneshot_key: S-A-p
+hint2_activation_key: S-A-p
 copy_and_exit: y
 hint: p
+hint2: S-p
 grid: g
+screen: m

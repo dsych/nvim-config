@@ -99,6 +99,16 @@ function install_java_decompiler {
     git clone "https://github.com/dgileadi/vscode-java-decompiler.git"
 }
 
+function install_lombok {
+    printf "INFO: Downloading lombok\n"
+    wget "https://projectlombok.org/downloads/lombok.jar"
+}
+
+function install_checkstyle {
+    printf "INFO: Downloading checkstyle\n"
+    wget "https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.5.0/checkstyle-10.5.0-all.jar" -O checkstyle.jar
+}
+
 configDir=$HOME/.config/nvim
 scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -121,7 +131,8 @@ done
 
 for path in ${all_configs[@]}; do
     source_path=$(basename $path)
-    link_config "$scriptDir/$source_path" $path
+    dest_path=$(dirname $path)
+    link_config "$scriptDir/$source_path" $dest_path
 done
 
 printf "Begin installing dependencies\n"
@@ -129,5 +140,7 @@ printf "Begin installing dependencies\n"
 run_inside_directory "$HOME/.local/source" install_jdtls
 run_inside_directory "$HOME/.local/source/jdtls-launcher" install_java_debug
 run_inside_directory "$HOME/.local/source/jdtls-launcher" install_java_decompiler
+run_inside_directory "$HOME/.local/source/jdtls-launcher" install_lombok
+run_inside_directory "$HOME/.local/source/jdtls-launcher" install_checkstyle
 
 printf "Done!!!\n"
