@@ -241,6 +241,9 @@ return require("packer").startup(function(use)
 	-- file explorer {{{
 	use({
 		"kyazdani42/nvim-tree.lua",
+		requires = {
+            "nvim-lua/plenary.nvim",
+		},
 		config = function()
 			local map_key = require("dsych_config.utils").map_key
 			map_key("n", "<leader>e", "<cmd>NvimTreeToggle<cr>")
@@ -579,7 +582,7 @@ return require("packer").startup(function(use)
 			vim.go.termguicolors = true
 			vim.go.background = "light"
 
-			vim.cmd("colorscheme zellner")
+			vim.cmd("colorscheme vscode")
 
 			-- Enable syntax highlighting
 			vim.cmd("syntax enable")
@@ -794,7 +797,12 @@ return require("packer").startup(function(use)
 	-- indent guides {{{
 	use({
 		"lukas-reineke/indent-blankline.nvim",
+        requires = {
+            'nmac427/guess-indent.nvim',
+        },
 		config = function()
+            require('guess-indent').setup {}
+
 			require("indent_blankline").setup({
 				space_char_blankline = " ",
 				show_current_context = true,
