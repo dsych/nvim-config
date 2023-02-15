@@ -211,21 +211,27 @@ return require("packer").startup(function(use)
 		config = require("dsych_config.lsp.jdtls").setup,
 	})
 
+    use({
+        "https://git.amazon.com/pkg/Checkstyle-null-ls",
+        branch = "mainline",
+        as = "checkstyle-null-ls"
+    })
+
 	use({
 		"jose-elias-alvarez/null-ls.nvim",
-		requires = { "nvim-lua/plenary.nvim" },
+		requires = { "nvim-lua/plenary.nvim", "checkstyle-null-ls" },
 		config = function()
 			local null_ls = require("null-ls")
+            local checkstyle_diagnostic = require("checkstyle-null-ls")("~/.config/nvim/additional/checkstyle/checkstyle-rules.xml", "~/.local/bin/checkstyle.jar")
 			null_ls.setup({
 				sources = {
 					null_ls.builtins.formatting.stylua,
-					null_ls.builtins.formatting.clang_format.with({
-						disabled_filetypes = { "java" },
-					}),
+					null_ls.builtins.formatting.clang_format,
 					null_ls.builtins.formatting.prettier,
 
 					null_ls.builtins.diagnostics.write_good,
 					null_ls.builtins.diagnostics.cppcheck,
+                    checkstyle_diagnostic
 				},
 			})
 		end,
@@ -532,6 +538,7 @@ return require("packer").startup(function(use)
             "https://gitlab.com/madyanov/gruber.vim.git",
             "sainnhe/everforest",
             "EdenEast/nightfox.nvim",
+            "Mofiqul/vscode.nvim",
 			-- missing lsp highlights for diagnostics, docs etc.
 			"folke/lsp-colors.nvim",
 		},
@@ -570,9 +577,9 @@ return require("packer").startup(function(use)
 			-- going to leave it here is a reminder...
 			-- OH HOW THINGS HAVE CHANGED)
 			vim.go.termguicolors = true
-			vim.go.background = "dark"
+			vim.go.background = "light"
 
-			vim.cmd("colorscheme everforest")
+			vim.cmd("colorscheme zellner")
 
 			-- Enable syntax highlighting
 			vim.cmd("syntax enable")
@@ -1096,32 +1103,6 @@ return require("packer").startup(function(use)
 		-- you can configure Hop the way you like here; see :h hop-config
 		local map_key = require("dsych_config.utils").map_key
 		require("hop").setup()
-		map_key({ "n", "v", "x" }, "f", function()
-			require("hop").hint_char1({
-				direction = require("hop.hint").HintDirection.AFTER_CURSOR,
-				current_line_only = true,
-			})
-		end, {})
-		map_key({ "n", "v", "x" }, "F", function()
-			require("hop").hint_char1({
-				direction = require("hop.hint").HintDirection.BEFORE_CURSOR,
-				current_line_only = true,
-			})
-		end, {})
-		map_key({ "n", "v", "x" }, "t", function()
-			require("hop").hint_char1({
-				direction = require("hop.hint").HintDirection.AFTER_CURSOR,
-				current_line_only = true,
-				hint_offset = -1,
-			})
-		end, {})
-		map_key({ "n", "v", "x" }, "T", function()
-			require("hop").hint_char1({
-				direction = require("hop.hint").HintDirection.BEFORE_CURSOR,
-				current_line_only = true,
-				hint_offset = 1,
-			})
-		end, {})
 
 		map_key({ "n", "v", "x" }, "s", function()
 			require("hop").hint_char2({
@@ -1136,7 +1117,7 @@ return require("packer").startup(function(use)
 			})
 		end, {})
 		map_key({ "n", "v", "x" }, "<leader>fw", function()
-			require("hop").hint_words({reverse_distribution = true, multi_windows = true })
+			require("hop").hint_words({reverse_distribution = false, multi_windows = true })
 		end, {})
         end
 	})
@@ -1284,9 +1265,10 @@ return require("packer").startup(function(use)
 	})
 	-- }}}
 
-	-- hocon filetype {{{
+	-- additional filetypes {{{
 	use({
 		"satabin/hocon-vim",
+        "lepture/vim-jinja"
 	})
 	-- }}}
 

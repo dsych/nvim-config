@@ -24,21 +24,21 @@ M.setup = function()
 		map_key("v", "<leader>lm", "<Esc><Cmd>lua require('jdtls').extract_method(true)<CR>")
 		-- overwrite default vimspector launch mapping
 		map_key("n", "<Bslash>l", require("dsych_config.lsp.jdtls").start_vimspector_java)
-        map_key("n", "<M-F>", vim.lsp.buf.format({ filter = function(cl) return cl.name == "jdtls" end }))
-        map_key({ "v", "x" }, "<M-F>", vim.lsp.buf.format)
-		-- require'formatter'.setup{
-		--     filetype = {
-		--         java = {
-		--             function()
-		--                 return {
-		--                     exe = 'java',
-		--                     args = { '-jar', os.getenv('HOME') .. '/.local/jars/google-java-format.jar', vim.api.nvim_buf_get_name(0) },
-		--                     stdin = true
-		--                 }
-		--             end
-		--         }
-		--     }
-		-- }
+        map_key("n", "<M-F>", function() vim.lsp.buf.format({ filter = function(cl) return cl.name == "jdtls" end }) end)
+        map_key({ "v", "x" }, "<M-F>", function() vim.lsp.buf.format({ filter = function(cl) return cl.name == "jdtls" end }) end)
+        -- require'formatter'.setup{
+        --     filetype = {
+        --         java = {
+        --             function()
+        --                 return {
+        --                     exe = 'java',
+        --                     args = { '-jar', os.getenv('HOME') .. '/.local/jars/google-java-format.jar', vim.api.nvim_buf_get_name(0) },
+        --                     stdin = true
+        --                 }
+        --             end
+        --         }
+        --     }
+        -- }
 
 		-- vim.api.nvim_exec([[
 		--   augroup FormatAutogroup
@@ -106,7 +106,7 @@ M.setup = function()
 
         local bundles = {
           vim.fn.glob(home .. "/.local/source/jdtls-launcher/java-debug/com.microsoft.java.debug.plugin/target/com.microsoft.java.debug.plugin-*.jar"),
-        };
+        }
         vim.list_extend(bundles, vim.split(vim.fn.glob(home .. "/.local/source/jdtls-launcher/vscode-java-decompiler/server/*.jar"), "\n"))
 
 		local extendedClientCapabilities = require("jdtls").extendedClientCapabilities
