@@ -1,4 +1,34 @@
 local M = {}
+
+local get_current_visual_selection = function ()
+    local get_line_and_col_for_mark = function (mark)
+        local ret = vim.fn.getpos("'" .. mark)
+        return ret[2], ret[3]
+    end
+
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<esc>", true, false, true), 'x', false)
+
+    local line_start, column_start = get_line_and_col_for_mark("<")
+    local line_end, column_end = get_line_and_col_for_mark(">")
+    return { start = { line_start, column_start }, ["end"] = { line_end, column_end } }
+end
+
+local select_lsp_client = function(callback)
+    local client_names = vim.tbl_map(function (client) return client.name end, vim.lsp.get_active_clients())
+
+    if vim.tbl_count(client_names) < 1 then
+        return
+    elseif vim.tbl_contains(client_names) == 1 then
+        callback(client_names[1])
+    else
+        vim.ui.select(client_names, {prompt = "Which lsp client:" }, function(choice)
+            if choice ~= nil then
+                callback(choice)
+            end
+        end)
+    end
+end
+
 M.mk_config = function()
 	local capabilities = vim.lsp.protocol.make_client_capabilities()
 	capabilities.workspace.configuration = true
@@ -10,12 +40,12 @@ M.mk_config = function()
             source = "always"
         }
     })
-
+    local c = vim.tbl_extend("force", require('cmp_nvim_lsp').default_capabilities(), capabilities)
 	return {
 		flags = {
 			allow_incremental_sync = true,
 		},
-		capabilities = require('cmp_nvim_lsp').update_capabilities(capabilities),
+		["capabilities"] = c,
 		on_init = function(client)
 			client.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
 		end,
@@ -70,22 +100,18 @@ M.define_mappings = function()
 		vim.diagnostic.goto_next({ severity = "Error" })
 	end)
 
-	map_key("n", "<M-F>", vim.lsp.buf.format)
-	map_key({ "v", "x" }, "<M-F>", vim.lsp.buf.format)
-	-- map_key({ "v", "x" }, "<M-F>", function()
- --        local start_pos = vim.fn.getpos("'<")
- --        local end_pos = vim.fn.getpos("'>")
- --        vim.lsp.buf.format({async=true, range={
- --            start={
- --                row=start_pos[2],
- --                col=start_pos[3],
- --            },
- --            ["end"]={
- --                row=end_pos[2],
- --                col=end_pos[3],
- --            },
- --        }})
- --    end)
+    map_key("n", "<M-F>", function()
+        select_lsp_client(function (desired_client)
+            vim.lsp.buf.format({ timeout_ms = 10000, async = false, name = desired_client })
+        end)
+    end)
+
+    map_key({ "v", "x" }, "<M-F>", function()
+        local r = get_current_visual_selection()
+        select_lsp_client(function (desired_client)
+            vim.lsp.buf.format({ timeout_ms = 10000, async = false, name = desired_client, range = r })
+        end)
+    end)
 end
 
 M.configure_lsp = function(lsp_opts)

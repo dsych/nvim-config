@@ -24,8 +24,6 @@ M.setup = function()
 		map_key("v", "<leader>lm", "<Esc><Cmd>lua require('jdtls').extract_method(true)<CR>")
 		-- overwrite default vimspector launch mapping
 		map_key("n", "<Bslash>l", require("dsych_config.lsp.jdtls").start_vimspector_java)
-        map_key("n", "<M-F>", function() vim.lsp.buf.format({ filter = function(cl) return cl.name == "jdtls" end }) end)
-        map_key({ "v", "x" }, "<M-F>", function() vim.lsp.buf.format({ filter = function(cl) return cl.name == "jdtls" end }) end)
         -- require'formatter'.setup{
         --     filetype = {
         --         java = {
@@ -96,6 +94,19 @@ M.setup = function()
 						template = "${object.className}{${member.name()}=${member.value}, ${otherMembers}}",
 					},
 				},
+                configuration = {
+                    runtimes = {
+                        {
+                            name = 'JavaSE-17',
+                            path = vim.fn.expandcmd"$JAVA_HOME_17"
+                        },
+                        {
+                            name = 'JavaSE-11',
+                            path = vim.fn.expandcmd"$JAVA_HOME_11",
+                            default = true
+                        },
+                    }
+                },
 			},
 		}
 		config.cmd = { "jdtls" , "--run", "--workspace", eclipse_workspace }
