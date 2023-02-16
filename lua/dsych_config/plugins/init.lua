@@ -435,6 +435,7 @@ return require("packer").startup(function(use)
                         -- layout_strategy = 'vertical',
 						only_sort_text = true,
                         layout_strategy = 'flex',
+						glob_pattern = { "!**/build" },
                         additional_args = function (_)
                             -- follow symlinks
                             return { "-L" }

@@ -6,6 +6,9 @@ M.language_server_configs = {
 		table.insert(runtime_path, "lua/?.lua")
 		table.insert(runtime_path, "lua/?/init.lua")
 
+		-- remove this
+		-- vim.lsp.set_log_level("debug")
+
 		return {
 			settings = {
 				Lua = {
