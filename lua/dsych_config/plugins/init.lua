@@ -838,6 +838,11 @@ return require("packer").startup(function(use)
 				end
 			end
 
+			local theme = {
+				fg = get_color_from_group("StatusLineNC", "fg"),
+				bg = get_color_from_group("StatusLineNC", "bg")
+			}
+
 			local status_line_components = {
 				active = {},
 			}
@@ -1021,7 +1026,7 @@ return require("packer").startup(function(use)
 
 			status_line_components.inactive = status_line_components.active
 
-			require("feline").setup({ components = status_line_components })
+			require("feline").setup({ components = status_line_components, theme = theme })
 			vim.go.laststatus = 3
 
 			local winbar = {
@@ -1078,6 +1083,7 @@ return require("packer").startup(function(use)
 
 			require("feline").winbar.setup({
 				components = winbar,
+				theme = theme
 			})
 		end,
 	})
