@@ -103,8 +103,12 @@ M.setup = function()
                         {
                             name = 'JavaSE-11',
                             path = vim.fn.expandcmd"$JAVA_HOME_11",
-                            default = true
                         },
+						{
+                            name = 'JavaSE-1.8',
+                            path = vim.fn.expandcmd"$JAVA_HOME_8",
+                            default = true
+						}
                     }
                 },
 			},
