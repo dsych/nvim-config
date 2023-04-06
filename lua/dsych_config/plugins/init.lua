@@ -1465,6 +1465,72 @@ return require("packer").startup(function(use)
     })
     -- }}}
 
+	-- organazied note taking {{{
+	use {
+		"nvim-neorg/neorg",
+		config = function()
+			local neorg_workspaces = {
+				notes = "~/notes",
+			}
+			require('neorg').setup {
+				load = {
+					["core.defaults"] = {}, -- Loads default behaviour
+					["core.norg.concealer"] = {}, -- Adds pretty icons to your documents
+					["core.norg.dirman"] = { -- Manages Neorg workspaces
+						config = {
+							workspaces = neorg_workspaces,
+						},
+					},
+					["core.export"] = {},
+					["core.export.markdown"] = {
+						config = {
+							extensions = "all",
+						},
+					},
+				},
+			}
+
+			local map_key = require("dsych_config.utils").map_key
+
+			-- api: https://github.com/nvim-neorg/neorg/blob/main/lua/neorg/modules/core/norg/dirman/module.lua#L126
+			local dirman = require"neorg.modules.core.norg.dirman.module".public
+
+			map_key("n", "<leader>no", function()
+				vim.ui.select(dirman.get_workspace_names(), { prompt = "Select Neorg workspace" }, function(choice)
+						if choice == nil then
+							return
+						end
+						vim.cmd.cd(dirman.get_workspace(choice))
+						dirman.open_workspace(choice)
+					end)
+			end)
+
+			vim.api.nvim_create_autocmd("BufEnter", {
+				pattern = {"*.norg"},
+				callback = function ()
+					map_key("n", "<localleader>mk", function()
+						print"Neorg keybinding reference: https://github.com/nvim-neorg/neorg/blob/main/lua/neorg/modules/core/keybinds/keybinds.lua"
+					end, { buffer = true })
+					map_key("n", "<localleader>ms", function()
+						vim.cmd"help neorg"
+					end, { buffer = true })
+
+					map_key("n", "j", "gj", { buffer = true })
+					map_key("n", "k", "gk", { buffer = true })
+
+					vim.wo.showbreak = "+++ "
+					vim.wo.breakindent = true
+					vim.wo.linebreak = true
+					vim.wo.wrap = true
+
+				end
+			})
+		end,
+		run = ":Neorg sync-parsers",
+		requires = { "nvim-lua/plenary.nvim", "nvim-treesitter/nvim-treesitter", "nvim-telescope/telescope.nvim" },
+	}
+	-- }}}
+
 	-- treesitter-based text object hints for visual and operator pending mode {{{
 	use({
 		"mfussenegger/nvim-treehopper",
