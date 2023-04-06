@@ -59,17 +59,25 @@ function link_config {
     source_path=$1
     dest_path=$2
 
+    # echo $source_path $dest_path
+
     if [[ ! -e "$source_path" ]]; then
         printf "WARN: Skipping $source_path has to point to a file or a directory\n"
         return 1
     fi
 
-    if [[ -e "$dest_path" ]]; then
+    # make sure that there is already no older files backed up previously
+    if [[ -e "$dest_path" ]] && [[ ! -e "$dest_path.old" ]]; then
         printf "INFO: Backing up old $dest_path\n"
         mv "$dest_path" "$dest_path.old"
+        # echo "mv \"$dest_path\" \"$dest_path.old\""
     fi
 
-    ln -s "$source_path" "$dest_path"
+    if [[ ! -e "$dest_path" ]]; then
+        ln -s "$source_path" "$dest_path"
+    else
+        printf "ERROR: Not going to link $source_path because $dest_path already exists"
+    fi
 }
 
 function install_jdtls {
@@ -138,8 +146,8 @@ done
 
 for path in ${all_configs[@]}; do
     source_path=$(basename $path)
-    dest_path=$(dirname $path)
-    link_config "$scriptDir/$source_path" $dest_path
+    # dest_path=$(dirname $path)
+    link_config "$scriptDir/$source_path" "$path"
 done
 
 printf "Begin installing dependencies\n"
@@ -151,11 +159,11 @@ run_inside_directory "$HOME/.local/source/jdtls-launcher" install_lombok
 run_inside_directory "$HOME/.local/source/jdtls-launcher" install_checkstyle
 
 
-printf "------------------------"
-printf "Also need to install the following manually:"
-printf "- Starship: https://starship.rs/guide/#%F0%9F%9A%80-installation"
-printf "- FZF: https://github.com/junegunn/fzf#installation"
-printf "- FZF tab completion for ZSH: https://github.com/lincheney/fzf-tab-completion#installation"
-printf "------------------------"
+echo "------------------------"
+echo "Also need to install the following manually:"
+echo "- Starship: https://starship.rs/guide/#%F0%9F%9A%80-installation"
+echo "- FZF: https://github.com/junegunn/fzf#installation"
+echo "- FZF tab completion for ZSH: https://github.com/lincheney/fzf-tab-completion#installation"
+echo "----------------------"
 
 printf "Done!!!\n"
