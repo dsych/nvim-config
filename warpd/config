@@ -2,7 +2,7 @@ scroll_down: f
 scroll_up: d
 buttons: q w e
 oneshot_buttons: z x c
-screen_activation_key: A-m
+screen_activation_key: A-s
 history_activation_key: A-;
 activation_key: A-n
 grid_activation_key: A-g
