@@ -28,6 +28,7 @@ vim.opt.signcolumn = "yes:2"
 -- remap leader to space
 map_key("n", "<space>", "<Nop>")
 vim.g.mapleader = " "
+vim.g.localleader = "\\"
 
 -- Sets how many lines of history VIM has to remember
 vim.opt.history = 500
@@ -43,6 +44,9 @@ vim.opt.autoread = true
 
 -- highlight the current line
 vim.opt.cursorline = true
+
+-- highlight the current column
+vim.opt.cursorcolumn = true
 
 -- disable line wrapping
 vim.opt.wrap = false
