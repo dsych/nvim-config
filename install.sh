@@ -64,6 +64,11 @@ function link_config {
         return 1
     fi
 
+    if [[ -e "$dest_path" ]]; then
+        printf "INFO: Backing up old $dest_path\n"
+        mv "$dest_path" "$dest_path.old"
+    fi
+
     ln -s "$source_path" "$dest_path"
 }
 
@@ -123,6 +128,8 @@ all_configs=(
     "$HOME/.config/warpd"
     "$HOME/.config/lsd"
     "$HOME/.config/fd"
+    "$HOME/.config/wezterm"
+    "$HOME/.config/starship.toml"
 )
 
 for path in ${all_configs[@]}; do
@@ -142,5 +149,13 @@ run_inside_directory "$HOME/.local/source/jdtls-launcher" install_java_debug
 run_inside_directory "$HOME/.local/source/jdtls-launcher" install_java_decompiler
 run_inside_directory "$HOME/.local/source/jdtls-launcher" install_lombok
 run_inside_directory "$HOME/.local/source/jdtls-launcher" install_checkstyle
+
+
+printf "------------------------"
+printf "Also need to install the following manually:"
+printf "- Starship: https://starship.rs/guide/#%F0%9F%9A%80-installation"
+printf "- FZF: https://github.com/junegunn/fzf#installation"
+printf "- FZF tab completion for ZSH: https://github.com/lincheney/fzf-tab-completion#installation"
+printf "------------------------"
 
 printf "Done!!!\n"
