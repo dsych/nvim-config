@@ -337,7 +337,10 @@ return require("packer").startup(function(use)
 			map_key("n", "<Bslash>i", "<Plug>VimspectorStepInto")
 			map_key("n", "<Bslash>o", "<Plug>VimspectorStepOut")
 			map_key("n", "<Bslash>d", "<cmd>VimspectorReset<cr>")
+			map_key("n", "<Bslash>fu", "<Plug>VimspectorUpFrame")
+			map_key("n", "<Bslash>fd", "<Plug>VimspectorDownFrame")
 
+            -- vim.g.vimspector_base_dir='/local/home/dsych/.local/share/nvim/site/pack/packer/start/vimspector'
 			---@diagnostic disable-next-line: lowercase-global
 			function save_vimspector_session()
 				if vim.fn.filereadable("./.vimspector.json") then
