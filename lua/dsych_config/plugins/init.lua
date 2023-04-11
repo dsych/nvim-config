@@ -253,7 +253,10 @@ return require("packer").startup(function(use)
 				null_ls.builtins.diagnostics.write_good,
 				null_ls.builtins.diagnostics.cppcheck,
 				null_ls.builtins.diagnostics.cspell.with{
-					extra_args = {"-c", global_dictionary}
+					extra_args = {"-c", global_dictionary},
+					diagnostics_postprocess = function(diagnostic)
+						diagnostic.severity = vim.diagnostic.severity.HINT
+					end,
 				},
 				checkstyle_diagnostic,
 
