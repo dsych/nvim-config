@@ -241,6 +241,9 @@ return require("packer").startup(function(use)
 			local null_ls = require("null-ls")
             local checkstyle_diagnostic = require("checkstyle-null-ls")("~/.config/nvim/additional/checkstyle/checkstyle-rules.xml", "~/.local/source/jdtls-launcher/checkstyle.jar")
 			local utils = require"dsych_config.utils"
+			local global_dictionary = vim.fn.stdpath"data" .. "/cspell.json"
+			-- generate global config, if missing
+			utils.create_file_if_does_not_exist(global_dictionary, generate_default_dictionary())
 
 			local sources = {
 				null_ls.builtins.formatting.stylua,
@@ -249,15 +252,15 @@ return require("packer").startup(function(use)
 
 				null_ls.builtins.diagnostics.write_good,
 				null_ls.builtins.diagnostics.cppcheck,
-				null_ls.builtins.diagnostics.cspell,
+				null_ls.builtins.diagnostics.cspell.with{
+					extra_args = {"-c", global_dictionary}
+				},
 				checkstyle_diagnostic,
 
 				null_ls.builtins.code_actions.cspell.with{
 					config = {
 						find_json = function ()
-							local global_dictionary = vim.fn.stdpath"data" .. "/cspell.json"
-
-							return utils.create_file_if_does_not_exist(global_dictionary, generate_default_dictionary())
+							return global_dictionary
 						end,
 						create_config_file = true
 					}
@@ -272,6 +275,44 @@ return require("packer").startup(function(use)
 			require("mason-null-ls").setup({
 				ensure_installed = config_names
 			})
+
+
+			local map_key = require("dsych_config.utils").map_key
+			map_key("n", "zg", function ()
+				vim.lsp.buf.code_action({
+                    filter = function(action) return action.title == "Add to cspell json file" end,
+                    apply = true,
+                })
+			end)
+			map_key("n", "z=", function ()
+				vim.lsp.buf.code_action({
+                    filter = function(action) return action.title:find"^Use" ~= nil end,
+                })
+			end)
+
+			local get_cspell_namespace = function ()
+				local sources = vim.tbl_filter(function (lsp) return lsp.name == "cspell" end, null_ls.get_sources())
+				if vim.tbl_isempty(sources) then
+					vim.notify("cspell is not attached", vim.log.levels.INFO)
+					return
+				end
+				local cspell_id = sources[1].id
+				return require("null-ls.diagnostics").get_namespace(cspell_id)
+			end
+
+			map_key("n", "]s", function ()
+				local namespace = require("null-ls.diagnostics").get_namespace("cspell")
+				vim.diagnostic.goto_next{
+					namespace = get_cspell_namespace(),
+					float = false,
+				}
+			end)
+			map_key("n", "[s", function ()
+				vim.diagnostic.goto_prev{
+					namespace = get_cspell_namespace(),
+					float = false,
+				}
+			end)
 		end,
 	})
 	-- }}}
@@ -442,7 +483,7 @@ return require("packer").startup(function(use)
 			map_key("n", "gm", require("telescope.builtin").marks)
 			map_key("n", "<leader>gh", require("telescope.builtin").help_tags)
 			map_key("n", "<leader>m", require("telescope.builtin").keymaps)
-			map_key("n", "z=", require("telescope.builtin").spell_suggest)
+			-- map_key("n", "z=", require("telescope.builtin").spell_suggest)
 
 			-- resume prev picker with state
 			map_key("n", "<leader>rr", require("telescope.builtin").resume)
