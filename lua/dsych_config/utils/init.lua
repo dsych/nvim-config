@@ -145,4 +145,22 @@ M.resolve_project_root = function ()
     return vim.fn.fnamemodify(vim.fn.finddir(".git", ".;"), ":p:h:h")
 end
 
+M.create_file_if_does_not_exist = function (file_path, file_content)
+    file_content = file_content or ""
+
+    local f = io.open(file_path, "r")
+    if f == nil then
+        f = io.open(file_path, "w")
+        if f then
+            f:write(file_content)
+        end
+    end
+
+    if f then
+        io.close(f)
+    end
+
+    return file_path
+end
+
 return M

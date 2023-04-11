@@ -196,7 +196,10 @@ return require("packer").startup(function(use)
 
             -- lsp config
 			"neovim/nvim-lspconfig",
-            "williamboman/mason-lspconfig.nvim"
+			"williamboman/mason-lspconfig.nvim",
+
+			-- null-ls
+			"jay-babu/mason-null-ls.nvim"
 		},
 		config = require("dsych_config.lsp").setup,
 	})
@@ -223,20 +226,51 @@ return require("packer").startup(function(use)
 
 	use({
 		"jose-elias-alvarez/null-ls.nvim",
-		requires = { "nvim-lua/plenary.nvim", "checkstyle-null-ls" },
+		requires = { "nvim-lua/plenary.nvim", "checkstyle-null-ls", "lsp-installer" },
 		config = function()
-			local null_ls = require("null-ls")
-            local checkstyle_diagnostic = require("checkstyle-null-ls")("~/.config/nvim/additional/checkstyle/checkstyle-rules.xml", "~/.local/bin/checkstyle.jar")
-			null_ls.setup({
-				sources = {
-					null_ls.builtins.formatting.stylua,
-					null_ls.builtins.formatting.clang_format,
-					null_ls.builtins.formatting.prettier,
+			local generate_default_dictionary = function ()
+				local cspell_json = {
+					version = "0.2",
+					language = "en",
+					words = {},
+					flagWords = {},
+				}
+				return vim.json.encode(cspell_json)
+			end
 
-					null_ls.builtins.diagnostics.write_good,
-					null_ls.builtins.diagnostics.cppcheck,
-                    checkstyle_diagnostic
-				},
+			local null_ls = require("null-ls")
+            local checkstyle_diagnostic = require("checkstyle-null-ls")("~/.config/nvim/additional/checkstyle/checkstyle-rules.xml", "~/.local/source/jdtls-launcher/checkstyle.jar")
+			local utils = require"dsych_config.utils"
+
+			local sources = {
+				null_ls.builtins.formatting.stylua,
+				null_ls.builtins.formatting.clang_format,
+				null_ls.builtins.formatting.prettier,
+
+				null_ls.builtins.diagnostics.write_good,
+				null_ls.builtins.diagnostics.cppcheck,
+				null_ls.builtins.diagnostics.cspell,
+				checkstyle_diagnostic,
+
+				null_ls.builtins.code_actions.cspell.with{
+					config = {
+						find_json = function ()
+							local global_dictionary = vim.fn.stdpath"data" .. "/cspell.json"
+
+							return utils.create_file_if_does_not_exist(global_dictionary, generate_default_dictionary())
+						end,
+						create_config_file = true
+					}
+				}
+			}
+
+			null_ls.setup({
+				sources = sources,
+			})
+
+			local config_names = vim.tbl_map(function (source) return source.name end, sources)
+			require("mason-null-ls").setup({
+				ensure_installed = config_names
 			})
 		end,
 	})
@@ -1376,21 +1410,21 @@ return require("packer").startup(function(use)
 	-- }}}
 
 	-- enhance vim's native spell checker {{{
-	use({
-		"dsych/vim-spell",
-		config = function()
-			vim.cmd([[
-                augroup code_spell
-                    autocmd!
-                    " turn on spell checking for all file types
-                    autocmd FileType * :set spelloptions=camel | :set spellcapcheck= | :set spell
-                    " except for the following file types
-                    " vim ft has poor dictionary
-                    autocmd FileType startify,vim,Telescope*,help :set nospell
-                augroup end
-            ]])
-		end,
-	})
+	-- use({
+	-- 	"dsych/vim-spell",
+	-- 	config = function()
+	-- 		vim.cmd([[
+ --                augroup code_spell
+ --                    autocmd!
+ --                    " turn on spell checking for all file types
+ --                    autocmd FileType * :set spelloptions=camel | :set spellcapcheck= | :set spell
+ --                    " except for the following file types
+ --                    " vim ft has poor dictionary
+ --                    autocmd FileType startify,vim,Telescope*,help :set nospell
+ --                augroup end
+ --            ]])
+	-- 	end,
+	-- })
 	-- }}}
 
 	-- {{{ window picker

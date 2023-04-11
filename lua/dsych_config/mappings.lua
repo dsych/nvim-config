@@ -71,8 +71,13 @@ map_key("v", "<M-k>", ":m'<-2<cr>`>my`<mzgv`yo`z")
 -- => convenience mappings
 ------------------------------------------------------------------------------------------------------------------------------
 map_key("n", "<leader>z", function()
-	vim.opt.spell = not vim.opt.spell:get()
-	utils.load_spell_file()
+	-- vim.opt.spell = not vim.opt.spell:get()
+	local success, null_ls = pcall(require, "null-ls")
+	if success then
+		print"Toggling spelling"
+		null_ls.toggle"cspell"
+	end
+	-- utils.load_spell_file()
 end)
 
 -- for configs
