@@ -82,6 +82,7 @@ map_key("n", "<leader>ne", function()
 end)
 map_key("n", "<leader>nE", function()
 	local path = vim.fn.stdpath("config") .. "/lua/dsych_config/plugins/init.lua"
+	vim.cmd.tcd(vim.fn.stdpath("config") .. "/lua/dsych_config")
 	vim.cmd.tabnew(path)
 end)
 map_key("n", "<leader>na", function()
