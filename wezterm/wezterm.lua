@@ -1,8 +1,16 @@
 local wezterm = require 'wezterm'
 local config = {}
 
-config.color_scheme = 'Batman'
-config.color_scheme = 'Violet Light'
+local is_night_in_est = function ()
+				-- does not account for daylight savings
+				local est_hour = tonumber(os.date("%H", os.time(os.date("!*t")) - 4 * 60 * 60))
+
+				return est_hour < 7 or est_hour > 21
+end
+
+-- config.color_scheme = 'Batman'
+config.color_scheme = is_night_in_est() and 'Violet Dark' or 'Violet Light'
+
 config.font_size = 14
 config.cursor_blink_rate = 1000
 config.default_cursor_style = 'BlinkingBlock'

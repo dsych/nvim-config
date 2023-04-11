@@ -588,7 +588,20 @@ return require("packer").startup(function(use)
 			-- going to leave it here is a reminder...
 			-- OH HOW THINGS HAVE CHANGED)
 			vim.go.termguicolors = true
-			vim.go.background = "light"
+
+
+			local is_night_in_est = function ()
+				-- does not account for daylight savings
+				local est_hour = tonumber(os.date("%H", os.time(os.date("!*t")) - 4 * 60 * 60))
+
+				return est_hour < 7 or est_hour > 21
+			end
+
+			if is_night_in_est() then
+				vim.go.background = "dark"
+			else
+				vim.go.background = "light"
+			end
 
 			vim.cmd("colorscheme vscode")
 
