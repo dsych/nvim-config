@@ -2,31 +2,10 @@ local M = {}
 
 M.language_server_configs = {
 	["lua_ls"] = function()
-		local runtime_path = vim.split(package.path, ";")
-		table.insert(runtime_path, "lua/?.lua")
-		table.insert(runtime_path, "lua/?/init.lua")
-
-		-- remove this
-		-- vim.lsp.set_log_level("debug")
-
 		return {
 			settings = {
 				Lua = {
-					runtime = {
-						version = "LuaJIT",
-                        -- Setup your lua path
-                        path = runtime_path,
-					},
-					diagnostics = {
-						-- Get the language server to recognize the 'vim', 'use' global
-						globals = { "vim", "use" },
-					},
-					workspace = {
-						-- Make the server aware of Neovim runtime files
-						library = vim.api.nvim_get_runtime_file("", true),
-                        checkThirdParty = false,
-					},
-					-- Do not send telemetry data containing a randomized but unique identifier
+	 				-- Do not send telemetry data containing a randomized but unique identifier
 					telemetry = {
 						enable = false,
 					},
@@ -85,6 +64,9 @@ M.setup = function()
 
 	local lsp_utils = require("dsych_config.lsp.utils")
     local lsp_config = require"lspconfig"
+
+	-- configure lua_ls for neovim plugin development
+	require"neodev".setup()
 
 	-- actually start the language server
     for _, server_name in ipairs(servers) do

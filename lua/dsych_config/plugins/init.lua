@@ -199,10 +199,14 @@ return require("packer").startup(function(use)
 			"williamboman/mason-lspconfig.nvim",
 
 			-- null-ls
-			"jay-babu/mason-null-ls.nvim"
+			"jay-babu/mason-null-ls.nvim",
+
+			-- neovim plugin development
+			"folke/neodev.nvim"
 		},
 		config = require("dsych_config.lsp").setup,
 	})
+
 
 	use({
 		"b0o/schemastore.nvim",
