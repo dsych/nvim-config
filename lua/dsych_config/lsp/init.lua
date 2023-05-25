@@ -75,7 +75,12 @@ M.setup = function()
 			lsp_utils.mk_config(),
 			server_configs[server_name] and server_configs[server_name]() or {}
 		)
-        lsp_config[server_name].setup(lsp_utils.configure_lsp(config))
+		config = lsp_utils.configure_lsp(config)
+		if server_name == "tsserver" then
+			require"dsych_config.lsp.tsserver".config(config)
+		else
+			lsp_config[server_name].setup(config)
+		end
     end
 end
 

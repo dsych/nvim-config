@@ -202,7 +202,10 @@ return require("packer").startup(function(use)
 			"jay-babu/mason-null-ls.nvim",
 
 			-- neovim plugin development
-			"folke/neodev.nvim"
+			"folke/neodev.nvim",
+
+			-- typescript language server
+			"jose-elias-alvarez/typescript.nvim",
 		},
 		config = require("dsych_config.lsp").setup,
 	})
@@ -271,7 +274,8 @@ return require("packer").startup(function(use)
 						end,
 						create_config_file = true
 					}
-				}
+				},
+				require("typescript.extensions.null-ls.code-actions"),
 			}
 
 			null_ls.setup({
@@ -1696,8 +1700,8 @@ return require("packer").startup(function(use)
 			require('neorg').setup {
 				load = {
 					["core.defaults"] = {}, -- Loads default behaviour
-					["core.norg.concealer"] = {}, -- Adds pretty icons to your documents
-					["core.norg.dirman"] = { -- Manages Neorg workspaces
+					["core.concealer"] = {}, -- Adds pretty icons to your documents
+					["core.dirman"] = { -- Manages Neorg workspaces
 						config = {
 							workspaces = neorg_workspaces,
 						},
@@ -1714,7 +1718,7 @@ return require("packer").startup(function(use)
 			local map_key = require("dsych_config.utils").map_key
 
 			-- api: https://github.com/nvim-neorg/neorg/blob/main/lua/neorg/modules/core/norg/dirman/module.lua#L126
-			local dirman = require"neorg.modules.core.norg.dirman.module".public
+			local dirman = require"neorg.modules.core.dirman.module".public
 
 			map_key("n", "<leader>no", function()
 				vim.ui.select(dirman.get_workspace_names(), { prompt = "Select Neorg workspace" }, function(choice)

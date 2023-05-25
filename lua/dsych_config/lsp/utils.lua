@@ -13,13 +13,21 @@ local get_current_visual_selection = function ()
     return { start = { line_start, column_start }, ["end"] = { line_end, column_end } }
 end
 
+local filetype_to_default_formatter = {
+	["typescript"] = "null-ls",
+	["java"] = "jdtls"
+}
+
 local select_lsp_client = function(callback)
     local client_names = vim.tbl_map(function (client) return client.name end, vim.lsp.get_active_clients())
+	local filetype = vim.bo.filetype
 
     if vim.tbl_count(client_names) < 1 then
         return
-    elseif vim.tbl_contains(client_names) == 1 then
+    elseif vim.tbl_count(client_names) == 1  then
         callback(client_names[1])
+	elseif filetype_to_default_formatter[filetype] ~= nil then
+		callback(filetype_to_default_formatter[filetype])
     else
         vim.ui.select(client_names, {prompt = "Which lsp client:" }, function(choice)
             if choice ~= nil then
@@ -83,7 +91,7 @@ M.define_mappings = function()
 		print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
 	end)
 
-	map_key("n", "ga", vim.lsp.buf.code_action)
+	map_key({ "n", "v", "x" }, "ga", vim.lsp.buf.code_action)
 
 	map_key("n", "<leader>de", function()
 		require("telescope.builtin").diagnostics({ bufnr = nil, severity = "ERROR" })
