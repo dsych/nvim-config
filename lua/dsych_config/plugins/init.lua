@@ -44,6 +44,9 @@ return require("packer").startup(function(use)
 			require("luasnip/loaders/from_vscode").lazy_load()
 
 			cmp.setup({
+				performance = {
+					throttle = 100
+				},
 				snippet = {
 					-- REQUIRED - you must specify a snippet engine
 					expand = function(args)
