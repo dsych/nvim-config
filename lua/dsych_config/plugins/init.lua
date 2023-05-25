@@ -259,11 +259,13 @@ return require("packer").startup(function(use)
 				null_ls.builtins.formatting.stylua,
 				null_ls.builtins.formatting.clang_format,
 				null_ls.builtins.formatting.prettier,
+				null_ls.builtins.formatting.beautysh,
 
 				null_ls.builtins.diagnostics.write_good,
 				null_ls.builtins.diagnostics.cppcheck,
 				null_ls.builtins.diagnostics.cspell.with{
 					extra_args = {"-c", global_dictionary},
+					disabled_filetypes = { "NvimTree" },
 					diagnostics_postprocess = function(diagnostic)
 						diagnostic.severity = vim.diagnostic.severity.HINT
 					end,
@@ -271,6 +273,7 @@ return require("packer").startup(function(use)
 				checkstyle_diagnostic,
 
 				null_ls.builtins.code_actions.cspell.with{
+					disabled_filetypes = { "NvimTree" },
 					config = {
 						find_json = function ()
 							return global_dictionary
@@ -420,8 +423,8 @@ return require("packer").startup(function(use)
 							nowait = false, -- disable `nowait` if you have existing combos starting with this char that you want to use
 						},
 						["<2-LeftMouse>"] = "open",
-						["<cr>"] = "open",
-						["o"] = "open",
+						["<cr>"] = "open_with_window_picker",
+						["o"] = "open_with_window_picker",
 						["<esc>"] = "revert_preview",
 						["P"] = { "toggle_preview", config = { use_float = true } },
 						["l"] = "focus_preview",
@@ -430,7 +433,6 @@ return require("packer").startup(function(use)
 						["t"] = "open_tabnew",
 						-- ["<cr>"] = "open_drop",
 						-- ["t"] = "open_tab_drop",
-						["w"] = "open_with_window_picker",
 						["C"] = "close_node",
 						["z"] = "close_all_nodes",
 						["Z"] = "expand_all_nodes",
@@ -809,13 +811,17 @@ return require("packer").startup(function(use)
 				return est_hour < 7 or est_hour > 21
 			end
 
-			if is_night_in_est() then
+			local colorscheme = nil
+			local force_dark = true
+			if is_night_in_est() or force_dark then
 				vim.go.background = "dark"
+				colorscheme = "terafox"
 			else
 				vim.go.background = "light"
+				colorscheme = "dawnfox"
 			end
 
-			vim.cmd("colorscheme vscode")
+			vim.cmd.colorscheme(colorscheme)
 
 			-- Enable syntax highlighting
 			vim.cmd("syntax enable")
@@ -1009,6 +1015,15 @@ return require("packer").startup(function(use)
 					end
 
                     vim.g.test_extra_flags = choice
+				end)
+			end)
+			map_key("n", "<leader>ipt", function()
+				vim.ui.select(vim.g.test_possible_replacement_command or {""}, { prompt = "Select vim-test extra flags (".. vim.g.test_replacement_command .."):" }, function(choice)
+					if choice == nil then
+						return
+					end
+
+                    vim.g.test_replacement_command = choice
 				end)
 			end)
 
@@ -1515,7 +1530,8 @@ return require("packer").startup(function(use)
 	-- additional filetypes {{{
 	use({
 		"satabin/hocon-vim",
-        "lepture/vim-jinja"
+        "lepture/vim-jinja",
+		"kyoh86/vim-jsonl"
 	})
 	-- }}}
 

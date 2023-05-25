@@ -53,7 +53,8 @@ M.setup = function()
 		"tsserver",
 		"vimls",
 		"bashls",
-		"yamlls"
+		"yamlls",
+		"cucumber_language_server"
 	}
 
     require("mason").setup()
