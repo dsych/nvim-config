@@ -69,6 +69,15 @@ M.setup = function()
 	-- configure lua_ls for neovim plugin development
 	require"neodev".setup()
 
+    -- FIXME: workaround for high cpu usage in the recent nighty release because of the new file watcher
+    local ok, wf = pcall(require, "vim.lsp._watchfiles")
+    if ok then
+        -- disable lsp watcher. Too slow on linux
+        wf._watchfunc = function()
+            return function() end
+        end
+    end
+
 	-- actually start the language server
     for _, server_name in ipairs(servers) do
 		local config = vim.tbl_deep_extend(

@@ -54,9 +54,9 @@ M.mk_config = function()
 			allow_incremental_sync = true,
 		},
 		["capabilities"] = c,
-		on_init = function(client)
-			client.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
-		end,
+		-- on_init = function(client)
+		-- 	client.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
+		-- end,
 	}
 end
 

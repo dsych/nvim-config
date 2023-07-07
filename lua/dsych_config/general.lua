@@ -43,10 +43,10 @@ vim.opt.showcmd = true
 vim.opt.autoread = true
 
 -- highlight the current line
-vim.opt.cursorline = true
+vim.opt.cursorline = false
 
 -- highlight the current column
-vim.opt.cursorcolumn = true
+vim.opt.cursorcolumn = false
 
 -- disable line wrapping
 vim.opt.wrap = false

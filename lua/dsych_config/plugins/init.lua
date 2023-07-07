@@ -764,6 +764,7 @@ return require("packer").startup(function(use)
             "sainnhe/everforest",
             "EdenEast/nightfox.nvim",
             "Mofiqul/vscode.nvim",
+			"thedenisnikulin/vim-cyberpunk",
 			-- missing lsp highlights for diagnostics, docs etc.
 			"folke/lsp-colors.nvim",
 		},
@@ -815,10 +816,10 @@ return require("packer").startup(function(use)
 			local force_dark = true
 			if is_night_in_est() or force_dark then
 				vim.go.background = "dark"
-				colorscheme = "terafox"
+				colorscheme = "cyberpunk"
 			else
 				vim.go.background = "light"
-				colorscheme = "dawnfox"
+				colorscheme = "cyberpunk"
 			end
 
 			vim.cmd.colorscheme(colorscheme)
@@ -1563,9 +1564,13 @@ return require("packer").startup(function(use)
 			map_key("n", "<leader>cf", require("blanket").pick_report_path)
 
 			require("blanket").setup({ silent = true, signs = {
-                incomplete_branch_color = "WarningMsg",
-                covered_color = "Search",
-                uncovered_color = "Error"
+				incomplete_branch = "*",
+				uncovered = "!",
+				covered = "=",
+
+                incomplete_branch_color = "DiagnosticSignWarn",
+                covered_color = "DiagnosticSignHint",
+                uncovered_color = "DiagnosticSignError"
             }})
 		end,
 	})
@@ -1601,24 +1606,6 @@ return require("packer").startup(function(use)
 		end,
         requires = "nvim-treesitter/nvim-treesitter",
 	})
-	-- }}}
-
-	-- enhance vim's native spell checker {{{
-	-- use({
-	-- 	"dsych/vim-spell",
-	-- 	config = function()
-	-- 		vim.cmd([[
- --                augroup code_spell
- --                    autocmd!
- --                    " turn on spell checking for all file types
- --                    autocmd FileType * :set spelloptions=camel | :set spellcapcheck= | :set spell
- --                    " except for the following file types
- --                    " vim ft has poor dictionary
- --                    autocmd FileType startify,vim,Telescope*,help :set nospell
- --                augroup end
- --            ]])
-	-- 	end,
-	-- })
 	-- }}}
 
 	-- {{{ window picker
@@ -1695,7 +1682,7 @@ return require("packer").startup(function(use)
         'ojroques/vim-oscyank',
         config = function ()
             vim.cmd[[
-                autocmd TextYankPost * if v:event.operator is 'y' && v:event.regname is '+' | execute 'OSCYankReg +' | endif
+                autocmd TextYankPost * if v:event.operator is 'y' && v:event.regname is '+' | execute 'OSCYankRegister +' | endif
             ]]
         end
 

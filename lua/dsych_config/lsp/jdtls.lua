@@ -6,7 +6,7 @@ M.start_vimspector_java = function()
 	require("jdtls.util").execute_command({ command = "vscode.java.startDebugSession" }, function(err0, port)
 		assert(not err0, vim.inspect(err0))
 
-		vim.fn["vimspector#LaunchWithSettings"]({ AdapterPort = port, configuration = "Java Attach" })
+		vim.fn["vimspector#LaunchWithSettings"]({ AdapterPort = port })
 	end, 0)
 end
 
