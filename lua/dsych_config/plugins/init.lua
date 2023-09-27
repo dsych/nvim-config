@@ -43,6 +43,31 @@ return require("packer").startup(function(use)
 			local cmp = require("cmp")
 			require("luasnip/loaders/from_vscode").lazy_load()
 
+			local next_item = function(fallback)
+				local has_words_before = function()
+					local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+					return col ~= 0
+						and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s")
+							== nil
+				end
+
+				if cmp.visible() then
+					cmp.select_next_item()
+				elseif has_words_before() then
+					cmp.complete()
+				else
+					fallback()
+				end
+			end
+
+			local prev_item = function(fallback)
+				if cmp.visible() then
+					cmp.select_prev_item()
+				else
+					fallback()
+				end
+			end
+
 			cmp.setup({
 				performance = {
 					throttle = 100
@@ -87,30 +112,10 @@ return require("packer").startup(function(use)
 						end
 					end, { "i", "s", "c" }),
 					["<CR>"] = cmp.mapping.confirm({ select = false, behavior = cmp.ConfirmBehavior.Replace }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
-					["<Tab>"] = cmp.mapping(function(fallback)
-						local has_words_before = function()
-							local line, col = unpack(vim.api.nvim_win_get_cursor(0))
-							return col ~= 0
-								and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s")
-									== nil
-						end
-
-						if cmp.visible() then
-							cmp.select_next_item()
-						elseif has_words_before() then
-							cmp.complete()
-						else
-							fallback()
-						end
-					end, { "i", "s", "c" }),
-
-					["<S-Tab>"] = cmp.mapping(function(fallback)
-						if cmp.visible() then
-							cmp.select_prev_item()
-						else
-							fallback()
-						end
-					end, { "i", "s", "c" }),
+					["<Tab>"] = cmp.mapping(next_item, { "i", "s", "c" }),
+					["<S-Tab>"] = cmp.mapping(prev_item, { "i", "s", "c" }),
+					["<C-j>"] = cmp.mapping(next_item, { "i", "s", "c" }),
+					["<C-k>"] = cmp.mapping(prev_item, { "i", "s", "c" }),
 				},
 				sources = cmp.config.sources({
 					{ name = "nvim_lsp" },
@@ -209,6 +214,12 @@ return require("packer").startup(function(use)
 
 			-- typescript language server
 			"jose-elias-alvarez/typescript.nvim",
+
+			-- inlay hints
+			{
+                "lvimuser/lsp-inlayhints.nvim",
+                branch = "anticonceal",
+            }
 		},
 		config = require("dsych_config.lsp").setup,
 	})
@@ -598,6 +609,7 @@ return require("packer").startup(function(use)
 
 			-- global search, useful with qf + replacer
 			map_key("n", "<leader>/", require("telescope.builtin").live_grep)
+			map_key("n", "<leader>//", ":lua require('telescope.builtin').live_grep({ glob_pattern = '!*.' })<left><left><left><left>")
 			map_key("n", "<leader>/w", require("telescope.builtin").grep_string)
 			map_key({ "v", "x" }, "<leader>/w", function()
 				vim.cmd([[normal "xy]])
@@ -633,8 +645,20 @@ return require("packer").startup(function(use)
 					path_display = {
 						shorten = { len = 1, exclude = { 1, -1 } },
 					},
-                    layout_strategy = 'flex',
-                    layout_config = { width = 0.9 }
+                    layout_strategy = 'vertical',
+                    layout_config = { width = 0.9 },
+					mappings = {
+						i = {
+							["<C-j>"] = {
+							  require"telescope.actions".move_selection_next, type = "action",
+							  opts = { nowait = true, silent = true }
+							},
+							["<C-k>"] = {
+							  require"telescope.actions".move_selection_previous, type = "action",
+							  opts = { nowait = true, silent = true }
+							},
+						}
+					}
 				},
 				pickers = {
 					spell_suggest = {
@@ -642,7 +666,7 @@ return require("packer").startup(function(use)
 						theme = "dropdown",
 					},
 					find_files = {
-						previewer = false,
+						previewer = true,
 						path_display = { "smart", "shorten" },
 						hidden = true,
 						follow = true,
@@ -651,7 +675,6 @@ return require("packer").startup(function(use)
 					live_grep = {
                         -- layout_strategy = 'vertical',
 						only_sort_text = true,
-                        layout_strategy = 'flex',
 						glob_pattern = { "!**/build" },
                         additional_args = function (_)
                             -- follow symlinks
@@ -665,10 +688,6 @@ return require("packer").startup(function(use)
                             -- follow symlinks
                             return { "-L" }
                         end
-					},
-					buffers = {
-						-- previewer = false,
-                        layout_strategy = 'vertical'
 					},
 				},
 				extensions = {
@@ -816,10 +835,10 @@ return require("packer").startup(function(use)
 			local force_dark = true
 			if is_night_in_est() or force_dark then
 				vim.go.background = "dark"
-				colorscheme = "cyberpunk"
+				colorscheme = "gruvbox"
 			else
 				vim.go.background = "light"
-				colorscheme = "cyberpunk"
+				colorscheme = "gruvbox"
 			end
 
 			vim.cmd.colorscheme(colorscheme)
@@ -1066,7 +1085,7 @@ return require("packer").startup(function(use)
 
 	-- status line {{{
 	use({
-		"feline-nvim/feline.nvim",
+		"freddiehaddad/feline.nvim",
 		after = "themes",
 		config = function()
 			local get_color_from_group = function(group_name, attribute)
@@ -1082,9 +1101,17 @@ return require("packer").startup(function(use)
 				end
 			end
 
+			local main_highlight_group = "StatusLineNC"
+
+			if vim.g.colors_name == "gruvbox" then
+				main_highlight_group = "CursorLine"
+			elseif vim.g.colors_name == "desert" then
+				main_highlight_group = "NonText"
+			end
+
 			local theme = {
-				fg = get_color_from_group("StatusLineNC", "fg"),
-				bg = get_color_from_group("StatusLineNC", "bg")
+				fg = get_color_from_group(main_highlight_group, "fg"),
+				bg = get_color_from_group(main_highlight_group, "bg")
 			}
 
 			local status_line_components = {
@@ -1185,7 +1212,11 @@ return require("packer").startup(function(use)
 			local middle_component = {
 				{
 					provider = function()
-						return require("lsp-status").status()
+						local status = require("lsp-status").status()
+
+						status = status:gsub('%%%%', '%%') -- decode the encoded % sign
+			  			status = status:gsub('%%', '%%%%') -- and encode them all
+		  				return status
 					end,
 
 					right_sep = {
@@ -1343,7 +1374,7 @@ return require("packer").startup(function(use)
 
 			map_key("n", "<leader>vo", ":DiffviewOpen ")
 			map_key("n", "<leader>vc", "<cmd>DiffviewClose<cr>")
-			map_key("n", "<leader>vf", "<cmd>DiffviewFileHistory<cr>")
+			map_key("n", "<leader>vf", "<cmd>DiffviewFileHistory %<cr>")
 			vim.cmd([[
             augroup file_types
                 autocmd!
@@ -1661,6 +1692,7 @@ return require("packer").startup(function(use)
 	-- treesitter playground for checking TS queries {{{
 	use({
 		"nvim-treesitter/playground",
+        cond = false,
 		requires = { "nvim-treesitter/nvim-treesitter" },
 		config = function()
 			require("nvim-treesitter.configs").setup({

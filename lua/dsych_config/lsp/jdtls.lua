@@ -83,6 +83,7 @@ M.setup = function()
 						"org.mockito.Mockito.*",
 					},
 				},
+				inlayHints = { parameterNames = { enabled = "all" } };
 				sources = {
 					organizeImports = {
 						starThreshold = 9999,
@@ -126,6 +127,7 @@ M.setup = function()
 
 		local extendedClientCapabilities = require("jdtls").extendedClientCapabilities
 		extendedClientCapabilities.resolveAdditionalTextEditsSupport = true
+		extendedClientCapabilities.onCompletionItemSelectedCommand = "editor.action.triggerParameterHints"
 		config.init_options = {
 			-- jdtls extensions e.g. debugging
 			bundles = bundles,

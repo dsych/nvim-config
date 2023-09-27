@@ -15,6 +15,8 @@ map_key("n", "<leader>q", ":quit<cr>")
 -- Super useful! From an idea by Michael Naumann
 map_key("v", "*", ":<C-u>call VisualSelection('', '')<CR>/<C-R>=@/<CR><CR>")
 map_key("v", "#", ":<C-u>call VisualSelection('', '')<CR>?<C-R>=@/<CR><CR>")
+map_key({ "n", "v" }, "**", "*N")
+map_key({ "n", "v" }, "##", "#N")
 
 ------------------------------------------------------------------------------------------------------------------------------
 -- => Moving around, tabs, windows and buffers

@@ -41,6 +41,8 @@ M.mk_config = function()
 	local capabilities = vim.lsp.protocol.make_client_capabilities()
 	capabilities.workspace.configuration = true
 	capabilities.textDocument.completion.completionItem.snippetSupport = true
+    -- FIXME: workaround for high cpu usage in the recent nighty release because of the new file watcher
+	capabilities.workspace.didChangeWatchedFiles.dynamicRegistration = false
     vim.diagnostic.config({
         virtual_text = false,
         severity_sort = true,
@@ -122,6 +124,15 @@ M.define_mappings = function()
             vim.lsp.buf.format({ timeout_ms = 10000, async = false, name = desired_client, range = r })
         end)
     end)
+
+	vim.api.nvim_create_user_command("LspFormat", function ()
+        select_lsp_client(function (desired_client)
+            vim.lsp.buf.format({ timeout_ms = 10000, async = false, name = desired_client })
+        end)
+	end, {
+        force = true,
+        desc = "Formats the current buffer, if there are any lsp clients attached. If more than one client is found, allows to pick which one.",
+    })
 end
 
 M.configure_lsp = function(lsp_opts)
@@ -136,6 +147,8 @@ M.configure_lsp = function(lsp_opts)
 		if old_on_attach then
 			old_on_attach(client, bufnr)
 		end
+
+		require("lsp-inlayhints").on_attach(client, bufnr)
 
 		--   if client.resolved_capabilities.document_highlight then
 		--       vim.cmd [[

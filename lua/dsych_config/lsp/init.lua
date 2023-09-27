@@ -22,6 +22,41 @@ M.language_server_configs = {
 			},
 		}
 	end,
+	["tsserver"] = function ()
+		return {
+			settings = {
+				typescript = {
+				  inlayHints = {
+					includeInlayParameterNameHints = 'all',
+					includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+					includeInlayFunctionParameterTypeHints = true,
+					includeInlayVariableTypeHints = false,
+					includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+					includeInlayPropertyDeclarationTypeHints = true,
+					includeInlayFunctionLikeReturnTypeHints = true,
+					includeInlayEnumMemberValueHints = true,
+				  }
+				},
+				javascript = {
+				  inlayHints = {
+					includeInlayParameterNameHints = 'all',
+					includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+					includeInlayFunctionParameterTypeHints = true,
+					includeInlayVariableTypeHints = true,
+					includeInlayVariableTypeHintsWhenTypeMatchesName = false,
+					includeInlayPropertyDeclarationTypeHints = true,
+					includeInlayFunctionLikeReturnTypeHints = true,
+					includeInlayEnumMemberValueHints = true,
+				  }
+				}
+			}
+		}
+	end,
+	["bashls"] = function ()
+		return {
+			filetypes = { "sh", "zsh" }
+		}
+	end
 }
 
 M.enable_lsp_status = function()
@@ -40,6 +75,7 @@ M.setup = function()
 	local server_configs = require("dsych_config.lsp").language_server_configs
 
 	require("dsych_config.lsp").enable_lsp_status()
+	require("lsp-inlayhints").setup()
 
 	-- automatically install these language servers
 	local servers = {
@@ -69,14 +105,14 @@ M.setup = function()
 	-- configure lua_ls for neovim plugin development
 	require"neodev".setup()
 
-    -- FIXME: workaround for high cpu usage in the recent nighty release because of the new file watcher
-    local ok, wf = pcall(require, "vim.lsp._watchfiles")
-    if ok then
-        -- disable lsp watcher. Too slow on linux
-        wf._watchfunc = function()
-            return function() end
-        end
-    end
+    -- -- FIXME: workaround for high cpu usage in the recent nighty release because of the new file watcher
+    -- local ok, wf = pcall(require, "vim.lsp._watchfiles")
+    -- if ok then
+    --     -- disable lsp watcher. Too slow on linux
+    --     wf._watchfunc = function()
+    --         return function() end
+    --     end
+    -- end
 
 	-- actually start the language server
     for _, server_name in ipairs(servers) do
