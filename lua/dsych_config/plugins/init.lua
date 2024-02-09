@@ -34,7 +34,10 @@ return require("packer").startup(function(use)
 			"andersevenrud/cmp-tmux",
 			"ray-x/cmp-treesitter",
 			-- snippets
-			"L3MON4D3/LuaSnip",
+			{
+				"L3MON4D3/LuaSnip",
+				commit = "52918849e2f2ba0f2c3329598d401ad13d6167ea"
+			},
 			"saadparwaiz1/cmp_luasnip",
 			"rafamadriz/friendly-snippets",
 		},
@@ -69,9 +72,10 @@ return require("packer").startup(function(use)
 			end
 
 			cmp.setup({
-				performance = {
-					throttle = 100
-				},
+				-- performance = {
+				-- 	throttle = 100,
+				-- 	debounce = 130
+				-- },
 				snippet = {
 					-- REQUIRED - you must specify a snippet engine
 					expand = function(args)
@@ -286,6 +290,7 @@ return require("packer").startup(function(use)
 				},
 				checkstyle_diagnostic,
 
+				-- code actions
 				null_ls.builtins.code_actions.cspell.with{
 					disabled_filetypes = { "NvimTree" },
 					config = {
@@ -661,6 +666,10 @@ return require("packer").startup(function(use)
 							  require"telescope.actions".move_selection_previous, type = "action",
 							  opts = { nowait = true, silent = true }
 							},
+							["<C-s>"] = {
+							  require"telescope.actions".select_horizontal, type = "action",
+							  opts = { nowait = true, silent = true }
+							}
 						}
 					}
 				},
@@ -695,9 +704,14 @@ return require("packer").startup(function(use)
 					},
 				},
 				extensions = {
-					["ui-select"] = {
+					["ui-select"] = vim.tbl_deep_extend("force",
 						require("telescope.themes").get_dropdown(),
-					},
+						{
+							layout_config = {
+								width = { 0.5, max = 0.9, min = 0.4 }
+							}
+						}
+					),
                     fzf = {
                         fuzzy = true,                    -- false will only do exact matching
                         override_generic_sorter = true,  -- override the generic sorter
@@ -835,17 +849,51 @@ return require("packer").startup(function(use)
 				return est_hour < 7 or est_hour > 21
 			end
 
+		 	vim.cmd[[
+				hi ActiveWindow ctermbg=None ctermfg=None guibg=#21242b
+				hi InactiveWindow ctermbg=darkgray ctermfg=gray guibg=#282c34
+				set winhighlight=Normal:ActiveWindow,NormalNC:InactiveWindow
+			]]
+
+			-- zenbones configurations
+			vim.g.zenbones_solid_vert_split = true
+			vim.g.zenbones_solid_float_border = true
+			vim.g.zenbones_lighten_noncurrent_window = true
+
 			local colorscheme = nil
+			local dimmed_color_scheme = "zenwritten"
 			local force_dark = true
 			if is_night_in_est() or force_dark then
 				vim.go.background = "dark"
-				colorscheme = "gruvbox"
+				colorscheme = "zenbones"
 			else
 				vim.go.background = "light"
-				colorscheme = "gruvbox"
+				colorscheme = "zenbones"
 			end
 
 			vim.cmd.colorscheme(colorscheme)
+
+			-- zenbones family of colorschemes already have dimming for non-active windows built-in
+			if not colorscheme:gmatch("zen")() and not colorscheme:gmatch("bones")() then
+				local auto_dimmer_group = vim.api.nvim_create_augroup("WindowDimmer", { clear = true})
+
+				vim.api.nvim_create_autocmd({"FocusLost"}, {
+					pattern = {"*"},
+					group = auto_dimmer_group,
+					callback = function()
+						vim.cmd.colorscheme(dimmed_color_scheme)
+					end
+				})
+
+				vim.api.nvim_create_autocmd({"FocusGained"}, {
+					pattern = {"*"},
+					group = auto_dimmer_group,
+					callback = function()
+						vim.cmd.colorscheme(colorscheme)
+					end
+				})
+			end
+
 
 			-- Enable syntax highlighting
 			vim.cmd("syntax enable")
@@ -996,6 +1044,11 @@ return require("packer").startup(function(use)
 			map_key("n", "<leader>ids", function()
 				execute_test("TestSuite", vim.g.test_extra_flags .. " " .. vim.g.test_debug_flags)
 			end)
+			map_key("n", "<leader>idm", function()
+				vim.ui.input({ prompt = "Should prompt for argument update (y/n)?" }, function (choice)
+					vim.g.vimtest_prompt_for_update = choice == "y"
+				end)
+			end)
 
             -- mappings for picking the current strategy and additional flags
 			map_key("n", "<leader>ip", function()
@@ -1073,15 +1126,29 @@ return require("packer").startup(function(use)
             'nmac427/guess-indent.nvim',
         },
 		config = function()
-            require('guess-indent').setup {}
+			require('guess-indent').setup {}
 
-			require("indent_blankline").setup({
-				space_char_blankline = " ",
-				show_current_context = true,
-				use_treesitter = true,
-				buftype_exclude = { "help", "nerdtree", "startify", "LuaTree", "Telescope*", "terminal" },
-				show_first_indent_level = false,
-				context_patterns = { "class", "function", "method", "expression", "statement" },
+			require("ibl").setup({
+				-- whitespace = " ",
+				-- show_current_context = true,
+				-- use_treesitter = true,
+				exclude = { filetypes = { "help", "nerdtree", "startify", "LuaTree", "Telescope*", "terminal" } },
+				scope = {
+					show_start = false,
+					show_end = false,
+					include = {
+						node_type = {
+							["*"] = {
+								"class",
+								"function",
+								"method",
+								"expression",
+								"statement",
+							}
+						}
+					},
+				},
+				-- show_start = false,
 			})
 		end,
 	})
@@ -1216,7 +1283,8 @@ return require("packer").startup(function(use)
 			local middle_component = {
 				{
 					provider = function()
-						local status = require("lsp-status").status()
+						-- limit to 80 chars
+						local status = require("lsp-status").status():sub(1, 80)
 
 						status = status:gsub('%%%%', '%%') -- decode the encoded % sign
 			  			status = status:gsub('%%', '%%%%') -- and encode them all
@@ -1469,7 +1537,8 @@ return require("packer").startup(function(use)
 					enable = true,
 				},
 				highlight = {
-					enable = true,
+					enable = false,
+					disable = { "lua" },
 					additional_vim_regex_highlighting = false,
 				},
 			})
@@ -1501,12 +1570,16 @@ return require("packer").startup(function(use)
 		"JoosepAlviste/nvim-ts-context-commentstring",
 		requires = { "nvim-treesitter/nvim-treesitter" },
 		config = function()
-			require("nvim-treesitter.configs").setup({
-				context_commentstring = {
-					enable = true,
-					autocmd = false,
-				},
-			})
+            require("ts_context_commentstring").setup({
+
+            })
+            vim.g.skip_ts_context_commentstring_module = true
+			-- require("nvim-treesitter.configs").setup({
+			-- 	context_commentstring = {
+			-- 		enable = true,
+			-- 		autocmd = false,
+			-- 	},
+			-- })
 		end,
 	})
 	-- }}}

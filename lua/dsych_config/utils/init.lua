@@ -137,7 +137,7 @@ M.show_documentation = function()
 	elseif not vim.tbl_isempty(vim.lsp.buf_get_clients()) then
 		vim.lsp.buf.hover()
 	else
-		vim.api.nvim_command("!" .. vim.opt.keywordprg .. " " .. vim.fn.expand("<cword>"))
+		vim.api.nvim_command("!" .. vim.opt.keywordprg:get() .. " " .. vim.fn.expand("<cword>"))
 	end
 end
 
