@@ -82,6 +82,10 @@ map_key("n", "<leader>z", function()
 	-- utils.load_spell_file()
 end)
 
+map_key("n", "<leader>zz", ":<C-u>set wrap!<cr>")
+
+map_key("n", "<leader>g", ":<c-u>G ")
+
 -- for configs
 map_key("n", "<leader>ne", function()
 	local path = vim.fn.stdpath("config") .. "/lua/dsych_config/plugins/init.lua"
