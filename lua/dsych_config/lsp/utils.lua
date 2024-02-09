@@ -81,7 +81,7 @@ M.define_mappings = function()
 	map_key("n", "gi", require("telescope.builtin").lsp_implementations)
 	map_key("n", "grn", vim.lsp.buf.rename)
 
-	map_key("n", "gs", require("telescope.builtin").lsp_document_symbols)
+	map_key("n", "gs", function () require("telescope.builtin").lsp_document_symbols({ fname_width = 50, symbol_width = 50 }) end)
 	map_key("n", "gS", require("telescope.builtin").lsp_dynamic_workspace_symbols)
 	map_key("n", "K", utils.show_documentation)
 	map_key({ "n", "i" }, "<C-Y>", vim.lsp.buf.signature_help)
@@ -163,6 +163,13 @@ M.configure_lsp = function(lsp_opts)
 		--       ]]
 		--   end
 	end
+
+	vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(
+	  vim.lsp.handlers.hover, {
+		-- Use a sharp border with `FloatBorder` highlights
+		border = "single",
+	  }
+	)
 
 	return lsp_opts
 end

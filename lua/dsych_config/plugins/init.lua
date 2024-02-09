@@ -267,11 +267,14 @@ return require("packer").startup(function(use)
 			utils.create_file_if_does_not_exist(global_dictionary, generate_default_dictionary())
 
 			local sources = {
+				-- formatters
 				null_ls.builtins.formatting.stylua,
 				null_ls.builtins.formatting.clang_format,
 				null_ls.builtins.formatting.prettier,
 				null_ls.builtins.formatting.beautysh,
+				null_ls.builtins.formatting.rustfmt,
 
+				-- diagnostics
 				null_ls.builtins.diagnostics.write_good,
 				null_ls.builtins.diagnostics.cppcheck,
 				null_ls.builtins.diagnostics.cspell.with{
@@ -301,7 +304,8 @@ return require("packer").startup(function(use)
 
 			local config_names = vim.tbl_map(function (source) return source.name end, sources)
 			require("mason-null-ls").setup({
-				ensure_installed = config_names
+				-- ensure_installed = config_names
+				automatic_installation = { exclude = { "rustfmt" } }
 			})
 
 

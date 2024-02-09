@@ -56,6 +56,16 @@ M.language_server_configs = {
 		return {
 			filetypes = { "sh", "zsh" }
 		}
+	end,
+	['rust_analyzer'] = function ()
+		return {
+			check = {
+				command = "clippy";
+			},
+			diagnostics = {
+				enable = true;
+			}
+		}
 	end
 }
 
@@ -78,8 +88,8 @@ M.setup = function()
 	require("lsp-inlayhints").setup()
 
 	-- automatically install these language servers
-	local servers = {
-		"clangd",
+	local servers_to_install = {
+		-- "clangd",
 		"cssls",
 		"html",
 		"jsonls",
@@ -90,14 +100,17 @@ M.setup = function()
 		"vimls",
 		"bashls",
 		"yamlls",
-		"cucumber_language_server"
+		"cucumber_language_server",
 	}
 
     require("mason").setup()
     require("mason-lspconfig").setup{
-        ensure_installed = servers,
-        automatic_installation = true
+        ensure_installed = servers_to_install,
+        automatic_installation = false -- { exclude = { "rust_analyzer" } }
     }
+
+	-- rely on a manual rust installation
+	local servers = vim.tbl_deep_extend("force", servers_to_install, { "rust_analyzer" })
 
 	local lsp_utils = require("dsych_config.lsp.utils")
     local lsp_config = require"lspconfig"
