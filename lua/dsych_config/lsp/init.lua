@@ -69,22 +69,9 @@ M.language_server_configs = {
 	end
 }
 
-M.enable_lsp_status = function()
-	local lsp_status = require("lsp-status")
-
-	lsp_status.config({
-		diagnostics = false,
-		show_filename = false,
-        status_symbol = ""
-	})
-
-	lsp_status.register_progress()
-end
-
 M.setup = function()
 	local server_configs = require("dsych_config.lsp").language_server_configs
 
-	require("dsych_config.lsp").enable_lsp_status()
 	require("lsp-inlayhints").setup()
 
 	-- automatically install these language servers
@@ -101,6 +88,7 @@ M.setup = function()
 		"bashls",
 		"yamlls",
 		"cucumber_language_server",
+		"solargraph"
 	}
 
     require("mason").setup()
