@@ -140,7 +140,11 @@ M.setup = function()
 
 		vim.api.nvim_create_user_command(
 			"CleanJavaWorkspace",
-			":!rm -rf '" .. eclipse_workspace .. "' <bar> :StopLsp <bar> :StartJavaLsp",
+            function ()
+                vim.cmd("!rm -rf '" .. eclipse_workspace .. "'")
+                vim.cmd("StopLsp")
+                vim.cmd("StartJavaLsp")
+            end,
 			{}
 		)
 		map_key("n", "<leader>lr", "<Cmd>CleanJavaWorkspace<CR>")
