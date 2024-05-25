@@ -19,7 +19,7 @@ local filetype_to_default_formatter = {
 }
 
 local select_lsp_client = function(callback)
-    local client_names = vim.tbl_map(function (client) return client.name end, vim.lsp.get_active_clients())
+    local client_names = vim.tbl_map(function (client) return client.name end, vim.lsp.get_clients())
 	local filetype = vim.bo.filetype
 
     if vim.tbl_count(client_names) < 1 then

@@ -151,7 +151,7 @@ M.setup = function()
 	end
 
 	vim.api.nvim_create_user_command("StopLsp", function()
-		vim.lsp.stop_client(vim.lsp.get_active_clients())
+		vim.lsp.stop_client(vim.lsp.get_clients())
 	end, {})
 	vim.api.nvim_create_user_command("StartJavaLsp", setup_java_lsp, {})
 	map_key("n", "<leader>lj", "<cmd>StartJavaLsp<cr>")
