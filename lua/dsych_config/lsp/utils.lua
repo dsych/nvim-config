@@ -65,6 +65,8 @@ end
 M.define_mappings = function()
 	local map_key = require("dsych_config.utils").map_key
 	local utils = require("dsych_config.utils")
+    local pick_win = require("window-picker").pick_window
+
 	-- See `:help vim.lsp.*` for documentation on any of the below functions
 	map_key("n", "gD", require("telescope.builtin").lsp_type_definitions)
 	map_key("n", "gd", require("telescope.builtin").lsp_definitions)
@@ -76,6 +78,18 @@ M.define_mappings = function()
 		vim.cmd.vsplit()
 		vim.lsp.buf.definition()
 	end)
+    map_key("n", "gdw", function()
+        local current_buffer_nr = vim.api.nvim_win_get_buf(0)
+        local current_line_coords = vim.api.nvim_win_get_cursor(0)
+        local win_id = pick_win()
+        if win_id == nil then
+            return
+        end
+        vim.fn.win_gotoid(win_id)
+        vim.api.nvim_win_set_buf(win_id, current_buffer_nr)
+        vim.api.nvim_win_set_cursor(win_id, current_line_coords)
+        vim.lsp.buf.definition()
+    end)
 	map_key("n", "gdp", "<c-w>}")
 	map_key("n", "gdc", "<c-w>z")
 	map_key("n", "gi", require("telescope.builtin").lsp_implementations)
@@ -142,8 +156,6 @@ M.configure_lsp = function(lsp_opts)
 
 	local old_on_attach = lsp_opts.on_attach
 	lsp_opts.on_attach = function(client, bufnr)
-        require("lsp-status").on_attach(client)
-
 		if old_on_attach then
 			old_on_attach(client, bufnr)
 		end

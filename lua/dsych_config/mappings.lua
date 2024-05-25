@@ -131,6 +131,24 @@ map_key("c", "<C-K>", "<C-U>")
 map_key("c", "<C-P>", "<Up>")
 map_key("c", "<C-N>", "<Down>")
 
+function set_terminal_keymaps()
+	local opts = { buffer = true }
+	map_key("t", "<esc>", [[<C-\><C-n>]], opts)
+	map_key("t", "jk", [[<C-\><C-n>]], opts)
+	map_key("t", "<C-j>", [[<C-\><C-n><C-W>j]], opts)
+	map_key("t", "<C-k>", [[<C-\><C-n><C-W>k]], opts)
+end
+
+local terminal_group = vim.api.nvim_create_augroup("terminal", {
+	clear = true
+})
+
+vim.api.nvim_create_autocmd("TermOpen", {
+	pattern = "*",
+	group = terminal_group,
+	callback = set_terminal_keymaps
+})
+
 -- map_key("n", "<leader>bp", "<cmd>BufferPick<cr>")
 
 -- -- Close the current buffer
