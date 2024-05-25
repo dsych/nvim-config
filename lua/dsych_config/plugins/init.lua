@@ -30,9 +30,8 @@ return require("packer").startup(function(use)
 			"hrsh7th/cmp-buffer",
 			"hrsh7th/cmp-path",
 			"hrsh7th/cmp-cmdline",
-			"hrsh7th/cmp-nvim-lsp-signature-help",
+			-- "hrsh7th/cmp-nvim-lsp-signature-help",
 			"andersevenrud/cmp-tmux",
-			"ray-x/cmp-treesitter",
 			-- snippets
 			{
 				"L3MON4D3/LuaSnip",
@@ -123,12 +122,10 @@ return require("packer").startup(function(use)
 				},
 				sources = cmp.config.sources({
 					{ name = "nvim_lsp" },
-					{ name = "nvim_lsp_signature_help" },
+					-- { name = "nvim_lsp_signature_help" },
 					{ name = "tmux", all_panes = true },
-					{ name = "treesitter" },
                     { name = "path" },
 					{ name = "luasnip" }, -- For luasnip users.
-				}, {
 					{ name = "buffer" },
 				}),
 				formatting = {
@@ -164,12 +161,6 @@ return require("packer").startup(function(use)
 					{ name = "buffer" },
 				}),
 			})
-			cmp.setup.filetype("java", {
-                -- slow down completion not to overwhelm jdt.ls
-                performance = {
-                    throttle = 100
-                }
-			})
 			-- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
 			cmp.setup.cmdline(":", {
 				sources = cmp.config.sources({
@@ -190,19 +181,9 @@ return require("packer").startup(function(use)
 
 	-- language server {{{
 	use({
-		-- current function/lsp status
-		"nvim-lua/lsp-status.nvim",
-		-- icons
-		"onsails/lspkind-nvim",
-		"neovim/nvim-lspconfig",
-	})
-
-	use({
         "williamboman/mason.nvim",
         as = "lsp-installer",
 		requires = {
-			-- current function/lsp status
-			"nvim-lua/lsp-status.nvim",
 			-- icons
 			"onsails/lspkind-nvim",
 
@@ -223,9 +204,24 @@ return require("packer").startup(function(use)
 			{
                 "lvimuser/lsp-inlayhints.nvim",
                 branch = "anticonceal",
-            }
+            },
+			"dgagn/diagflow.nvim",
+			"j-hui/fidget.nvim"
 		},
-		config = require("dsych_config.lsp").setup,
+		config = function()
+			require"neodev".setup{
+				library = {
+					plugins = false
+				},
+				pathStrict = true
+			}
+			require"diagflow".setup{
+				scope = "line"
+			}
+
+			require"fidget".setup {}
+			require("dsych_config.lsp").setup()
+	end
 	})
 
 
@@ -250,8 +246,8 @@ return require("packer").startup(function(use)
     })
 
 	use({
-		"jose-elias-alvarez/null-ls.nvim",
-		requires = { "nvim-lua/plenary.nvim", "checkstyle-null-ls", "lsp-installer" },
+		"nvimtools/none-ls.nvim",
+		requires = { "nvim-lua/plenary.nvim", "checkstyle-null-ls", "lsp-installer", "davidmh/cspell.nvim" },
 		config = function()
 			local generate_default_dictionary = function ()
 				local cspell_json = {
@@ -264,6 +260,7 @@ return require("packer").startup(function(use)
 			end
 
 			local null_ls = require("null-ls")
+            local cspell = require('cspell')
             local checkstyle_diagnostic = require("checkstyle-null-ls")("~/.config/nvim/additional/checkstyle/checkstyle-rules.xml", "~/.local/source/jdtls-launcher/checkstyle.jar")
 			local utils = require"dsych_config.utils"
 			local global_dictionary = vim.fn.stdpath"data" .. "/cspell.json"
@@ -275,15 +272,15 @@ return require("packer").startup(function(use)
 				null_ls.builtins.formatting.stylua,
 				null_ls.builtins.formatting.clang_format,
 				null_ls.builtins.formatting.prettier,
-				null_ls.builtins.formatting.beautysh,
-				null_ls.builtins.formatting.rustfmt,
+				null_ls.builtins.formatting.shfmt,
 
 				-- diagnostics
 				null_ls.builtins.diagnostics.write_good,
 				null_ls.builtins.diagnostics.cppcheck,
-				null_ls.builtins.diagnostics.cspell.with{
+				cspell.diagnostics.with{
 					extra_args = {"-c", global_dictionary},
 					disabled_filetypes = { "NvimTree" },
+					filetypes = { "markdown" },
 					diagnostics_postprocess = function(diagnostic)
 						diagnostic.severity = vim.diagnostic.severity.HINT
 					end,
@@ -291,8 +288,9 @@ return require("packer").startup(function(use)
 				checkstyle_diagnostic,
 
 				-- code actions
-				null_ls.builtins.code_actions.cspell.with{
+				cspell.code_actions.with{
 					disabled_filetypes = { "NvimTree" },
+					filetypes = { "markdown" },
 					config = {
 						find_json = function ()
 							return global_dictionary
@@ -357,7 +355,7 @@ return require("packer").startup(function(use)
 	-- file explorer {{{
 	use({
 		"nvim-neo-tree/neo-tree.nvim",
-		branch = "v2.x",
+		branch = "v3.x",
 		requires = {
 			"nvim-lua/plenary.nvim",
 			"nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
@@ -510,7 +508,9 @@ return require("packer").startup(function(use)
 							--".null-ls_*",
 						},
 					},
-					follow_current_file = true, -- This will find and focus the file in the active buffer every
+					follow_current_file = {
+                        enabled = true, -- This will find and focus the file in the active buffer every
+                    },
 					-- time the current file is changed while the tree is open.
 					group_empty_dirs = true, -- when true, empty folders will be grouped together
 					hijack_netrw_behavior = "open_default", -- netrw disabled, opening a directory opens neo-tree
@@ -742,30 +742,6 @@ return require("packer").startup(function(use)
 	})
 	-- }}}
 
-	-- start screen {{{
-	use({
-		"mhinz/vim-startify",
-		config = function()
-			local map_key = require("dsych_config.utils").map_key
-			-- save current layout into session
-			map_key("n", "<leader>ss", function()
-				vim.cmd("SSave!")
-			end)
-
-			vim.g.startify_session_before_save = { 'echo "Cleaning up before saving.."', "silent! NvimTreeClose" }
-
-			vim.g.startify_session_persistence = true
-
-			-- save coc's workspace folders between sessions
-			vim.g.startify_session_savevars = {
-				"g:startify_session_savevars",
-				"g:startify_session_savecmds",
-				"g:WorkspaceFolders",
-			}
-		end,
-	})
-	-- }}}
-
 	-- commenting {{{
 	use({
 		"b3nj5m1n/kommentary",
@@ -817,7 +793,8 @@ return require("packer").startup(function(use)
 
 			-- make vertical split divider more legible
 			vim.cmd([[autocmd ColorScheme * highlight! link VertSplit IncSearch]])
-			vim.cmd([[autocmd ColorScheme * highlight! link StatusLine IncSearch]])
+			vim.cmd([[autocmd ColorScheme * highlight! link SignColumn Normal]])
+			-- vim.cmd([[autocmd ColorScheme * highlight! link StatusLine IncSearch]])
 
 			------------------------------------------------------------------------------------------------------------------------------
 			-- => Rose-pint
@@ -833,6 +810,27 @@ return require("packer").startup(function(use)
 			vim.g.tokyonight_sidebars = { "nerdtree", "terminal", "LuaTree", "sidebarnvim" }
 			vim.g.tokyonight_hide_inactive_statusline = true
 			vim.g.tokyonight_italic_comments = true
+
+			-- zenbones configurations
+			vim.g.zenbones_solid_vert_split = true
+			vim.g.zenbones_solid_float_border = true
+			vim.g.zenbones_lighten_noncurrent_window = true
+			vim.g.zenbones_lighten_cursor_line = 10
+			vim.g.zenbones_darker_cursor_line = 10
+
+			require"gruvbox".setup {
+				dim_inactive = true,
+				overrides = {
+					SignColumn = { link = "Normal" },
+					GruvboxGreenSign = { bg = "" },
+					GruvboxOrangeSign = { bg = "" },
+					GruvboxPurpleSign = { bg = "" },
+					GruvboxYellowSign = { bg = "" },
+					GruvboxRedSign = { bg = "" },
+					GruvboxBlueSign = { bg = "" },
+					GruvboxAquaSign = { bg = "" },
+				},
+			}
 		end,
 		config = function()
 			-- THIS IS PURE FUCKING EVIL!!! DO NOT E-V-E-R SET THIS OPTION
@@ -846,53 +844,49 @@ return require("packer").startup(function(use)
 				-- does not account for daylight savings
 				local est_hour = tonumber(os.date("%H", os.time(os.date("!*t")) - 4 * 60 * 60))
 
-				return est_hour < 7 or est_hour > 21
+				return est_hour < 7 or est_hour > 18
 			end
 
-		 	vim.cmd[[
-				hi ActiveWindow ctermbg=None ctermfg=None guibg=#21242b
-				hi InactiveWindow ctermbg=darkgray ctermfg=gray guibg=#282c34
-				set winhighlight=Normal:ActiveWindow,NormalNC:InactiveWindow
-			]]
+		 -- 	vim.cmd[[
+			-- 	hi ActiveWindow ctermbg=None ctermfg=None guibg=#21242b
+			-- 	hi InactiveWindow ctermbg=darkgray ctermfg=gray guibg=#282c34
+			-- 	set winhighlight=Normal:ActiveWindow,NormalNC:InactiveWindow
+			-- ]]
 
-			-- zenbones configurations
-			vim.g.zenbones_solid_vert_split = true
-			vim.g.zenbones_solid_float_border = true
-			vim.g.zenbones_lighten_noncurrent_window = true
 
 			local colorscheme = nil
 			local dimmed_color_scheme = "zenwritten"
-			local force_dark = true
+			local force_dark = false
 			if is_night_in_est() or force_dark then
 				vim.go.background = "dark"
 				colorscheme = "zenbones"
 			else
 				vim.go.background = "light"
-				colorscheme = "zenbones"
+				colorscheme = "gruvbox"
 			end
 
 			vim.cmd.colorscheme(colorscheme)
 
 			-- zenbones family of colorschemes already have dimming for non-active windows built-in
-			if not colorscheme:gmatch("zen")() and not colorscheme:gmatch("bones")() then
-				local auto_dimmer_group = vim.api.nvim_create_augroup("WindowDimmer", { clear = true})
+			-- if not colorscheme:gmatch("zen")() and not colorscheme:gmatch("bones")() then
+			-- 	local auto_dimmer_group = vim.api.nvim_create_augroup("WindowDimmer", { clear = true})
 
-				vim.api.nvim_create_autocmd({"FocusLost"}, {
-					pattern = {"*"},
-					group = auto_dimmer_group,
-					callback = function()
-						vim.cmd.colorscheme(dimmed_color_scheme)
-					end
-				})
+			-- 	vim.api.nvim_create_autocmd({"FocusLost"}, {
+			-- 		pattern = {"*"},
+			-- 		group = auto_dimmer_group,
+			-- 		callback = function()
+			-- 			vim.cmd.colorscheme(dimmed_color_scheme)
+			-- 		end
+			-- 	})
 
-				vim.api.nvim_create_autocmd({"FocusGained"}, {
-					pattern = {"*"},
-					group = auto_dimmer_group,
-					callback = function()
-						vim.cmd.colorscheme(colorscheme)
-					end
-				})
-			end
+			-- 	vim.api.nvim_create_autocmd({"FocusGained"}, {
+			-- 		pattern = {"*"},
+			-- 		group = auto_dimmer_group,
+			-- 		callback = function()
+			-- 			vim.cmd.colorscheme(colorscheme)
+			-- 		end
+			-- 	})
+			-- end
 
 
 			-- Enable syntax highlighting
@@ -1155,291 +1149,55 @@ return require("packer").startup(function(use)
 	-- }}}
 
 	-- status line {{{
-	use({
-		"freddiehaddad/feline.nvim",
-		after = "themes",
-		config = function()
-			local get_color_from_group = function(group_name, attribute)
-				return vim.api.nvim_exec(
-					string.format([[echo synIDattr(synIDtrans(hlID("%s")), "%s#")]], group_name, attribute),
-					true
-				)
-			end
-
-			local get_severity_count = function(severity)
-				return function()
-					return tostring(require("feline.providers.lsp").get_diagnostics_count(severity))
-				end
-			end
-
-			local main_highlight_group = "StatusLineNC"
-
-			if vim.g.colors_name == "gruvbox" then
-				main_highlight_group = "CursorLine"
-			elseif vim.g.colors_name == "desert" then
-				main_highlight_group = "NonText"
-			end
-
-			local theme = {
-				fg = get_color_from_group(main_highlight_group, "fg"),
-				bg = get_color_from_group(main_highlight_group, "bg")
-			}
-
-			local status_line_components = {
-				active = {},
-			}
-
-			local empty_space = {
-				provider = "  ",
-			}
-
-			local left_component = {
-				empty_space,
-				{
-					provider = "vi_mode",
-					hl = function()
-						return {
-							name = require("feline.providers.vi_mode").get_mode_highlight_name(),
-							style = "bold",
-						}
-					end,
-					-- Uncomment the next line to disable icons for this component and use the mode name instead
-					icon = "",
-					left_sep = {
-						str = "[ ",
-						hl = {
-							fg = "fg",
-							bg = "bg",
-							style = "bold",
-						},
-					},
-					right_sep = {
-
-						str = " ]",
-						hl = {
-							fg = "fg",
-							bg = "bg",
-							style = "bold",
-						},
-					},
-				},
-				{
-					left_sep = {
-						str = " ",
-						always_visible = true,
-					},
-					right_sep = {
-						hl = {
-							fg = "fg",
-							bg = "bg",
-							style = "bold",
-						},
-						str = "vertical_bar",
-						always_visible = true,
-					},
-				},
-				{
-					provider = get_severity_count(vim.diagnostic.severity.ERROR),
-					icon = "E-",
-					left_sep = " ",
-					hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignError", "fg") },
-				},
-				{
-					provider = get_severity_count(vim.diagnostic.severity.WARN),
-					icon = "W-",
-					left_sep = " ",
-					hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignWarn", "fg") },
-				},
-				{
-					provider = get_severity_count(vim.diagnostic.severity.INFO),
-					icon = "I-",
-					left_sep = " ",
-					hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignInfo", "fg") },
-				},
-				{
-					provider = "diagnostic_hints",
-					icon = "H-",
-					left_sep = " ",
-					hl = { bg = "bg", fg = get_color_from_group("DiagnosticSignHint", "fg") },
-				},
-				{
-					left_sep = {
-						str = " ",
-						always_visible = true,
-					},
-					right_sep = {
-						hl = {
-							fg = "fg",
-							bg = "bg",
-							style = "bold",
-						},
-						str = "vertical_bar",
-						always_visible = true,
-					},
-				},
-			}
-			table.insert(status_line_components.active, left_component)
-
-			local middle_component = {
-				{
-					provider = function()
-						-- limit to 80 chars
-						local status = require("lsp-status").status():sub(1, 80)
-
-						status = status:gsub('%%%%', '%%') -- decode the encoded % sign
-			  			status = status:gsub('%%', '%%%%') -- and encode them all
-		  				return status
-					end,
-
-					right_sep = {
-						hl = {
-							fg = "fg",
-							bg = "bg",
-							style = "bold",
-						},
-						str = " %% ",
-						always_visible = true,
-					},
-					left_sep = {
-						hl = {
-							fg = "fg",
-							bg = "bg",
-							style = "bold",
-						},
-						str = " %% ",
-						always_visible = true,
-					},
-				},
-			}
-			table.insert(status_line_components.active, middle_component)
-
-			local right_component = {
-				{
-					provider = "git_diff_added",
-					left_sep = {
-						hl = {
-							fg = "fg",
-							bg = "bg",
-							style = "bold",
-						},
-						str = "vertical_bar",
-						always_visible = true,
-					},
-					icon = "+",
-				},
-				{
-					provider = "git_diff_removed",
-					icon = "-",
-					left_sep = " ",
-				},
-				{
-					provider = "git_diff_changed",
-					icon = "~",
-					left_sep = " ",
-				},
-				{
-					provider = "git_branch",
-
-					left_sep = {
-						hl = {
-							fg = "fg",
-							bg = "bg",
-							style = "bold",
-						},
-						str = " - ",
-					},
-					right_sep = " ",
-				},
-				{
-					provider = " L/C",
-					left_sep = {
-						hl = {
-							fg = "fg",
-							bg = "bg",
-							style = "bold",
-						},
-						str = "vertical_bar",
-					},
-					right_sep = " ",
-				},
-				{
-					provider = "position",
-				},
-				empty_space,
-				{ provider = "-- %p%% --" },
-				empty_space,
-			}
-			table.insert(status_line_components.active, right_component)
-
-			status_line_components.inactive = status_line_components.active
-
-			require("feline").setup({ components = status_line_components, theme = theme })
+	use {
+		"windwp/windline.nvim",
+		config = function ()
 			vim.go.laststatus = 3
+			require"wlsample.evil_line"
 
-			local winbar = {
-				active = {
-					{
-						{
-							provider = {
-								name = "file_info",
-								opts = {
-									type = "unique",
-								},
-							},
-							hl = {
-								fg = get_color_from_group("Question", "fg"),
-							},
-						},
-						{
-							provider = function()
-								local filename = vim.fn.expand("#:t"):gsub("%%", "%%%%")
-								return filename
-							end,
-							hl = {
-								fg = get_color_from_group("Comment", "fg"),
-							},
-							left_sep = { str = " ^ ", hl = { fg = "fg" } },
-							right_sep = { str = " ^ ", hl = { fg = "fg" } },
-						},
-					},
-				},
-				inactive = {
-					{
-						{
-							provider = {
-								name = "file_info",
-								opts = {
-									type = "unique",
-								},
-							},
-						},
-						{
-							provider = function()
-								local filename = vim.fn.expand("#:t"):gsub("%%", "%%%%")
-								return filename
-							end,
-							hl = {
-								fg = get_color_from_group("Comment", "fg"),
-							},
-							left_sep = { str = " ^ ", hl = { fg = "fg" } },
-							right_sep = { str = " ^ ", hl = { fg = "fg" } },
-						},
-					},
-				},
-			}
+		-- 	local get_filename = function ()
+		-- 		local name = vim.fn.expand("#:t"):gsub("%%", "%%%%")
+		-- 		if name == '' then name = '[No Name]' end
+		-- 		return name..  ' '
+		-- 	end
 
-			require("feline").winbar.setup({
-				components = winbar,
-				theme = theme
-			})
-		end,
-	})
+		-- local filename_component = {
+		-- 			{
+		-- 				text = get_filename,
+		-- 				hl_colors = {'FilenameFg', 'FilenameBg'}
+		-- 			},
+		-- 			{ '^ ' },
+		-- 			{
+		-- 				text = get_filename,
+		-- 				hl_colors = {'FilenameFg', 'FilenameBg'}
+		-- 			},
+		-- 			{ '^ ' },
+		-- 		}
+		-- 	local windline = require('windline')
 
+		-- 	local winbar = {
+		-- 		filetypes = { 'winbar' },
+		-- 		active = filename_component,
+		-- 		inactive = filename_component,
+		-- 		colors_name = function(colors)
+		-- 			-- ADD MORE COLOR HERE ----
+		-- 			colors.FilenameFg = colors.white_light
+		-- 			colors.FilenameBg = colors.black_light
+		-- 			return colors
+		-- 		end,
+		-- 		--- enable=function(bufnr,winid)  return true end --a function to disable winbar on some window or filetype
+		-- 	}
+
+		-- 	windline.add_status(winbar)
+		-- -- or you can use a setup function to add winbar
+		end
+	}
 	-- }}}
 
 	-- git diff view {{{
 	use({
 		"sindrets/diffview.nvim",
+		-- disable = true,
 		config = function()
 			require("diffview").setup()
 			local map_key = require("dsych_config.utils").map_key
@@ -1462,21 +1220,21 @@ return require("packer").startup(function(use)
 	use({ "tpope/vim-surround" })
 
 	use({
-        'phaazon/hop.nvim',
-        branch = 'v2',
+        'smoka7/hop.nvim',
+        branch = 'master',
         config = function()
 
 		-- you can configure Hop the way you like here; see :h hop-config
 		local map_key = require("dsych_config.utils").map_key
 		require("hop").setup()
 
-		map_key({ "n", "v", "x" }, "s", function()
+		map_key({ "n", "v" }, "s", function()
 			require("hop").hint_char2({
 				direction = require("hop.hint").HintDirection.AFTER_CURSOR,
 				current_line_only = false,
 			})
 		end, {})
-		map_key({ "n", "v", "x" }, "S", function()
+		map_key({ "n", "v" }, "S", function()
 			require("hop").hint_char2({
 				direction = require("hop.hint").HintDirection.BEFORE_CURSOR,
 				current_line_only = false,
@@ -1485,44 +1243,12 @@ return require("packer").startup(function(use)
 		map_key({ "n", "v", "x" }, "<leader>fw", function()
 			require("hop").hint_words({reverse_distribution = false, multi_windows = true })
 		end, {})
+
+		map_key({ "n", "v" }, "<leader>fl", ":HopLine<cr>", {})
+		map_key({ "n", "v" }, "<leader>fy", ":HopYankChar1<cr>", {})
+		map_key({ "n", "v" }, "<leader>fp", ":HopPasteChar1<cr>", {})
+
         end
-	})
-	-- }}}
-
-	-- terminal {{{
-	use({
-		"akinsho/nvim-toggleterm.lua",
-		config = function()
-			local map_key = require("dsych_config.utils").map_key
-			function _G.set_terminal_keymaps()
-				local opts = { buffer = true }
-				map_key("t", "<esc>", [[<C-\><C-n>]], opts)
-				map_key("t", "jk", [[<C-\><C-n>]], opts)
-				map_key("t", "<C-j>", [[<C-\><C-n><C-W>j]], opts)
-				map_key("t", "<C-k>", [[<C-\><C-n><C-W>k]], opts)
-			end
-
-			require("toggleterm").setup({
-				open_mapping = [[<c-\>]],
-				size = function(term)
-					if term.direction == "horizontal" then
-						return 30
-					elseif term.direction == "vertical" then
-						return vim.o.columns * 0.4
-					end
-				end,
-			})
-            persist_size = false,
-			-- start terminal in insert mode
-			-- and do not show terminal buffers in buffer list
-			vim.cmd([[
-            augroup terminal
-                autocmd!
-                autocmd TermOpen * setlocal nobuflisted | lua set_terminal_keymaps()
-                " au BufEnter * if &buftype == 'terminal' | :startinsert | endif
-            augroup END
-            ]])
-		end,
 	})
 	-- }}}
 
@@ -1537,8 +1263,8 @@ return require("packer").startup(function(use)
 					enable = true,
 				},
 				highlight = {
-					enable = false,
-					disable = { "lua" },
+					-- enable = false,
+					-- disable = { "lua" },
 					additional_vim_regex_highlighting = false,
 				},
 			})
@@ -1640,7 +1366,8 @@ return require("packer").startup(function(use)
 	use({
 		"satabin/hocon-vim",
         "lepture/vim-jinja",
-		"kyoh86/vim-jsonl"
+		"kyoh86/vim-jsonl",
+        "tmux-plugins/vim-tmux",
 	})
 	-- }}}
 
@@ -1808,6 +1535,7 @@ return require("packer").startup(function(use)
 	-- organazied note taking {{{
 	use {
 		"nvim-neorg/neorg",
+		cmd = "Neorg",
 		config = function()
 			local neorg_workspaces = {
 				notes = "~/notes",
