@@ -1120,11 +1120,50 @@ require("lazy").setup({
 			vim.go.laststatus = 3
 			require"wlsample.evil_line"
 
-		-- 	local get_filename = function ()
-		-- 		local name = vim.fn.expand("#:t"):gsub("%%", "%%%%")
-		-- 		if name == '' then name = '[No Name]' end
-		-- 		return name..  ' '
-		-- 	end
+			local windline = require('windline')
+
+			local get_filename = function (filename)
+				return function (bufnr)
+					local bufname = filename and vim.fn.expand(filename .. ":p") or vim.api.nvim_buf_get_name(bufnr)
+					local prefix = vim.fn.fnamemodify(bufname, ':.')
+					if #prefix > 25 then
+						prefix = prefix:sub(1, 25) .. "../"
+					end
+					local suffix = vim.fn.fnamemodify(bufname, ':t')
+                    local name = (#prefix == #suffix and suffix or prefix .. suffix):gsub("%%", "%%%%")
+
+					if suffix == '' then name = '[No Name]' end
+					return name
+				end
+			end
+
+			local file_winbar_component = {
+					{
+                        '   >',
+                        { 'white', 'ActiveBg' },
+                    },
+					{
+						get_filename(nil),
+					},
+					{ '< '},
+					{
+                        '^',
+                    },
+					{
+					    get_filename("#"),
+					},
+					{ '^' },
+				}
+
+			local winbar = {
+				filetypes = { 'winbar' },
+				active = file_winbar_component,
+				inactive = file_winbar_component
+				--- enable=function(bufnr,winid)  return true end --a function to disable winbar on some window or filetype
+			}
+
+			windline.add_status(winbar)
+
 
 		-- local filename_component = {
 		-- 			{
@@ -1439,9 +1478,11 @@ require("lazy").setup({
 	-- {{{ window picker
 	{
 		"s1n7ax/nvim-window-picker",
-		tag = "v1.*",
+		tag = "v2.*",
 		config = function()
-			require("window-picker").setup()
+			require("window-picker").setup({
+				hint = 'floating-big-letter'
+			})
 
 			local map_key = require("dsych_config.utils").map_key
 
