@@ -1091,7 +1091,7 @@ require("lazy").setup({
 				-- whitespace = " ",
 				-- show_current_context = true,
 				-- use_treesitter = true,
-				exclude = { filetypes = { "help", "nerdtree", "startify", "LuaTree", "Telescope*", "terminal" } },
+				exclude = { filetypes = { "help", "nerdtree", "startify", "LuaTree", "Telescope*", "terminal", "norg" } },
 				scope = {
 					show_start = false,
 					show_end = false,
@@ -1175,6 +1175,7 @@ require("lazy").setup({
                 autocmd!
                 autocmd BufRead,BufNewFile *.json set filetype=jsonc
                 autocmd BufRead,BufNewFile *sqc,*HPP,*CPP set filetype=cpp
+                autocmd BufRead,BufNewFile *.ics set filetype=icalendar
             augroup END
             ]])
 		end,
@@ -1332,6 +1333,7 @@ require("lazy").setup({
     "lepture/vim-jinja",
     "kyoh86/vim-jsonl",
     "tmux-plugins/vim-tmux",
+	"vim-scripts/icalendar.vim",
 	-- }}}
 
 	-- markdown preview {{{
@@ -1371,6 +1373,36 @@ require("lazy").setup({
 		end,
 	},
 	-- }}}
+
+-- {{{ cursor tracking, smooth scrolling
+	{
+        'echasnovski/mini.animate',
+        version = false,
+		config = function ()
+			require('mini.animate').setup()
+		end
+    },
+-- }}}
+
+-- {{{ automatic word highlighting under cursor
+	{
+        'echasnovski/mini.cursorword',
+        version = false,
+		config = function ()
+			require('mini.cursorword').setup()
+		end
+    },
+-- }}}
+
+-- {{{ autopairs
+	{
+        'echasnovski/mini.pairs',
+        version = false,
+		config = function ()
+			require('mini.pairs').setup()
+		end
+    },
+-- }}}
 
 	-- generate documentation {{{
 	{
@@ -1543,6 +1575,8 @@ require("lazy").setup({
 						vim.cmd"help neorg"
 					end, { buffer = true })
 
+					map_key("n", "<localleader>mt", ":Neorg toggle-concealer<cr>", { buffer = true })
+
 					map_key("n", "j", "gj", { buffer = true })
 					map_key("n", "k", "gk", { buffer = true })
 
@@ -1554,7 +1588,6 @@ require("lazy").setup({
 				end
 			})
 		end,
-		build = ":Neorg sync-parsers",
 		dependencies = { "nvim-lua/plenary.nvim", "nvim-treesitter/nvim-treesitter", "nvim-telescope/telescope.nvim" },
 	},
 	-- }}}
