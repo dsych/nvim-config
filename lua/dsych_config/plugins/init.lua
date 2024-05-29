@@ -1423,7 +1423,7 @@ require("lazy").setup({
 		config = function ()
 			require('mini.animate').setup()
 		end
-    },
+	},
 -- }}}
 
 -- {{{ automatic word highlighting under cursor
@@ -1497,6 +1497,20 @@ require("lazy").setup({
         dependencies = { "nvim-treesitter/nvim-treesitter" },
 	},
 	-- }}}
+
+--{{{ smart buffer deletion
+	{
+        'echasnovski/mini.bufremove',
+        version = false,
+		config = function ()
+			require('mini.bufremove').setup()
+
+			local map_key = require("dsych_config.utils").map_key
+
+			map_key("n", "<leader>bd", ":lua MiniBufremove.delete()<cr>")
+		end
+    },
+--}}}
 
 	-- {{{ window picker
 	{
