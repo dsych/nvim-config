@@ -1121,44 +1121,47 @@ require("lazy").setup({
 			require"wlsample.evil_line"
 
 			local windline = require('windline')
+			local b_components = require('windline.components.basic')
 
-			local get_filename = function (filename)
+			local get_filename = function (filename, is_name_only)
 				return function (bufnr)
 					local bufname = filename and vim.fn.expand(filename .. ":p") or vim.api.nvim_buf_get_name(bufnr)
-					local prefix = vim.fn.fnamemodify(bufname, ':.')
-					if #prefix > 25 then
-						prefix = prefix:sub(1, 25) .. "../"
+					local name = vim.fn.fnamemodify(bufname, is_name_only and ':t' or ':.')
+					if #name > 25 then
+						local path_parts = vim.fn.split(name, "/")
+						name = path_parts[1] ..
+							(#path_parts > 2 and "/.../" .. path_parts[#path_parts - 1] or "") ..
+							"/" .. path_parts[#path_parts]
 					end
-					local suffix = vim.fn.fnamemodify(bufname, ':t')
-                    local name = (#prefix == #suffix and suffix or prefix .. suffix):gsub("%%", "%%%%")
-
-					if suffix == '' then name = '[No Name]' end
-					return name
+					name = name:gsub("%%", "%%%%")
+					local modified_icon = b_components.file_modified("*")(bufnr)
+					return (name == '' and '[No Name]' or name) ..
+						((modified_icon and not is_name_only) and (string.format(" (%s)", modified_icon)) or "")
 				end
 			end
 
-			local file_winbar_component = {
-					{
-                        '   >',
-                        { 'white', 'ActiveBg' },
-                    },
-					{
-						get_filename(nil),
-					},
-					{ '< '},
-					{
-                        '^',
-                    },
-					{
-					    get_filename("#"),
-					},
-					{ '^' },
-				}
-
 			local winbar = {
 				filetypes = { 'winbar' },
-				active = file_winbar_component,
-				inactive = file_winbar_component
+				active = {
+					{ ' ' },
+					{
+						get_filename(nil),
+                        { 'white', 'ActiveBg' },
+					},
+					{
+                        ' ^ ',
+                    },
+					{
+					    get_filename("#", true),
+					},
+					{ ' ^' },
+				},
+				inactive = {
+					{
+						get_filename(nil, true),
+                        { 'white', 'InactiveBg' },
+					}
+				}
 				--- enable=function(bufnr,winid)  return true end --a function to disable winbar on some window or filetype
 			}
 
