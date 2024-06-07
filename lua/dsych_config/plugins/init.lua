@@ -814,7 +814,7 @@ require("lazy").setup({
 			vim.g.zenbones_darker_cursor_line = 10
 
 			require"gruvbox".setup {
-				dim_inactive = true,
+				dim_inactive = false,
 				overrides = {
 					SignColumn = { link = "Normal" },
 					GruvboxGreenSign = { bg = "" },
@@ -1269,6 +1269,7 @@ require("lazy").setup({
 				-- ensure_installed = "all",
 				indent = {
 					enable = true,
+					disable = { "java" }
 				},
 				highlight = {
 					-- enable = false,
@@ -1397,12 +1398,6 @@ require("lazy").setup({
 	{
 		"dsych/blanket.nvim",
 		config = function()
-			local map_key = require("dsych_config.utils").map_key
-			map_key("n", "<leader>cr", require("blanket").refresh)
-			map_key("n", "<leader>cs", require("blanket").stop)
-			map_key("n", "<leader>ca", require("blanket").start)
-			map_key("n", "<leader>cf", require("blanket").pick_report_path)
-
 			require("blanket").setup({ silent = true, signs = {
 				incomplete_branch = "*",
 				uncovered = "!",
@@ -1412,6 +1407,13 @@ require("lazy").setup({
                 covered_color = "DiagnosticSignHint",
                 uncovered_color = "DiagnosticSignError"
             }})
+
+			local map_key = require("dsych_config.utils").map_key
+			map_key("n", "<leader>cr", require("blanket").refresh)
+			map_key("n", "<leader>cR", require("blanket").reset)
+			map_key("n", "<leader>cs", require("blanket").stop)
+			map_key("n", "<leader>ca", require("blanket").start)
+			map_key("n", "<leader>cf", require("blanket").pick_report_path)
 		end,
 	},
 	-- }}}
@@ -1421,7 +1423,11 @@ require("lazy").setup({
         'echasnovski/mini.animate',
         version = false,
 		config = function ()
-			require('mini.animate').setup()
+			require('mini.animate').setup({
+				cursor = {
+					enable = false
+				}
+			})
 		end
 	},
 -- }}}
