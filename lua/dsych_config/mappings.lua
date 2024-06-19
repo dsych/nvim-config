@@ -39,8 +39,8 @@ map_key("n", "<M-S-.>", ":<c-u>vertical resize +5<cr>")
 -- same but under tmux these code are different
 map_key("n", "<M-{>", ":<c-u>resize -5<cr>")
 map_key("n", "<M-}>", ":<c-u>resize +5<cr>")
-map_key("n", "<M-lt>", ":<c-u>vertical resize -5<cr>")
-map_key("n", "<M->>", ":<c-u>vertical resize +5<cr>")
+map_key("n", "<M-”>", ":<c-u>vertical resize -5<cr>")
+map_key("n", "<M-’>", ":<c-u>vertical resize +5<cr>")
 
 -- Useful mappings for managing tabs
 map_key("n", "<leader>tn", ":tabnew<cr>")
