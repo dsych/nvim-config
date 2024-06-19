@@ -88,7 +88,6 @@ M.setup = function()
 		"bashls",
 		"yamlls",
 		"cucumber_language_server",
-		"solargraph"
 	}
 
     require("mason").setup()
