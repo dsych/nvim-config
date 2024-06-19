@@ -122,6 +122,17 @@ function install_checkstyle {
     wget "https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.5.0/checkstyle-10.5.0-all.jar" -O checkstyle.jar
 }
 
+function install_fzf {
+    printf "INFO: Cloning fzf into ~/.fzf directory\n"
+    git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+    printf "INFO: Installing fzf"
+    ~/.fzf/install
+
+    printf "INFO: Cloning fzf-tab-completion\n"
+    git clone "https://github.com/lincheney/fzf-tab-completion.git"
+    printf "INFO: add 'source $(pwd)/fzf-tab-completion/zsh/fzf-zsh-completion.sh' to .zshrc"
+}
+
 configDir=$HOME/.config/nvim
 scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -158,12 +169,22 @@ run_inside_directory "$HOME/.local/source/jdtls-launcher" install_java_decompile
 run_inside_directory "$HOME/.local/source/jdtls-launcher" install_lombok
 run_inside_directory "$HOME/.local/source/jdtls-launcher" install_checkstyle
 
+which cargo &> /dev/null
 
-echo "------------------------"
-echo "Also need to install the following manually:"
-echo "- Starship: https://starship.rs/guide/#%F0%9F%9A%80-installation"
-echo "- FZF: https://github.com/junegunn/fzf#installation"
-echo "- FZF tab completion for ZSH: https://github.com/lincheney/fzf-tab-completion#installation"
-echo "----------------------"
+if [[ "$?" != "0" ]]; then
+    cargo install --locked fd-find
+    cargo install --locked starship
+
+    run_inside_directory "$HOME/.local/source" install_fzf
+
+else
+    echo "------------------------"
+    echo "Also need to install the following manually:"
+    echo "- Starship: https://starship.rs/guide/#%F0%9F%9A%80-installation"
+    echo "- FZF: https://github.com/junegunn/fzf#installation"
+    echo "- FZF tab completion for ZSH: https://github.com/lincheney/fzf-tab-completion#installation"
+    echo "----------------------"
+fi
+
 
 printf "Done!!!\n"
