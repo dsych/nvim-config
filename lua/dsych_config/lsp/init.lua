@@ -66,7 +66,7 @@ M.language_server_configs = {
 				enable = true;
 			}
 		}
-	end
+	end,
 }
 
 M.setup = function()
@@ -124,6 +124,8 @@ M.setup = function()
 		config = lsp_utils.configure_lsp(config)
 		if server_name == "tsserver" then
 			require"dsych_config.lsp.tsserver".config(config)
+		elseif server_name == "cucumber_language_server" then
+			lsp_config[server_name].setup(require"dsych_config.lsp.cucumber"(config))
 		else
 			lsp_config[server_name].setup(config)
 		end
