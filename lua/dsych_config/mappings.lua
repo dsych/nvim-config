@@ -32,15 +32,15 @@ map_key("n", "<C-h>", "<C-W>h")
 map_key("n", "<C-l>", "<C-W>l")
 
 -- resize windows
-map_key("n", "<M-S-[>", ":<c-u>resize -5<cr>")
-map_key("n", "<M-S-]>", ":<c-u>resize +5<cr>")
-map_key("n", "<M-S-,>", ":<c-u>vertical resize -5<cr>")
-map_key("n", "<M-S-.>", ":<c-u>vertical resize +5<cr>")
+map_key("n", "<M-S-[>", ":<c-u>resize -5<cr>") -- height
+map_key("n", "<M-S-]>", ":<c-u>resize +5<cr>") -- height
+map_key("n", "<M-S-,>", ":<c-u>vertical resize -5<cr>") -- width
+map_key("n", "<M-S-.>", ":<c-u>vertical resize +5<cr>") -- width
 -- same but under tmux these code are different
-map_key("n", "<M-{>", ":<c-u>resize -5<cr>")
-map_key("n", "<M-}>", ":<c-u>resize +5<cr>")
-map_key("n", "<M-”>", ":<c-u>vertical resize -5<cr>")
-map_key("n", "<M-’>", ":<c-u>vertical resize +5<cr>")
+map_key("n", "”", ":<c-u>resize -5<cr>") -- height
+map_key("n", "’", ":<c-u>resize +5<cr>") -- height
+map_key("n", "<M-lt>", ":<c-u>vertical resize -5<cr>") -- width
+map_key("n", "<M->>", ":<c-u>vertical resize +5<cr>") -- width
 
 -- Useful mappings for managing tabs
 map_key("n", "<leader>tn", ":tabnew<cr>")
