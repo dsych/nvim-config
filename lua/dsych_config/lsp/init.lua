@@ -96,6 +96,9 @@ M.setup = function()
         automatic_installation = false -- { exclude = { "rust_analyzer" } }
     }
 
+	-- install java decompiler manually
+	require"mason-registry".get_package("vscode-java-decompiler"):install()
+
 	-- rely on a manual rust installation
 	local servers = vim.tbl_deep_extend("force", servers_to_install, { "rust_analyzer" })
 

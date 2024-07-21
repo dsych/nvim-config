@@ -1,14 +1,6 @@
+local mason = require "dsych_config.utils.mason"
+
 local M = {}
-
--- DEBUGGINS WITH VIMSPECTOR
-M.start_vimspector_java = function()
-	-- need to start java-debug adapter first and pass it's port to vimspector
-	require("jdtls.util").execute_command({ command = "vscode.java.startDebugSession" }, function(err0, port)
-		assert(not err0, vim.inspect(err0))
-
-		vim.fn["vimspector#LaunchWithSettings"]({ AdapterPort = port })
-	end, 0)
-end
 
 M.setup = function()
 	local map_key = require("dsych_config.utils").map_key
@@ -22,8 +14,6 @@ M.setup = function()
 		map_key("v", "<leader>le", "<Esc><Cmd>lua require('jdtls').extract_variable(true)<CR>")
 		map_key("n", "<leader>le", "<Cmd>lua require('jdtls').extract_variable()<CR>")
 		map_key("v", "<leader>lm", "<Esc><Cmd>lua require('jdtls').extract_method(true)<CR>")
-		-- overwrite default vimspector launch mapping
-		map_key("n", "<Bslash>l", require("dsych_config.lsp.jdtls").start_vimspector_java)
         -- require'formatter'.setup{
         --     filetype = {
         --         java = {

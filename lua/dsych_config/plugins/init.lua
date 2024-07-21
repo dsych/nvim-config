@@ -190,6 +190,8 @@ require("lazy").setup({
 			-- null-ls
 			"jay-babu/mason-null-ls.nvim",
 
+			"jay-babu/mason-nvim-dap.nvim",
+
 			-- neovim plugin development
 			"folke/neodev.nvim",
 
@@ -207,7 +209,10 @@ require("lazy").setup({
 		config = function()
 			require"neodev".setup{
 				library = {
-					plugins = false
+					plugins = {
+						"nvim-dap-ui"
+					},
+					types = true
 				},
 				pathStrict = true
 			}
@@ -231,7 +236,7 @@ require("lazy").setup({
 	{
 		-- java lsp client
 		"mfussenegger/nvim-jdtls",
-		dependencies = { "lsp-installer" },
+		dependencies = { "lsp-installer", "mfussenegger/nvim-dap" },
 		config = require("dsych_config.lsp.jdtls").setup,
 	},
 
@@ -541,57 +546,156 @@ require("lazy").setup({
 	-- }}}
 
 	-- debugging {{{
+
 	{
-		"puremourning/vimspector",
-		config = function()
+		"mfussenegger/nvim-dap",
+		config = function ()
+			require("mason-nvim-dap").setup({
+				ensure_installed = {"javadbg", "javatest"}
+			})
+
+			local dap = require"dap"
+
+			dap.configurations.java = {
+				{
+					type = "java",
+					request = "attach",
+					host = "127.0.0.1",
+					port = "5005",
+					name = "Java Attach"
+				}
+			}
+
+			local apply_vimspector_launch_config = function ()
+				local vimspector_config_path = vim.fs.find({".vimspector.json"}, {upward = true, type = "file"})
+				if vim.tbl_isempty(vimspector_config_path) then
+					return
+				end
+
+				local fp = io.open(vimspector_config_path[1], "r")
+				if not fp then
+					return
+				end
+
+				local vimspector_config = vim.fn.json_decode(fp:read("*a"))
+				fp:close()
+
+				for adapter_name, adapter_config in pairs(vimspector_config.configurations) do
+					local launch_config = adapter_config.configuration
+					local type = adapter_config.adapter
+
+					if string.match(type, "java") then
+						type = "java"
+					end
+
+					launch_config.name = adapter_name
+					launch_config.type = type
+					launch_config.cwd = string.gsub(launch_config.cwd, "workspaceRoot", "workspaceFolder")
+
+					local overwrote = false
+					for i, c in ipairs(dap.configurations[type]) do
+						if c.name == adapter_name then
+							-- if configuration with given value already exists, simply overwrite it
+							dap.configurations[type][i] = launch_config
+							overwrote = true
+							break
+						end
+					end
+
+					if not overwrote then
+						-- if no matching config was found, add a new entry
+						table.insert(dap.configurations[type], launch_config)
+					end
+				end
+			end
+			apply_vimspector_launch_config()
+
+			local dapui = require"dapui"
+			dapui.setup()
+
 			local map_key = require("dsych_config.utils").map_key
+			local utils = require("dsych_config.utils")
 
 			-- for normal mode - the word under the cursor
-			map_key("n", "<Bslash>e", "<Plug>VimspectorBalloonEval")
+			map_key("n", "<Bslash>e", dapui.eval)
 			-- for visual mode, the visually selected text
-			map_key("x", "<Bslash>e", "<Plug>VimspectorBalloonEval")
+			map_key("x", "<Bslash>e", dapui.eval)
 
-			map_key("n", "<Bslash>c", "<Plug>VimspectorContinue")
-			map_key("n", "<Bslash>l", "<Plug>VimspectorLaunch")
-			map_key("n", "<Bslash>t", "<Plug>VimspectorStop")
-			map_key("n", "<Bslash>r", "<Plug>VimspectorRestart")
-			map_key("n", "<Bslash>p", "<Plug>VimspectorPause")
-			map_key("n", "<Bslash>b", "<Plug>VimspectorToggleBreakpoint")
-			map_key("n", "<Bslash>bc", "<Plug>VimspectorToggleConditionalBreakpoint")
-			map_key("n", "<Bslash>bf", "<Plug>VimspectorAddFunctionBreakpoint")
-			map_key("n", "<Bslash>br", "<Plug>VimspectorRunToCursor")
-			map_key("n", "<Bslash>bda", "<cmd>call vimspector#ClearBreakpoints()<cr>")
-			map_key("n", "<Bslash>bl", "<cmd>VimspectorBreakpoints<cr>")
-			map_key("n", "<Bslash>s", "<Plug>VimspectorStepOver")
-			map_key("n", "<Bslash>i", "<Plug>VimspectorStepInto")
-			map_key("n", "<Bslash>o", "<Plug>VimspectorStepOut")
-			map_key("n", "<Bslash>d", "<cmd>VimspectorReset<cr>")
-			map_key("n", "<Bslash>fu", "<Plug>VimspectorUpFrame")
-			map_key("n", "<Bslash>fd", "<Plug>VimspectorDownFrame")
 
-            -- vim.g.vimspector_base_dir='/local/home/dsych/.local/share/nvim/site/pack/packer/start/vimspector'
-			---@diagnostic disable-next-line: lowercase-global
-			function save_vimspector_session()
-				if vim.fn.filereadable("./.vimspector.json") then
-					vim.api.nvim_command("silent! VimspectorMkSession")
-				end
+			map_key("n", "<Bslash>b", dap.toggle_breakpoint)
+			map_key("n", "<Bslash>bc", function ()
+				vim.ui.input({ prompt = "Breakpoint condition: " }, function (condition)
+					vim.ui.input({ prompt = "Hit condition: " }, function (hit_condition)
+						vim.ui.input({ prompt = "Log message: " }, function (log_message)
+							dap.toggle_breakpoint(condition, hit_condition, log_message)
+						end)
+					end)
+				end)
+			end)
+			-- map_key("n", "<Bslash>bf", "<Plug>VimspectorAddFunctionBreakpoint")
+			map_key("n", "<Bslash>bda", dap.clear_breakpoints)
+			map_key("n", "<Bslash>bl", function ()
+				dap.list_breakpoints()
+				require"telescope.builtin".quickfix()
+			end)
+
+			map_key("n", "<Bslash>c", dap.continue)
+			map_key("n", "<Bslash>l", dap.run_last)
+			map_key("n", "<Bslash>d", dapui.close)
+			map_key("n", "<Bslash>r", dap.restart)
+			map_key("n", "<Bslash>p", dap.pause)
+			map_key("n", "<Bslash>br", dap.run_to_cursor)
+			map_key("n", "<Bslash>s", dap.step_over)
+			map_key("n", "<Bslash>i", function ()
+				dap.step_into({
+					steppingGranularity = "instruction",
+					askForTargets = false
+				})
+
+			end)
+			map_key("n", "<Bslash>o", dap.step_out)
+			map_key("n", "<Bslash>fu", dap.up)
+			map_key("n", "<Bslash>fd", dap.down)
+
+			dap.listeners.after.event_initialized["dapui_config"] = function()
+				dapui.open({})
+			end
+			dap.listeners.before.event_terminated["dapui_config"] = function()
+				dapui.close({})
+			end
+			dap.listeners.before.event_exited["dapui_config"] = function()
+				dapui.close({})
 			end
 
-			---@diagnostic disable-next-line: lowercase-global
-			function load_vimspector_session()
-				if vim.fn.filereadable("./.vimspector.session") then
-					vim.api.nvim_command("silent! VimspectorLoadSession")
+			local load_launchjson = function ()
+				local found_path = vim.fs.find({
+					".vscode",
+					".nvim"
+				},
+				{
+					type = "directory",
+					upward = true
+				})
+
+				if vim.tbl_isempty(found_path) then
+					return
+				end
+
+				for _, config_dir_path in pairs(found_path) do
+					local p = vim.fs.joinpath(config_dir_path, "launch.json")
+
+					if utils.does_file_exist(p) then
+						dap.ext.load_launchj()
+					end
 				end
 			end
-
-			-- vim.cmd([[
-   --          augroup vimspector_session
-   --            autocmd!
-   --            autocmd VimLeave * :lua save_vimspector_session()
-   --            autocmd VimEnter * :lua load_vimspector_session()
-   --          augroup END
-   --          ]])
+			load_launchjson()
 		end,
+		dependencies = {
+			"rcarriga/nvim-dap-ui",
+			"nvim-neotest/nvim-nio",
+			"lsp-installer"
+		}
 	},
 	-- }}}
 

@@ -163,4 +163,14 @@ M.create_file_if_does_not_exist = function (file_path, file_content)
     return file_path
 end
 
+M.does_file_exist = function (file_path)
+    local f = io.open(file_path, "r")
+
+    if not f then
+        return false
+    end
+
+    io.close(f)
+    return true
+end
 return M
