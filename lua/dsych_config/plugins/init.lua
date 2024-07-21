@@ -877,6 +877,7 @@ require("lazy").setup({
             "EdenEast/nightfox.nvim",
             "Mofiqul/vscode.nvim",
 			"thedenisnikulin/vim-cyberpunk",
+			"catppuccin/nvim",
 			-- missing lsp highlights for diagnostics, docs etc.
 			"folke/lsp-colors.nvim",
 		},
@@ -955,10 +956,10 @@ require("lazy").setup({
 
 			local colorscheme = nil
 			local dimmed_color_scheme = "zenwritten"
-			local force_dark = false
+			local force_dark = true
 			if is_night_in_est() or force_dark then
 				vim.go.background = "dark"
-				colorscheme = "zenbones"
+				colorscheme = "catppuccin-mocha"
 			else
 				vim.go.background = "light"
 				colorscheme = "gruvbox"
