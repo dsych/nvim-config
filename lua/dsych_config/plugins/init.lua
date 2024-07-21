@@ -685,7 +685,7 @@ require("lazy").setup({
 					local p = vim.fs.joinpath(config_dir_path, "launch.json")
 
 					if utils.does_file_exist(p) then
-						dap.ext.load_launchj()
+						dap.ext.load_launchj(p)
 					end
 				end
 			end
