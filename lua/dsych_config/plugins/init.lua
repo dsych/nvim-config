@@ -1306,6 +1306,35 @@ require("lazy").setup({
 	},
 	-- }}}
 
+	-- status column {{{
+	{
+		"luukvbaal/statuscol.nvim",
+		config = function()
+			local builtin = require("statuscol.builtin")
+			require("statuscol").setup({
+				-- configuration goes here, for example:
+				relculright = true,
+				ft_ignore = { "neo-tree" },
+				segments = {
+					{
+						sign = { namespace = { "diagnostic/signs" }, auto = false },
+						click = "v:lua.ScSa"
+					},
+					{
+						sign = { name = { ".*" }, maxwidth = 2, colwidth = 1, auto = false, wrap = true },
+						click = "v:lua.ScSa"
+					},
+					{ text = { builtin.lnumfunc }, click = "v:lua.ScLa", },
+					{
+						sign = { namespace = { "gitsigns.*" }, auto = false },
+						click = "v:lua.ScSa"
+					},
+				}
+			})
+		end,
+	},
+	-- }}}
+
 	-- git diff view {{{
 	{
 		"sindrets/diffview.nvim",

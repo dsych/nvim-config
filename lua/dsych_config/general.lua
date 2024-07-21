@@ -109,7 +109,7 @@ vim.opt.number = true
 vim.opt.relativenumber = true
 
 -- automatically toggle number and relativenumber in insert mode
-utils.toggle_relative_numbers(true)
+-- utils.toggle_relative_numbers(true)
 
 vim.opt.foldmethod = "marker"
 
