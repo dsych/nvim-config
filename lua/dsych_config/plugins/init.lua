@@ -10,10 +10,14 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
   })
 end
 vim.opt.rtp:prepend(lazypath)
+require("lazy").setup(
+    "dsych_config/plugins",
+    {
+        defaults = { lazy = false }
+    }
+)
 
-require("lazy").setup({
-	-- Packer can manage itself
-	"wbthomason/packer.nvim",
+return {
 	-- Recommended (for coloured icons)
     "kyazdani42/nvim-web-devicons",
 
@@ -1537,7 +1541,7 @@ require("lazy").setup({
 
 			local map_key = require("dsych_config.utils").map_key
 			map_key("n", "<leader>cr", require("blanket").refresh)
-			map_key("n", "<leader>cR", require("blanket").reset)
+			-- map_key("n", "<leader>cR", require("blanket").reset)
 			map_key("n", "<leader>cs", require("blanket").stop)
 			map_key("n", "<leader>ca", require("blanket").start)
 			map_key("n", "<leader>cf", require("blanket").pick_report_path)
@@ -1818,6 +1822,4 @@ require("lazy").setup({
 	},
 	-- }}}
 
-}, {
-    defaults = { lazy = false }
-})
+}
