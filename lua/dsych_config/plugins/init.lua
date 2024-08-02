@@ -560,6 +560,18 @@ require("lazy").setup({
 				}
 			}
 
+			dap.configurations.lua = {
+				{
+					type = 'nlua',
+					request = 'attach',
+					name = "Attach to running Neovim instance",
+				}
+			}
+
+			dap.adapters.nlua = function(callback, config)
+				callback({ type = 'server', host = config.host or "127.0.0.1", port = config.port or 8086 })
+			end
+
 			local apply_vimspector_launch_config = function ()
 				local vimspector_config_path = vim.fs.find({".vimspector.json"}, {upward = true, type = "file"})
 				if vim.tbl_isempty(vimspector_config_path) then
@@ -651,6 +663,10 @@ require("lazy").setup({
 			map_key("n", "<Bslash>fu", dap.up)
 			map_key("n", "<Bslash>fd", dap.down)
 
+			map_key("n", "<Bslash>n", function ()
+				require"osv".launch({port=8086})
+			end)
+
 			dap.listeners.after.event_initialized["dapui_config"] = function()
 				dapui.open({})
 			end
@@ -688,7 +704,8 @@ require("lazy").setup({
 		dependencies = {
 			"rcarriga/nvim-dap-ui",
 			"nvim-neotest/nvim-nio",
-			"lsp-installer"
+			"lsp-installer",
+			"jbyuki/one-small-step-for-vimkind"
 		}
 	},
 	-- }}}
