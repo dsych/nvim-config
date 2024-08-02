@@ -193,7 +193,10 @@ require("lazy").setup({
 			"jay-babu/mason-nvim-dap.nvim",
 
 			-- neovim plugin development
-			"folke/neodev.nvim",
+		    {
+				"folke/lazydev.nvim",
+				ft = "lua", -- only load on lua files
+			},
 
 			-- typescript language server
 			"jose-elias-alvarez/typescript.nvim",
@@ -207,15 +210,6 @@ require("lazy").setup({
 			"j-hui/fidget.nvim"
 		},
 		config = function()
-			require"neodev".setup{
-				library = {
-					plugins = {
-						"nvim-dap-ui"
-					},
-					types = true
-				},
-				pathStrict = true
-			}
 			require"diagflow".setup{
 				scope = "line"
 			}

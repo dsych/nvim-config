@@ -105,9 +105,6 @@ M.setup = function()
 	local lsp_utils = require("dsych_config.lsp.utils")
     local lsp_config = require"lspconfig"
 
-	-- configure lua_ls for neovim plugin development
-	require"neodev".setup()
-
     -- -- FIXME: workaround for high cpu usage in the recent nighty release because of the new file watcher
     -- local ok, wf = pcall(require, "vim.lsp._watchfiles")
     -- if ok then
