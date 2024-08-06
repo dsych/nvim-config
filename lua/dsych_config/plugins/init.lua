@@ -1260,6 +1260,37 @@ return {
 				end
 			end
 
+			local ollama = function()
+				return function ()
+					if not require("ollama") or not require("ollama").status() then
+						return nil
+					end
+					local status = require("ollama").status()
+
+					if status == "IDLE" then
+						return nil
+					elseif status == "WORKING" then
+						return " OLLAMA [GENERATING] "
+					end
+				end
+			end
+
+			windline.add_component({
+				name = 'ollama',
+				text = ollama(),
+			}, {
+				filetype = 'default',
+				-- it will add a new component before git component
+				-- you can use and index number
+				position = 'lsp_name',
+				-- if you want to add on inactive component
+				--kind ='inactive',
+				autocmd = false,
+				-- set it = true mean when you are on custom filetype component will add to the default statusline
+				-- then remove after you leave that filetype
+
+			})
+
 			local winbar = {
 				filetypes = { 'winbar' },
 				active = {
