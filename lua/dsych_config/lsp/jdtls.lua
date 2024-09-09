@@ -110,10 +110,22 @@ M.setup = function()
 		-- every workspaces
 		config.root_dir = root_dir
 
-        local bundles = {
-          vim.fn.glob(home .. "/.local/source/jdtls-launcher/java-debug/com.microsoft.java.debug.plugin/target/com.microsoft.java.debug.plugin-*.jar"),
-        }
-        vim.list_extend(bundles, vim.split(vim.fn.glob(home .. "/.local/source/jdtls-launcher/vscode-java-decompiler/server/*.jar"), "\n"))
+		local bundles = {}
+
+		table.insert(bundles, mason.get_package_path_with_fallback(
+            "java-debug-adapter",
+            "/extension/server/com.microsoft.java.debug.plugin-*.jar",
+            home .. "/.local/source/jdtls-launcher/java-debug/com.microsoft.java.debug.plugin/target/com.microsoft.java.debug.plugin-*.jar"
+        ))
+		vim.list_extend(bundles, vim.split(mason.get_package_path_with_fallback(
+            "vscode-java-decompiler",
+            "/server/*.jar",
+			home .. "/.local/source/jdtls-launcher/vscode-java-decompiler/server/*.jar"
+        ), "\n"))
+		vim.list_extend(bundles, vim.split(mason.get_package_path_with_fallback(
+            "java-test",
+            "/extension/server/*.jar"
+        ), "\n"))
 
 		local extendedClientCapabilities = require("jdtls").extendedClientCapabilities
 		extendedClientCapabilities.resolveAdditionalTextEditsSupport = true
