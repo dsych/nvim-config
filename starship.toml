@@ -5,7 +5,8 @@ $git_commit\
 $git_state\
 $git_metrics\
 $git_status\
-$aws
+$aws\
+${env_var}
 $username\
 $hostname\
 $character"""
@@ -29,3 +30,10 @@ ssh_only = false
 [username]
 format = '[$user]($style)'
 show_always = true
+
+[env_var.PERSONAL_ACCOUNT]
+format="\\([$env_value](red bold)@"
+
+[env_var.PERSONAL_ACCOUNT_ID]
+variable="PERSONAL_ACCOUNT_ID"
+format="[$env_value](yellow bold)\\) "
