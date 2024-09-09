@@ -553,6 +553,7 @@ return {
 			})
 
 			local dap = require"dap"
+			local mason_utils = require"dsych_config.utils.mason"
 
 			dap.configurations.java = {
 				{
@@ -570,6 +571,20 @@ return {
 					request = 'attach',
 					name = "Attach to running Neovim instance",
 				}
+			}
+
+			dap.configurations.typescript = {
+				{
+					type = "node",
+					request = "attach",
+					name = "Attach",
+					port = 9229
+				}
+			}
+
+			dap.adapters.node = {
+				type = 'executable',
+				command = mason_utils.get_package_path_with_fallback("js-debug-adapter", "/js-debug-adapter"),
 			}
 
 			dap.adapters.nlua = function(callback, config)
