@@ -135,3 +135,12 @@ vim.opt.smarttab = true
 ------------------------------------------------------------
 -- Always show the status line
 vim.opt.laststatus = 2
+
+------------------------------------------------------------
+-- => Shell
+------------------------------------------------------------
+if string.gmatch(vim.opt.shell:get(), "zsh") then
+	-- spawn login shell instead of regular shell to take full advantage of
+	-- aliases and other shell specific configurations
+	vim.opt.shellcmdflag = "-i -l -c"
+end
