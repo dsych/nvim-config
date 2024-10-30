@@ -645,6 +645,7 @@ return {
 			map_key("n", "<Bslash>e", dapui.eval)
 			-- for visual mode, the visually selected text
 			map_key("x", "<Bslash>e", dapui.eval)
+			map_key("n", "<Bslash>E", function () dap.repl.toggle() end)
 
 
 			map_key("n", "<Bslash>b", dap.toggle_breakpoint)
@@ -666,7 +667,7 @@ return {
 
 			map_key("n", "<Bslash>c", dap.continue)
 			map_key("n", "<Bslash>l", dap.run_last)
-			map_key("n", "<Bslash>d", dapui.close)
+			map_key("n", "<Bslash>d", dap.disconnect)
 			map_key("n", "<Bslash>r", dap.restart)
 			map_key("n", "<Bslash>p", dap.pause)
 			map_key("n", "<Bslash>br", dap.run_to_cursor)
@@ -686,14 +687,34 @@ return {
 				require"osv".launch({port=8086})
 			end)
 
+			local last_tab_id = nil
+			local dap_tabpage_key = "___dap_tabpage_me___"
 			dap.listeners.after.event_initialized["dapui_config"] = function()
-				dapui.open({})
+				if not last_tab_id or
+					not vim.api.nvim_tabpage_is_valid(last_tab_id) or
+					not vim.api.nvim_tabpage_get_var(last_tab_id, dap_tabpage_key)
+				then
+					vim.cmd.tabnew()
+					last_tab_id = vim.api.nvim_tabpage_get_number(0)
+					vim.api.nvim_tabpage_set_var(last_tab_id, dap_tabpage_key, true)
+				else
+					vim.api.nvim_set_current_tabpage(last_tab_id)
+				end
+
+				dapui.open({reset=true})
 			end
 			dap.listeners.before.event_terminated["dapui_config"] = function()
 				dapui.close({})
 			end
-			dap.listeners.before.event_exited["dapui_config"] = function()
-				dapui.close({})
+			dap.listeners.before.event_exited["dapui_config"] = function(session, body)
+				if body.exitCode == 0 then
+					dapui.close({})
+				end
+			end
+
+			local success, json5 = pcall(require, "json5")
+			if success then
+				require"dap.ext.vscode".json_decode = json5.parse
 			end
 
 			local load_launchjson = function ()
@@ -714,7 +735,7 @@ return {
 					local p = vim.fs.joinpath(config_dir_path, "launch.json")
 
 					if utils.does_file_exist(p) then
-						dap.ext.load_launchj(p)
+						require"dap.ext.vscode".load_launchjs(p)
 					end
 				end
 			end
@@ -724,7 +745,14 @@ return {
 			"rcarriga/nvim-dap-ui",
 			"nvim-neotest/nvim-nio",
 			"lsp-installer",
-			"jbyuki/one-small-step-for-vimkind"
+			"jbyuki/one-small-step-for-vimkind",
+			"mfussenegger/nvim-dap-python",
+			{
+				'Joakker/lua-json5',
+				-- if you're on windows
+				-- run = 'powershell ./install.ps1'
+				build = './install.sh'
+			}
 		}
 	},
 	-- }}}
