@@ -27,7 +27,8 @@ require("dsych_config.autocommands")
 ------------------------------------------------------------------------------------------------------------------------------
 -- => Plugins
 ------------------------------------------------------------------------------------------------------------------------------
-require("dsych_config.plugins")
+-- everything inside "plugins" directory gets automatically sourced by lazy
+require("dsych_config.lazy")
 
 --------------------------------------------------------
 -- Additional runtime path and script locations
