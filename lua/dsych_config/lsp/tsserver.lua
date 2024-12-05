@@ -19,7 +19,7 @@ local on_ts_attach = function(old_on_attach)
 end
 
 M.config = function (config)
-    -- wrap the on_attach from the previous config with on_attach specific to tsserver
+    -- wrap the on_attach from the previous config with on_attach specific to ts_ls
     config.on_attach = on_ts_attach(config.on_attach)
     require"typescript".setup({
         server = config

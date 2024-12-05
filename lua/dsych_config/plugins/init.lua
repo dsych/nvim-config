@@ -184,13 +184,8 @@ return {
 			},
 
 			-- typescript language server
-			"jose-elias-alvarez/typescript.nvim",
+			"dsych/typescript.nvim",
 
-			-- inlay hints
-			{
-                "lvimuser/lsp-inlayhints.nvim",
-                branch = "anticonceal",
-            },
 			"dgagn/diagflow.nvim",
 			"j-hui/fidget.nvim"
 		},
@@ -530,7 +525,7 @@ return {
 		"mfussenegger/nvim-dap",
 		config = function ()
 			require("mason-nvim-dap").setup({
-				ensure_installed = {"javadbg", "javatest"}
+				ensure_installed = {"javadbg", "javatest", "python"}
 			})
 
 			local dap = require"dap"
@@ -617,7 +612,26 @@ return {
 			apply_vimspector_launch_config()
 
 			local dapui = require"dapui"
-			dapui.setup()
+			dapui.setup({
+				layouts = { {
+					elements = { {
+						id = "stacks",
+						size = 0.5
+					  }, {
+						id = "watches",
+						size = 0.5
+					  } },
+					position = "left",
+					size = 40
+				  }, {
+					elements = { {
+						id = "repl",
+						size = 1
+					  } },
+					position = "bottom",
+					size = 10
+				  } },
+			})
 
 			local map_key = require("dsych_config.utils").map_key
 			local utils = require("dsych_config.utils")
@@ -676,7 +690,7 @@ return {
 					not vim.api.nvim_tabpage_get_var(last_tab_id, dap_tabpage_key)
 				then
 					vim.cmd.tabnew()
-					last_tab_id = vim.api.nvim_tabpage_get_number(0)
+					last_tab_id = vim.api.nvim_get_current_tabpage()
 					vim.api.nvim_tabpage_set_var(last_tab_id, dap_tabpage_key, true)
 				else
 					vim.api.nvim_set_current_tabpage(last_tab_id)
@@ -1477,8 +1491,8 @@ return {
 					disable = { "java" }
 				},
 				highlight = {
-					-- enable = false,
-					-- disable = { "lua" },
+					enable = true,
+					disable = { "lua", "java" },
 					additional_vim_regex_highlighting = false,
 				},
 			})

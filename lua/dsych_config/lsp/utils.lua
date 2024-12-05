@@ -160,8 +160,6 @@ M.configure_lsp = function(lsp_opts)
 			old_on_attach(client, bufnr)
 		end
 
-		require("lsp-inlayhints").on_attach(client, bufnr)
-
 		--   if client.resolved_capabilities.document_highlight then
 		--       vim.cmd [[
 		--         hi! LspReferenceRead cterm=bold ctermbg=red guibg=#eee8d5
