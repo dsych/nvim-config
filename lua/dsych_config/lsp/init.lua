@@ -1,3 +1,4 @@
+local utils = require"dsych_config.utils"
 local M = {}
 
 M.language_server_configs = {
@@ -22,7 +23,7 @@ M.language_server_configs = {
 			},
 		}
 	end,
-	["tsserver"] = function ()
+	["ts_ls"] = function ()
 		return {
 			settings = {
 				typescript = {
@@ -72,18 +73,16 @@ M.language_server_configs = {
 M.setup = function()
 	local server_configs = require("dsych_config.lsp").language_server_configs
 
-	require("lsp-inlayhints").setup()
-
 	-- automatically install these language servers
 	local servers_to_install = {
-		-- "clangd",
+		"clangd",
 		"cssls",
 		"html",
 		"jsonls",
 		"lemminx",
-		"pyright",
+		"basedpyright",
 		"lua_ls",
-		"tsserver",
+		"ts_ls",
 		"vimls",
 		"bashls",
 		"yamlls",
@@ -100,7 +99,8 @@ M.setup = function()
 	require"mason-registry".get_package("vscode-java-decompiler"):install()
 
 	-- rely on a manual rust installation
-	local servers = vim.tbl_deep_extend("force", servers_to_install, { "rust_analyzer" })
+	local servers = vim.fn.deepcopy(servers_to_install)
+	table.insert(servers, "rust_analyzer")
 
 	local lsp_utils = require("dsych_config.lsp.utils")
     local lsp_config = require"lspconfig"
@@ -122,7 +122,7 @@ M.setup = function()
 			server_configs[server_name] and server_configs[server_name]() or {}
 		)
 		config = lsp_utils.configure_lsp(config)
-		if server_name == "tsserver" then
+		if server_name == "ts_ls" then
 			require"dsych_config.lsp.tsserver".config(config)
 		elseif server_name == "cucumber_language_server" then
 			lsp_config[server_name].setup(require"dsych_config.lsp.cucumber"(config))

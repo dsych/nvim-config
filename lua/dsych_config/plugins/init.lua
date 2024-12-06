@@ -242,6 +242,12 @@ return {
 			-- generate global config, if missing
 			utils.create_file_if_does_not_exist(global_dictionary, generate_default_dictionary())
 
+			local cspell_config = {
+				find_json = function ()
+				return global_dictionary
+				end,
+			}
+
 			local sources = {
 				-- formatters
 				null_ls.builtins.formatting.stylua,
@@ -256,6 +262,7 @@ return {
 					extra_args = {"-c", global_dictionary},
 					disabled_filetypes = { "NvimTree" },
 					filetypes = { "markdown" },
+					config = cspell_config,
 					diagnostics_postprocess = function(diagnostic)
 						diagnostic.severity = vim.diagnostic.severity.HINT
 					end,
@@ -266,12 +273,7 @@ return {
 				cspell.code_actions.with{
 					disabled_filetypes = { "NvimTree" },
 					filetypes = { "markdown" },
-					config = {
-						find_json = function ()
-							return global_dictionary
-						end,
-						create_config_file = true
-					}
+					config = cspell_config
 				},
 				require("typescript.extensions.null-ls.code-actions"),
 			}
@@ -282,7 +284,7 @@ return {
 
 			local config_names = vim.tbl_map(function (source) return source.name end, sources)
 			require("mason-null-ls").setup({
-				-- ensure_installed = config_names
+				ensure_installed = config_names,
 				automatic_installation = { exclude = { "rustfmt" } }
 			})
 
