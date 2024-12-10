@@ -178,27 +178,34 @@ return {
 			"jay-babu/mason-nvim-dap.nvim",
 
 			-- neovim plugin development
-		    {
+			{
 				"folke/lazydev.nvim",
 				ft = "lua", -- only load on lua files
+				opts = {
+					enabled = true,
+					library = {
+						"wezterm-types/types",
+					},
+				},
+                dependencies = {
+                    "justinsgithub/wezterm-types"
+                }
 			},
-
 			-- typescript language server
 			"dsych/typescript.nvim",
 
 			"dgagn/diagflow.nvim",
-			"j-hui/fidget.nvim"
+			"j-hui/fidget.nvim",
 		},
 		config = function()
-			require"diagflow".setup{
-				scope = "line"
-			}
+			require("diagflow").setup({
+				scope = "line",
+			})
 
-			require"fidget".setup {}
+			require("fidget").setup({})
 			require("dsych_config.lsp").setup()
-	end
+		end,
 	},
-
 
 	{
 		"b0o/schemastore.nvim",

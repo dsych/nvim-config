@@ -136,9 +136,6 @@ function install_fzf {
 configDir=$HOME/.config/nvim
 scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-# create the nvim directory
-mkdir -p $configDir
-
 all_configs=(
     "$configDir/init.lua"
     "$configDir/lua"
@@ -150,6 +147,10 @@ all_configs=(
     "$HOME/.config/wezterm"
     "$HOME/.config/starship.toml"
 )
+
+
+# create the nvim directory
+mkdir -p $configDir
 
 for path in ${all_configs[@]}; do
     save_old_config $path
@@ -185,6 +186,5 @@ else
     echo "- FZF tab completion for ZSH: https://github.com/lincheney/fzf-tab-completion#installation"
     echo "----------------------"
 fi
-
 
 printf "Done!!!\n"
