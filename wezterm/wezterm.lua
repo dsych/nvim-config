@@ -393,7 +393,16 @@ if wezterm.gui then
 				window:perform_action(wezterm.action.CopyMode { SetSelectionMode = "Word" }, pane)
 			end
 		end)
-
+	})
+	table.insert(copy_mode, {
+		key = "/",
+		mods = "NONE",
+		action = wezterm.action.Search({ CaseInSensitiveString = "" }),
+	})
+	table.insert(copy_mode, {
+		key = "?",
+		mods = "NONE",
+		action = wezterm.action.Search({ CaseInSensitiveString = "" }),
 	})
 
 
@@ -412,14 +421,19 @@ if wezterm.gui then
 		})
 	})
 	table.insert(search_mode, {
-		key = "n",
-		mods = "NONE",
+		key = "j",
+		mods = "CTRL",
 		action = wezterm.action.CopyMode("NextMatch"),
 	})
 	table.insert(search_mode, {
-		key = "N",
-		mods = "SHIFT",
+		key = "k",
+		mods = "CTRL",
 		action = wezterm.action.CopyMode("PriorMatch"),
+	})
+	table.insert(search_mode, {
+		key = "w",
+		mods = "CTRL",
+		action = wezterm.action.CopyMode("ClearPattern"),
 	})
 
 	config.key_tables = {
@@ -493,11 +507,6 @@ config.keys = {
 		key = "z",
 		mods = "LEADER",
 		action = wezterm.action.TogglePaneZoomState,
-	},
-	{
-		key = "f",
-		mods = "LEADER",
-		action = wezterm.action.Search({ CaseInSensitiveString = "" }),
 	},
 	{
 		key = "y",
@@ -579,6 +588,11 @@ config.keys = {
 	{ key = "q", mods = "LEADER", action = wezterm.action.QuickSelect },
 	{
 		key = "/",
+		mods = "LEADER",
+		action = wezterm.action.Search({ CaseInSensitiveString = "" }),
+	},
+	{
+		key = "?",
 		mods = "LEADER",
 		action = wezterm.action.Search({ CaseInSensitiveString = "" }),
 	},
@@ -671,5 +685,7 @@ wezterm.on("augment-command-palette", function()
 
 	return merge_tables(commands, theme.get_palette_commands())
 end)
+
+config.term = "wezterm"
 
 return config
