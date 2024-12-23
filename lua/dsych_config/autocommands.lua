@@ -26,9 +26,18 @@ vim.api.nvim_create_autocmd({"BufWritePre"}, {
 --     augroup END
 -- ]])
 
-vim.cmd([[
-    augroup markdown
-      autocmd!
-      autocmd FileType markdown :set textwidth=120
-    augroup END
-]])
+vim.api.nvim_create_autocmd("FileType", {
+    pattern = "markdown",
+    group = my_auto_group,
+    callback = function (event)
+        local file_path = vim.api.nvim_buf_get_name(event.buf)
+        local textwidth = 120
+        if file_path:gmatch(".*/designs?/.*")() then
+            -- disable hard line wrapping as it's harder to import markdown due to line breaks
+            textwidth = 0
+            -- because hard breaks are disabled, enable virtual wrapping instead
+            vim.wo[vim.api.nvim_get_current_win()].wrap = true
+        end
+        vim.bo[event.buf].textwidth = textwidth
+    end
+})
