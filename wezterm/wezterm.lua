@@ -405,6 +405,20 @@ if wezterm.gui then
 		action = wezterm.action.Search({ CaseInSensitiveString = "" }),
 	})
 
+	table.insert(copy_mode, {
+		key = "s",
+		mods = "NONE",
+		action = wezterm.action.QuickSelectArgs{
+			label = "jump to word",
+			patterns = {
+				"\\w+"
+			},
+			action = wezterm.action_callback(function (window, pane)
+				local selected_text = window:get_selection_text_for_pane(pane)
+				window:perform_action(wezterm.action.Search{ CaseInSensitiveString = selected_text }, pane)
+			end)
+		},
+	})
 
 	local search_mode = wezterm.gui.default_key_tables().search_mode
 	table.insert(search_mode, {
@@ -641,12 +655,22 @@ config.keys = {
 
 			if success then
 				window:perform_action(wezterm.action.AttachDomain "cloud-desktop", pane)
+				wezterm.log_warn("If ssh connection fails due to 'Socket Error: No such file or directory', run 'ssh-add -D' and try again")
 			else
 				wezterm.log_error(stdout, stderr)
 			end
 		end)
 	}
 }
+
+for i = 1, 9 do
+  -- LEADER + number to activate that tab
+  table.insert(config.keys, {
+    key = tostring(i),
+    mods = "LEADER",
+    action = wezterm.action.ActivateTab(i - 1),
+  })
+end
 
 config.default_gui_startup_args = { "connect", "unix" }
 
