@@ -261,7 +261,6 @@ return {
 				null_ls.builtins.diagnostics.write_good,
 				null_ls.builtins.diagnostics.cppcheck,
 				cspell.diagnostics.with{
-					extra_args = {"-c", global_dictionary},
 					disabled_filetypes = { "NvimTree" },
 					filetypes = { "markdown" },
 					config = cspell_config,
@@ -562,6 +561,39 @@ return {
 				}
 			}
 
+			require"dap-python".setup"debugpy-adapter"
+			dap.adapters.python = function(cb, config)
+				if config.request == 'attach' then
+					---@diagnostic disable-next-line: undefined-field
+					local port = (config.connect or config).port
+					---@diagnostic disable-next-line: undefined-field
+					local host = (config.connect or config).host or '127.0.0.1'
+					cb({
+						type = 'server',
+						port = assert(port, '`connect.port` is required for a python `attach` configuration'),
+						host = host,
+						options = {
+							source_filetype = 'python',
+						}
+					})
+				else
+					cb({
+						type = 'executable',
+						command = "debugpy-adapter",
+						args = {},
+						options = {
+							source_filetype = 'python',
+						}
+					})
+				end
+			end
+			dap.configurations.python = vim.tbl_map(function(config)
+				config["justMyCode"] = false
+				return config
+			end, dap.configurations.python)
+
+			dap.defaults.python.exception_breakpoints = {}
+
 			dap.adapters.node = {
 				type = 'executable',
 				command = mason_utils.get_package_path_with_fallback("js-debug-adapter", "/js-debug-adapter"),
@@ -640,12 +672,14 @@ return {
 			local map_key = require("dsych_config.utils").map_key
 			local utils = require("dsych_config.utils")
 
-			-- for normal mode - the word under the cursor
-			map_key("n", "<Bslash>e", dapui.eval)
-			-- for visual mode, the visually selected text
-			map_key("x", "<Bslash>e", dapui.eval)
-			map_key("n", "<Bslash>E", function () dap.repl.toggle() end)
+			vim.g.use_fn_keys = false
 
+			if vim.g.use_fn_keys then
+				-- for normal mode - the word under the cursor
+				map_key("n", "<F8>", dapui.eval)
+				-- for visual mode, the visually selected text
+				map_key("x", "<F8>", dapui.eval)
+				map_key("n", "<F20>", function () dap.repl.toggle() end)
 
 			map_key("n", "<Bslash>b", dap.toggle_breakpoint)
 			map_key("n", "<Bslash>bc", function ()
@@ -656,57 +690,126 @@ return {
 						end)
 					end)
 				end)
-			end)
-			-- map_key("n", "<Bslash>bf", "<Plug>VimspectorAddFunctionBreakpoint")
-			map_key("n", "<Bslash>bda", dap.clear_breakpoints)
-			map_key("n", "<Bslash>bl", function ()
-				dap.list_breakpoints()
-				require"telescope.builtin".quickfix()
-			end)
+				-- map_key("n", "<Bslash>bf", "<Plug>VimspectorAddFunctionBreakpoint")
+				map_key("n", "<F10>", dap.clear_breakpoints)
+				map_key("n", "<F13>", function ()
+					dap.list_breakpoints()
+					require"telescope.builtin".quickfix()
+				end)
 
-			map_key("n", "<Bslash>c", dap.continue)
-			map_key("n", "<Bslash>l", dap.run_last)
-			map_key("n", "<Bslash>d", dap.disconnect)
-			map_key("n", "<Bslash>r", dap.restart)
-			map_key("n", "<Bslash>p", dap.pause)
-			map_key("n", "<Bslash>br", dap.run_to_cursor)
-			map_key("n", "<Bslash>s", dap.step_over)
-			map_key("n", "<Bslash>i", function ()
-				dap.step_into({
-					steppingGranularity = "instruction",
-					askForTargets = false
-				})
+				map_key("n", "<F5>", dap.continue)
+				map_key("n", "<F4>", dap.run_last)
+				map_key("n", "<F3>", dap.disconnect)
+				map_key("n", "<Bslash>r", dap.restart)
+				map_key("n", "<Bslash>p", dap.pause)
+				map_key("n", "<F18>", dap.run_to_cursor)
+				map_key("n", "<F7>", dap.step_over)
+				map_key("n", "<F6>", function ()
+					dap.step_into({
+						steppingGranularity = "instruction",
+						askForTargets = false
+					})
 
-			end)
-			map_key("n", "<Bslash>o", dap.step_out)
-			map_key("n", "<Bslash>fu", dap.up)
-			map_key("n", "<Bslash>fd", dap.down)
+				end)
+				map_key("n", "<F12>", dap.step_out)
+				map_key("n", "<F24>", dap.up)
+				map_key("n", "<F22>", dap.down)
 
-			map_key("n", "<Bslash>n", function ()
-				require"osv".launch({port=8086})
-			end)
+				map_key("n", "<Bslash>n", function ()
+					require"osv".launch({port=8086})
+				end)
 
+			else
+				-- for normal mode - the word under the cursor
+				map_key("n", "<Bslash>e", dapui.eval)
+				-- for visual mode, the visually selected text
+				map_key("x", "<Bslash>e", dapui.eval)
+				map_key("n", "<Bslash>E", function () dap.repl.toggle() end)
+
+
+				map_key("n", "<Bslash>b", dap.toggle_breakpoint)
+				map_key("n", "<Bslash>bc", function ()
+					vim.ui.input({ prompt = "Breakpoint condition: " }, function (condition)
+						vim.ui.input({ prompt = "Hit condition: " }, function (hit_condition)
+							vim.ui.input({ prompt = "Log message: " }, function (log_message)
+								dap.toggle_breakpoint(condition, hit_condition, log_message)
+							end)
+						end)
+					end)
+				end)
+				-- map_key("n", "<Bslash>bf", "<Plug>VimspectorAddFunctionBreakpoint")
+				map_key("n", "<Bslash>bda", dap.clear_breakpoints)
+				map_key("n", "<Bslash>bl", function ()
+					dap.list_breakpoints()
+					require"telescope.builtin".quickfix()
+				end)
+
+				map_key("n", "<Bslash>c", dap.continue)
+				map_key("n", "<Bslash>l", dap.run_last)
+				map_key("n", "<Bslash>d", dap.disconnect)
+				map_key("n", "<Bslash>r", dap.restart)
+				map_key("n", "<Bslash>p", dap.pause)
+				map_key("n", "<Bslash>br", dap.run_to_cursor)
+				map_key("n", "<Bslash>s", dap.step_over)
+				map_key("n", "<Bslash>i", function ()
+					dap.step_into({
+						steppingGranularity = "instruction",
+						askForTargets = false
+					})
+
+				end)
+				map_key("n", "<Bslash>o", dap.step_out)
+				map_key("n", "<Bslash>fu", dap.up)
+				map_key("n", "<Bslash>fd", dap.down)
+
+				map_key("n", "<Bslash>n", function ()
+					require"osv".launch({port=8086})
+				end)
+			end
+
+
+			local debug_tab_id = nil
 			local last_tab_id = nil
 			local dap_tabpage_key = "___dap_tabpage_me___"
+			local close_debug_tab = function()
+				if last_tab_id and vim.api.nvim_tabpage_is_valid(last_tab_id) then
+					vim.api.nvim_set_current_tabpage(last_tab_id)
+				else
+					last_tab_id = nil
+				end
+
+				if debug_tab_id and
+					vim.api.nvim_tabpage_is_valid(debug_tab_id) and
+					vim.api.nvim_tabpage_get_var(debug_tab_id, dap_tabpage_key)
+				then
+					vim.cmd(vim.api.nvim_tabpage_get_number(debug_tab_id) .. "tabclose")
+					debug_tab_id = nil
+				end
+			end
+
 			dap.listeners.after.event_initialized["dapui_config"] = function()
-				if not last_tab_id or
-					not vim.api.nvim_tabpage_is_valid(last_tab_id) or
-					not vim.api.nvim_tabpage_get_var(last_tab_id, dap_tabpage_key)
+				last_tab_id = vim.api.nvim_get_current_tabpage()
+				if not debug_tab_id or
+					not vim.api.nvim_tabpage_is_valid(debug_tab_id) or
+					not vim.api.nvim_tabpage_get_var(debug_tab_id, dap_tabpage_key)
 				then
 					vim.cmd.tabnew()
-					last_tab_id = vim.api.nvim_get_current_tabpage()
-					vim.api.nvim_tabpage_set_var(last_tab_id, dap_tabpage_key, true)
+					debug_tab_id = vim.api.nvim_get_current_tabpage()
+					vim.api.nvim_tabpage_set_var(debug_tab_id, dap_tabpage_key, true)
 				else
-					vim.api.nvim_set_current_tabpage(last_tab_id)
+					vim.api.nvim_set_current_tabpage(debug_tab_id)
 				end
 
 				dapui.open({reset=true})
+
 			end
 			dap.listeners.before.event_terminated["dapui_config"] = function()
 				dapui.close({})
+				close_debug_tab()
 			end
 			dap.listeners.before.event_exited["dapui_config"] = function(session, body)
 				if body.exitCode == 0 then
+					close_debug_tab()
 					dapui.close({})
 				end
 			end
@@ -763,7 +866,6 @@ return {
 		dependencies = {
             "nvim-lua/popup.nvim",
             "nvim-lua/plenary.nvim",
-            "nvim-telescope/telescope-ui-select.nvim",
             "telescope-fzf-native",
         },
 		config = function()
@@ -837,7 +939,7 @@ return {
 					find_files = {
 						previewer = true,
 						path_display = { "smart", "shorten" },
-						hidden = true,
+						hidden = false,
 						follow = true,
                         find_command =  { "fd", "--type", "f", "--color", "never" }
 					},
@@ -860,14 +962,6 @@ return {
 					},
 				},
 				extensions = {
-					["ui-select"] = vim.tbl_deep_extend("force",
-						require("telescope.themes").get_dropdown(),
-						{
-							layout_config = {
-								width = { 0.5, max = 0.9, min = 0.4 }
-							}
-						}
-					),
                     fzf = {
                         fuzzy = true,                    -- false will only do exact matching
                         override_generic_sorter = true,  -- override the generic sorter
@@ -878,7 +972,6 @@ return {
 			})
 
 			-- telescope extensions
-			require("telescope").load_extension("ui-select")
 			require("telescope").load_extension("fzf")
 		end,
 	},
@@ -931,6 +1024,7 @@ return {
             "rktjmp/lush.nvim",
             "https://gitlab.com/madyanov/gruber.vim.git",
             "sainnhe/everforest",
+			"ribru17/bamboo.nvim",
             "EdenEast/nightfox.nvim",
             "Mofiqul/vscode.nvim",
 			"thedenisnikulin/vim-cyberpunk",
@@ -988,6 +1082,40 @@ return {
 					GruvboxAquaSign = { bg = "" },
 				},
 			}
+			require"catppuccin".setup({
+				dim_inactive = {
+					enabled = true
+				},
+				no_underline = false,
+				integrations = {
+					mini = true,
+					native_lsp = {
+						enabled = true,
+						virtual_text = {
+							errors = { "italic" },
+							hints = { "italic" },
+							warnings = { "italic" },
+							information = { "italic" },
+							ok = { "italic" },
+						},
+						underlines = {
+							errors = { "undercurl" },
+							hints = { "undercurl" },
+							warnings = { "undercurl" },
+							information = { "undercurl" },
+						},
+					},
+				}
+			})
+
+			------------------------------------------------------------------------------------------------------------------------------
+			-- => Bamboo
+			------------------------------------------------------------------------------------------------------------------------------
+			require"bamboo".setup{
+				style = "multiplex",
+				dim_inactive = true,
+			}
+
 		end,
 		config = function()
 			-- THIS IS PURE FUCKING EVIL!!! DO NOT E-V-E-R SET THIS OPTION
@@ -1015,11 +1143,12 @@ return {
 			local dimmed_color_scheme = "zenwritten"
 			local force_dark = true
 			if is_night_in_est() or force_dark then
-				vim.go.background = "dark"
-				colorscheme = "catppuccin-mocha"
+				-- vim.go.background = "dark"
+				-- colorscheme = "catppuccin-mocha"
+				colorscheme = "bamboo"
 			else
-				vim.go.background = "light"
-				colorscheme = "gruvbox"
+				-- vim.go.background = "light"
+				colorscheme = "bamboo"
 			end
 
 			vim.cmd.colorscheme(colorscheme)
@@ -1302,37 +1431,6 @@ return {
 				end
 			end
 
-			local ollama = function()
-				return function ()
-					if not require("ollama") or not require("ollama").status() then
-						return nil
-					end
-					local status = require("ollama").status()
-
-					if status == "IDLE" then
-						return nil
-					elseif status == "WORKING" then
-						return " OLLAMA [GENERATING] "
-					end
-				end
-			end
-
-			windline.add_component({
-				name = 'ollama',
-				text = ollama(),
-			}, {
-				filetype = 'default',
-				-- it will add a new component before git component
-				-- you can use and index number
-				position = 'lsp_name',
-				-- if you want to add on inactive component
-				--kind ='inactive',
-				autocmd = false,
-				-- set it = true mean when you are on custom filetype component will add to the default statusline
-				-- then remove after you leave that filetype
-
-			})
-
 			local winbar = {
 				filetypes = { 'winbar' },
 				active = {
@@ -1405,7 +1503,7 @@ return {
 				ft_ignore = { "neo-tree" },
 				segments = {
 					{
-						sign = { namespace = { "diagnostic/signs" }, auto = false },
+						sign = { namespace = { "diagnostic" }, maxwidth = 2, auto = false },
 						click = "v:lua.ScSa"
 					},
 					{
