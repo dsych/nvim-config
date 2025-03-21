@@ -19,3 +19,5 @@ require("lazy").setup(
     },
   }
 )
+
+require("dsych_config.utils.tasks").setup()
