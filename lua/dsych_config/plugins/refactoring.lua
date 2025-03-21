@@ -7,7 +7,11 @@ return {
   lazy = false,
   config = function()
     require("refactoring").setup({
-
+      print_var_statements = {
+        python = {
+          'nl.device_print("%s", %s)'
+        }
+      }
     })
 
     local map_key = require("dsych_config.utils").map_key
@@ -27,7 +31,7 @@ return {
       "<leader>lp",
       function() require('refactoring').debug.printf({below = false}) end
     )
-    map_key({"x", "n"}, "<leader>lpv", function() require('refactoring').debug.print_var() end)
+    map_key({"x", "n"}, "<leader>lpv", function() require('refactoring').debug.print_var({below = false}) end)
     map_key("n", "<leader>lpc", function() require('refactoring').debug.cleanup({}) end)
 
   end,
