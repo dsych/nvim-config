@@ -58,6 +58,22 @@ M.language_server_configs = {
 			filetypes = { "sh", "zsh" }
 		}
 	end,
+	['basedpyright'] = function ()
+		return {
+			settings = {
+				pyright = {
+					-- Using Ruff's import organizer
+					disableOrganizeImports = true,
+				},
+				python = {
+					analysis = {
+						-- Ignore all files for analysis to exclusively use Ruff for linting
+						ignore = { '*' },
+					},
+				},
+			},
+		}
+	end,
 	['rust_analyzer'] = function ()
 		return {
 			check = {
@@ -68,6 +84,31 @@ M.language_server_configs = {
 			}
 		}
 	end,
+	['clangd'] = function ()
+		local compile_command_option = ""
+
+		if derive_additional_clangd_cmd_flags then
+			compile_command_option = derive_additional_clangd_cmd_flags()
+		end
+
+		local settings = {
+			cmd = {
+				"clangd",
+				"-j",
+				tostring(math.floor(#vim.loop.cpu_info() * 0.66)),
+				"--background-index",
+				"--malloc-trim",
+				"--pch-storage=memory",
+				"--background-index"
+			}
+
+		}
+		if compile_command_option ~= "" then
+			table.insert(settings.cmd, compile_command_option)
+		end
+
+		return settings
+	end
 }
 
 M.setup = function()
