@@ -194,15 +194,10 @@ return {
 			-- typescript language server
 			"dsych/typescript.nvim",
 
-			"dgagn/diagflow.nvim",
-			"j-hui/fidget.nvim",
+			"j-hui/fidget.nvim"
 		},
 		config = function()
-			require("diagflow").setup({
-				scope = "line",
-			})
-
-			require("fidget").setup({})
+			require"fidget".setup {}
 			require("dsych_config.lsp").setup()
 		end,
 	},

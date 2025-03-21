@@ -87,6 +87,7 @@ M.setup = function()
 		"bashls",
 		"yamlls",
 		"cucumber_language_server",
+		"ruff"
 	}
 
     require("mason").setup()
@@ -126,6 +127,8 @@ M.setup = function()
 			require"dsych_config.lsp.tsserver".config(config)
 		elseif server_name == "cucumber_language_server" then
 			lsp_config[server_name].setup(require"dsych_config.lsp.cucumber"(config))
+		elseif server_name == "ruff" then
+			lsp_config[server_name].setup(require"dsych_config.lsp.ruff"(config))
 		else
 			lsp_config[server_name].setup(config)
 		end

@@ -15,7 +15,8 @@ end
 
 local filetype_to_default_formatter = {
 	["typescript"] = "null-ls",
-	["java"] = "jdtls"
+	["java"] = "jdtls",
+	["python"] = "ruff"
 }
 
 local select_lsp_client = function(callback)
