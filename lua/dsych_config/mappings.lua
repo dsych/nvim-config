@@ -41,6 +41,9 @@ map_key("n", "”", ":<c-u>resize -5<cr>") -- height
 map_key("n", "’", ":<c-u>resize +5<cr>") -- height
 map_key("n", "<M-lt>", ":<c-u>vertical resize -5<cr>") -- width
 map_key("n", "<M->>", ":<c-u>vertical resize +5<cr>") -- width
+-- same, but under wezterm these are different
+map_key("n", "<M-{>", ":<c-u>resize -5<cr>") -- height
+map_key("n", "<M-}>", ":<c-u>resize +5<cr>") -- height
 
 -- Useful mappings for managing tabs
 map_key("n", "<leader>tn", ":tabnew<cr>")
