@@ -127,6 +127,28 @@ M.define_mappings = function()
 		vim.diagnostic.goto_next({ severity = "Error" })
 	end)
 
+	local default_diagnostic_float = vim.diagnostic.config().float
+	map_key('n', 'gK', function()
+		local l_config = vim.diagnostic.config().virtual_lines
+		local float_config = default_diagnostic_float
+		if type(l_config) == "boolean" then
+			if l_config == true then
+				l_config = not l_config
+			else
+				l_config = {
+					current_line = false
+				}
+				float_config = false
+			end
+		else
+			l_config = false
+		end
+		vim.diagnostic.config({
+            virtual_lines = l_config,
+			float = float_config
+        })
+	end, { desc = 'Toggle diagnostic virtual_lines' })
+
     map_key("n", "<M-F>", function()
         select_lsp_client(function (desired_client)
             vim.lsp.buf.format({ timeout_ms = 10000, async = false, name = desired_client })
