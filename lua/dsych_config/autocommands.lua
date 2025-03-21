@@ -41,3 +41,16 @@ vim.api.nvim_create_autocmd("FileType", {
         vim.bo[event.buf].textwidth = textwidth
     end
 })
+
+vim.cmd([[
+    augroup markdown
+      autocmd!
+      autocmd FileType markdown :set textwidth=120
+    augroup END
+]])
+
+vim.api.nvim_create_autocmd("FileType", {
+    group = vim.api.nvim_create_augroup("python_config", {clear = true}),
+    pattern = "python",
+    command = "set textwidth=0"
+})
