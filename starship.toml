@@ -14,7 +14,10 @@ $character"""
 add_newline = true
 
 [character]
-vimcmd_symbol = '[N ❯](bold yellow)'
+vimcmd_symbol = '[N ❮](bold yellow)'
+vimcmd_visual_symbol = '[V ❮](bold yellow)'
+vimcmd_replace_symbol = '[R ❮](bold yellow)'
+vimcmd_replace_one_symbol = '[R ❮](bold yellow)'
 success_symbol = '[I ❯](bold green)'
 error_symbol = '[I ❯](bold red)'
 
