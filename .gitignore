@@ -2,3 +2,4 @@
 .luarc.json
 .vimspector*
 **/ignore_*.lua
+wasabi-toolbag
