@@ -1,5 +1,10 @@
 local utils = require("dsych_config.utils")
-local Path = require("pathlib")
+local success, Path  = pcall(require, "pathlib")
+
+if not success then
+    vim.notify("Unable to load 'pathlib', tasks integration is going to be disabled", vim.log.levels.WARN)
+    return
+end
 
 local M = {}
 
@@ -75,6 +80,9 @@ local on_item_selection = function(item)
         vertical = true,
         height = 25
     })
+
+    -- move window to the bottom of viewport
+    vim.api.nvim_input("<C-W>J")
 
     local output_wrapper = on_output(item)
     vim.api.nvim_buf_attach(term_buffer, false, {
