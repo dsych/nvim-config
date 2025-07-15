@@ -105,7 +105,8 @@ map_key("n", "<leader>na", function()
 end)
 
 map_key("n", "<leader>nz", function()
-	local path = vim.fn.expandcmd"$HOME" .. "/.zshrc"
+	-- local path = vim.fn.expandcmd"$HOME" .. "/.zshrc"
+	local path = vim.fn.expandcmd"$HOME" .. "/.config/fish/config.fish"
 	vim.cmd.edit(path)
 end)
 
