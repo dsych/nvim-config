@@ -1840,6 +1840,19 @@ return {
 	},
 	-- }}}
 
+	-- visual cursor movement {{{
+	{
+		"sphamba/smear-cursor.nvim",
+		opts = {
+			stiffness = 0.8,       -- 0.6      [0, 1]
+			trailing_stiffness = 0.5, -- 0.3      [0, 1]
+			distance_stop_animating = 0.5, -- 0.1      > 0
+		},
+		lazy = true, -- don't enable by default, only use for pair programming
+		cmd = "SmearToggleCursor"
+	},
+	-- }}}
+
 --{{{ smart buffer deletion
 	{
         'echasnovski/mini.bufremove',
@@ -1925,18 +1938,6 @@ return {
 	},
 	-- }}}
 
-    -- sync system clipboard over ssh {{{
-    {
-        'ojroques/vim-oscyank',
-        config = function ()
-            vim.cmd[[
-                autocmd TextYankPost * if v:event.operator is 'y' && v:event.regname is '+' | execute 'OSCYankRegister +' | endif
-            ]]
-        end
-
-    },
-    -- }}}
-
     -- use neovim as manpager {{{
     {
         'lambdalisue/vim-manpager',
@@ -2021,6 +2022,27 @@ return {
                 vnoremap <silent> m :lua require('tsht').nodes()<CR>
             ]])
 		end,
+	},
+	-- }}}
+
+	-- python documentation search {{{
+	{
+		"fredrikaverpil/pydoc.nvim",
+		dependencies = {
+			{ "nvim-telescope/telescope.nvim" }, -- optional
+			{ "nvim-treesitter/nvim-treesitter" },
+		},
+		config = function ()
+			local map_key = require("dsych_config.utils").map_key
+			require("pydoc").setup({
+				python_bin = "brazil-runtime-exec python3",
+				picker = {
+					type = "telescope"
+				}
+			})
+			map_key("n", "<leader>ghp", "<cmd>PyDoc<cr>")
+			map_key("n", "<leader>ghP", ":PyDoc ")
+		end
 	},
 	-- }}}
 
