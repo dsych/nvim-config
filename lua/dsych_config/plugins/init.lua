@@ -191,10 +191,12 @@ return {
                     "justinsgithub/wezterm-types"
                 }
 			},
-			-- typescript language server
-			"dsych/typescript.nvim",
 
-			"j-hui/fidget.nvim"
+			"j-hui/fidget.nvim",
+			{
+			  "pmizio/typescript-tools.nvim",
+			  dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
+			}
 		},
 		config = function()
 			require"fidget".setup {}
@@ -276,7 +278,7 @@ return {
 					filetypes = { "markdown" },
 					config = cspell_config
 				},
-				require("typescript.extensions.null-ls.code-actions"),
+				-- require("typescript.extensions.null-ls.code-actions"),
 			}
 
 			null_ls.setup({
