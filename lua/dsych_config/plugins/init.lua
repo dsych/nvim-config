@@ -1778,20 +1778,25 @@ return {
         'echasnovski/mini.pairs',
         version = false,
 		config = function()
+            local close_pattern = '[^\\%s%)%]%}%"\'][%s%)%]%}%"\']'
 			require('mini.pairs').setup({
 				mappings = {
 					-- stolen from https://github.com/echasnovski/mini.nvim/issues/835
 					-- Prevents the action if the cursor is just before any character or next to a "\".
-					['('] = { action = 'open', pair = '()', neigh_pattern = '[^\\][%s%)%]%}]' },
-					['['] = { action = 'open', pair = '[]', neigh_pattern = '[^\\][%s%)%]%}]' },
-					['{'] = { action = 'open', pair = '{}', neigh_pattern = '[^\\][%s%)%]%}]' },
-					['<'] = { action = 'open', pair = '<>', neigh_pattern = '[^\\][%s%)%]%}]' },
+					['('] = { action = 'open', pair = '()', neigh_pattern = close_pattern },
+					['['] = { action = 'open', pair = '[]', neigh_pattern = close_pattern },
+					['{'] = { action = 'open', pair = '{}', neigh_pattern = close_pattern },
+					['"'] = { action = 'open', pair = '""', neigh_pattern = close_pattern },
+					["'"] = { action = 'open', pair = "''", neigh_pattern = close_pattern },
+					-- ['<'] = { action = 'open', pair = '<>', neigh_pattern = '[^\\][%s%)%]%}]' },
 
 					-- This is default (prevents the action if the cursor is just next to a "\").
 					[')'] = { action = 'close', pair = '()', neigh_pattern = '[^\\].' },
 					[']'] = { action = 'close', pair = '[]', neigh_pattern = '[^\\].' },
 					['}'] = { action = 'close', pair = '{}', neigh_pattern = '[^\\].' },
-					['>'] = { action = 'close', pair = '<>', neigh_pattern = '[^\\].' },
+					['"'] = { action = 'close', pair = '""', neigh_pattern = '[^\\].' },
+					["'"] = { action = 'close', pair = "''", neigh_pattern = '[^\\].' },
+					-- ['>'] = { action = 'close', pair = '<>', neigh_pattern = '[^\\].' },
 
 					-- Prevents the action if the cursor is just before or next to any character.
 					['"'] = { action = 'closeopen', pair = '""', neigh_pattern = '[^%w][^%w]', register = { cr = false } },
