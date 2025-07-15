@@ -167,11 +167,14 @@ M.setup = function()
 		if server_name == "ts_ls" then
 			require"dsych_config.lsp.tsserver".config(config)
 		elseif server_name == "cucumber_language_server" then
-			lsp_config[server_name].setup(require"dsych_config.lsp.cucumber"(config))
+			vim.lsp.enable(server_name)
+			vim.lsp.config(server_name, require"dsych_config.lsp.cucumber"(config))
 		elseif server_name == "ruff" then
-			lsp_config[server_name].setup(require"dsych_config.lsp.ruff"(config))
+			vim.lsp.enable(server_name)
+			vim.lsp.config(server_name, require"dsych_config.lsp.ruff"(config))
 		else
-			lsp_config[server_name].setup(config)
+			vim.lsp.enable(server_name)
+			vim.lsp.config(server_name, config)
 		end
     end
 end
