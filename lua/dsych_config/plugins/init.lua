@@ -878,13 +878,15 @@ return {
 	-- }}}
 
 	-- files search {{{
-    { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make', name = "telescope-fzf-native" },
+    -- { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make', name = "telescope-fzf-native" },
+	{ "pysan3/pathlib.nvim" },
 	{
 		"nvim-telescope/telescope.nvim",
 		dependencies = {
             "nvim-lua/popup.nvim",
             "nvim-lua/plenary.nvim",
-            "telescope-fzf-native",
+            -- "telescope-fzf-native",
+			"natecraddock/telescope-zf-native.nvim"
         },
 		config = function()
 			local map_key = require("dsych_config.utils").map_key
@@ -894,7 +896,7 @@ return {
 
 			-- global search, useful with qf + replacer
 			map_key("n", "<leader>/", require("telescope.builtin").live_grep)
-			map_key("n", "<leader>//", ":lua require('telescope.builtin').live_grep({ glob_pattern = '!*.' })<left><left><left><left>")
+			map_key("n", "<leader>//", ":lua require('telescope.builtin').live_grep({ glob_pattern = { '!**/build', '!**/test_dir', '!*.' }})<left><left><left><left><left>")
 			map_key("n", "<leader>/w", require("telescope.builtin").grep_string)
 			map_key({ "v", "x" }, "<leader>/w", function()
 				vim.cmd([[normal "xy]])
@@ -928,7 +930,13 @@ return {
 				defaults = {
 					prompt_prefix = "==> ",
 					path_display = {
-						shorten = { len = 1, exclude = { 1, -1 } },
+						shorten = {
+							len = 3,
+							exclude = {1, -1}
+						},
+						filename_first = {
+							reverse_directories = true
+						}
 					},
                     layout_strategy = 'vertical',
                     layout_config = { width = 0.9 },
@@ -956,7 +964,6 @@ return {
 					},
 					find_files = {
 						previewer = true,
-						path_display = { "smart", "shorten" },
 						hidden = false,
 						follow = true,
                         find_command =  { "fd", "--type", "f", "--color", "never" }
@@ -964,7 +971,7 @@ return {
 					live_grep = {
                         -- layout_strategy = 'vertical',
 						only_sort_text = true,
-						glob_pattern = { "!**/build" },
+						glob_pattern = { "!**/build", "!**/test_dir" },
                         additional_args = function (_)
                             -- follow symlinks
                             return { "-L" }
@@ -990,7 +997,8 @@ return {
 			})
 
 			-- telescope extensions
-			require("telescope").load_extension("fzf")
+			-- require("telescope").load_extension("fzf")
+			require("telescope").load_extension("zf-native")
 		end,
 	},
 	-- }}}
