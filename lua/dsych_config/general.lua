@@ -137,6 +137,30 @@ vim.opt.smarttab = true
 vim.opt.laststatus = 2
 
 ------------------------------------------------------------
+-- => Undo history
+------------------------------------------------------------
+vim.go.undolevels = 100 -- set this to something reasonable
+vim.api.nvim_create_autocmd("BufWritePre", {
+	pattern = "/tmp/*",
+	callback = function()
+		vim.opt_local.undofile = false
+	end
+})
+
+------------------------------------------------------------
+-- => Enable borders on all floating windows
+------------------------------------------------------------
+local orig_util_open_floating_preview = vim.lsp.util.open_floating_preview
+
+---@diagnostic disable-next-line: duplicate-set-field
+function vim.lsp.util.open_floating_preview(contents, syntax, opts, ...)
+	opts = opts or {}
+	opts.border = opts.border or 'rounded'
+
+	return orig_util_open_floating_preview(contents, syntax, opts, ...)
+end
+
+------------------------------------------------------------
 -- => Shell
 ------------------------------------------------------------
 if string.gmatch(vim.opt.shell:get(), "zsh") then
@@ -145,7 +169,7 @@ if string.gmatch(vim.opt.shell:get(), "zsh") then
 	vim.opt.shellcmdflag = "-i -l -c"
 end
 
-vim.cmd[[
+vim.cmd [[
 	let &t_Cs = "\e[4:3m"
 	let &t_Ce = "\e[4:0m"
 ]]
