@@ -1057,6 +1057,7 @@ return {
 			"catppuccin/nvim",
 			-- missing lsp highlights for diagnostics, docs etc.
 			"folke/lsp-colors.nvim",
+			{ 'echasnovski/mini.hues', version = false }
 		},
 		name = "themes",
 		init = function()
@@ -1142,6 +1143,14 @@ return {
 				dim_inactive = true,
 			}
 
+
+			require('mini.hues').setup({
+                background = '#17280e',
+                foreground = '#c4c8c2',
+                -- background = '#2c2101',
+                -- foreground = '#c9c6c0',
+                saturation = "lowmedium",
+            }) -- yellow
 		end,
 		config = function()
 			-- THIS IS PURE FUCKING EVIL!!! DO NOT E-V-E-R SET THIS OPTION
@@ -1167,14 +1176,16 @@ return {
 
 			local colorscheme = nil
 			local dimmed_color_scheme = "zenwritten"
-			local force_dark = true
+			local force_dark = false
 			if is_night_in_est() or force_dark then
 				-- vim.go.background = "dark"
 				-- colorscheme = "catppuccin-mocha"
-				colorscheme = "bamboo"
+				-- colorscheme = "seoulbones"
+				colorscheme = "minispring"
 			else
 				-- vim.go.background = "light"
-				colorscheme = "bamboo"
+				-- colorscheme = "seoulbones"
+				colorscheme = "minispring"
 			end
 
 			vim.cmd.colorscheme(colorscheme)
@@ -1533,7 +1544,7 @@ return {
 						click = "v:lua.ScSa"
 					},
 					{
-						sign = { name = { ".*" }, maxwidth = 2, colwidth = 1, auto = false, wrap = true },
+						sign = { name = { ".*" }, notnamespace = { "diagnostic" }, maxwidth = 2, colwidth = 1, auto = false, wrap = true },
 						click = "v:lua.ScSa"
 					},
 					{ text = { builtin.lnumfunc }, click = "v:lua.ScLa", },
