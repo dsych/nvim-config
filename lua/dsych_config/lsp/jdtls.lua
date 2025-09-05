@@ -44,7 +44,7 @@ M.setup = function()
 		-- where eclipse stores runtime files about current project
 		local eclipse_workspace = home .. "/.local/share/eclipse/" .. vim.fn.fnamemodify(root_dir, ":p:h:t")
 
-		local ws_folders_lsp = get_java_workspaces and get_java_workspaces(root_dir) or {}
+		local ws_folders_lsp = locate_workspace_folders and locate_workspace_folders(root_dir) or {}
 		local ws_folders_jdtls = {}
 		for _, ws in ipairs(ws_folders_lsp) do
 			table.insert(ws_folders_jdtls, string.format("file://%s", ws))

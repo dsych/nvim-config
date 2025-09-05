@@ -123,7 +123,6 @@ M.setup = function()
 		"lemminx",
 		"basedpyright",
 		"lua_ls",
-		"ts_ls",
 		"vimls",
 		"bashls",
 		"yamlls",
@@ -143,6 +142,7 @@ M.setup = function()
 	-- rely on a manual rust installation
 	local servers = vim.fn.deepcopy(servers_to_install)
 	table.insert(servers, "rust_analyzer")
+	table.insert(servers, "ts_ls")
 
 	local lsp_utils = require("dsych_config.lsp.utils")
     local lsp_config = require"lspconfig"

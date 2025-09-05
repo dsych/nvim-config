@@ -14,7 +14,7 @@ local get_current_visual_selection = function ()
 end
 
 local filetype_to_default_formatter = {
-	["typescript"] = "null-ls",
+	["typescript"] = "typescript-tools",
 	["java"] = "jdtls",
 	["python"] = "ruff"
 }
@@ -179,6 +179,12 @@ M.configure_lsp = function(lsp_opts)
 
 	local old_on_attach = lsp_opts.on_attach
 	lsp_opts.on_attach = function(client, bufnr)
+		if locate_workspace_folders then
+			local workspace_folders = locate_workspace_folders()
+			for _, folder_path in ipairs(workspace_folders) do
+				vim.lsp.buf.add_workspace_folder(folder_path)
+			end
+		end
 		if old_on_attach then
 			old_on_attach(client, bufnr)
 		end
