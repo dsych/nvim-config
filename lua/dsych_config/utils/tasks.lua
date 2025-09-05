@@ -1,5 +1,5 @@
-local utils = require("dsych_config.utils")
-local success, Path  = pcall(require, "pathlib")
+local utils         = require("dsych_config.utils")
+local success, Path = pcall(require, "pathlib")
 
 if not success then
     vim.notify("Unable to load 'pathlib', tasks integration is going to be disabled", vim.log.levels.WARN)
@@ -7,6 +7,32 @@ if not success then
 end
 
 local M = {}
+
+local tasks_template = [[
+local tasks = {
+    {
+        name = "Dummy task",
+        command = "ls"
+    },
+}
+
+return vim.tbl_map(function(value)
+    local command = value.command
+    local name = value.name
+
+    return {
+        name = name,
+        cwd = value.cwd or ".",
+        command = command,
+        once = true,
+        -- wait_for_output = "pattern", -- pattern to look for in output before triggering output_found_callback
+        -- output_found_callback = function()
+        --     vim.print("running debugger")
+        --     require "dap".run_last()
+        -- end,
+    }
+end, tasks)
+]]
 
 local running_processes = {}
 local currently_running_num_of_tasks = 0
@@ -43,6 +69,25 @@ local get_output_found_callback = function(value)
     return callback
 end
 
+---
+---@return string | nil
+local find_tasks_file = function()
+    local matches = vim.fs.find({ ".nvim" }, { type = "directory", upward = true })
+    if #matches == 0 then
+        return
+    end
+
+    local path_to_nvim_dir = matches[1]
+
+    local tasks_file_path = vim.fs.joinpath(path_to_nvim_dir, "tasks.lua")
+
+    if not utils.does_file_exist(tasks_file_path) then
+        return
+    end
+
+    return tasks_file_path
+end
+
 local on_item_selection = function(item)
     last_executed_task = item
 
@@ -57,7 +102,7 @@ local on_item_selection = function(item)
                     --     vim.api.nvim_buf_set_lines(buffer, -1, -1, false, line)
                     -- end
 
-                    if string.gmatch(line, item.wait_for_output)() then
+                    if item.wait_for_output and string.gmatch(line, item.wait_for_output)() then
                         item.output_found_callback()
                     end
                 end
@@ -139,11 +184,11 @@ M.get_currently_running_num_of_tasks = function()
     return currently_running_num_of_tasks
 end
 
-M.open_tasks_file = function ()
+M.open_tasks_file = function()
     vim.cmd.edit(path_to_tasks_file)
 end
 
-M.refresh = function (path_to_tasks_file)
+M.refresh = function(path_to_tasks_file)
     tasks = dofile(path_to_tasks_file)
 
     tasks = vim.tbl_map(function(value)
@@ -157,19 +202,14 @@ M.refresh = function (path_to_tasks_file)
 end
 
 M.setup = function()
-    local matches = vim.fs.find({ ".nvim" }, { type = "directory", upward = true })
-    if #matches == 0 then
+    utils.map_key("n", "<leader>tT", M.create_tasks_file_template)
+
+    path_to_tasks_file = find_tasks_file()
+    if not path_to_tasks_file then
         return
     end
 
-    local path_to_nvim_dir = matches[1]
-
-    path_to_tasks_file = vim.fs.joinpath(path_to_nvim_dir, "tasks.lua")
-    if not utils.does_file_exist(path_to_tasks_file) then
-        return
-    end
-
-    Path.new(path_to_tasks_file):register_watcher("dsych_tasks", function (file, args)
+    Path.new(path_to_tasks_file):register_watcher("dsych_tasks", function(file, args)
         if args.events.change then
             M.refresh(path_to_tasks_file)
         elseif args.events.rename then
@@ -183,6 +223,36 @@ M.setup = function()
     utils.map_key("n", "<leader>tl", M.run_last_task)
     utils.map_key("n", "<leader>tc", M.open_tasks_file)
 
+    M.refresh(path_to_tasks_file)
+end
+
+M.create_tasks_file_template = function()
+    if path_to_tasks_file then
+        vim.notify(path_to_tasks_file .. " already exists!", vim.log.levels.ERROR)
+        return
+    end
+
+    local dir_path = vim.fs.joinpath(vim.fn.getcwd(), ".nvim")
+
+    if not dir_path or vim.fn.mkdir(dir_path, "p") ~= 1 then
+        vim.notify("Unable to create directory " .. dir_path, vim.log.level.ERROR)
+        return
+    end
+
+    local tasks_file_path = vim.fs.joinpath(dir_path, "tasks.lua")
+
+    local fd, err_msg = io.open(tasks_file_path, "w+")
+
+    if not fd then
+        vim.notify("Unable to open tasks file " .. tasks_file_path .. ". " .. err_msg, vim.log.levels.ERROR)
+        return
+    end
+
+    fd:write(tasks_template)
+
+    io.close(fd)
+
+    path_to_tasks_file = tasks_file_path
     M.refresh(path_to_tasks_file)
 end
 
