@@ -33,11 +33,30 @@ return {
         -- model = "codegemma",
         disable_tools = true
       },
+      bedrock = {
+        model = "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        -- model = "us.anthropic.claude-opus-4-1-20250805-v1:0",
+        -- model = "us.anthropic.claude-opus-4-20250514-v1:0",
+        aws_profile = "personal_bedrock",
+        aws_region = "us-east-1",
+        disabled_tools = {
+          "bash",
+          "web_search",
+          "fetch",
+          "delete_path",
+          "move_path",
+          "copy_path",
+          "create_dir",
+          "write_to_file",
+          "run_python",
+          "rag_search"
+        }
+      },
     },
     -- provider = "ollama_dev_desk",
     -- auto_suggestions_provider = "ollama_dev_desk",
-    provider = "ollama",
-    auto_suggestions_provider = "ollama",
+    provider = "bedrock",
+    auto_suggestions_provider = "bedrock",
     mappings = {
       ask = "<leader>ma",
       edit = "<leader>me",
@@ -78,8 +97,10 @@ return {
                 return math.floor(max_columns * 0.65)
               end
             }
-          })
-
+          }),
+        },
+        input = {
+          enabled = false
         }
       }
     },
