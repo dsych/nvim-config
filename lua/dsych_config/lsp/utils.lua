@@ -62,7 +62,7 @@ M.mk_config = function()
             source = "always"
         }
     })
-    local c = vim.tbl_extend("force", require('cmp_nvim_lsp').default_capabilities(), capabilities)
+    local c = vim.tbl_extend("force", require('blink.cmp').get_lsp_capabilities(), capabilities)
 	return {
 		flags = {
 			allow_incremental_sync = true,

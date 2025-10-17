@@ -4,175 +4,265 @@ return {
 
 	-- autocompletion {{{
 	{
-		"hrsh7th/nvim-cmp",
+		'saghen/blink.cmp',
+		-- optional: provides snippets for the snippet source
 		dependencies = {
-			"neovim/nvim-lspconfig",
-			"hrsh7th/cmp-nvim-lsp",
-			"hrsh7th/cmp-buffer",
-			"hrsh7th/cmp-path",
-			"hrsh7th/cmp-cmdline",
-			-- "hrsh7th/cmp-nvim-lsp-signature-help",
-			"andersevenrud/cmp-tmux",
-			-- snippets
+            'rafamadriz/friendly-snippets',
+			-- neovim plugin development
 			{
-				"L3MON4D3/LuaSnip",
-				commit = "52918849e2f2ba0f2c3329598d401ad13d6167ea"
+				"folke/lazydev.nvim",
+				ft = "lua", -- only load on lua files
+				opts = {
+					enabled = true,
+					library = {
+						"wezterm-types/types",
+					},
+				},
+                dependencies = {
+                    "justinsgithub/wezterm-types"
+                }
 			},
-			"saadparwaiz1/cmp_luasnip",
-			"rafamadriz/friendly-snippets",
-		},
-		config = function()
-			-- Setup nvim-cmp.
-			local cmp = require("cmp")
-			require("luasnip/loaders/from_vscode").lazy_load()
 
-			local next_item = function(fallback)
-				local has_words_before = function()
-					local line, col = unpack(vim.api.nvim_win_get_cursor(0))
-					return col ~= 0
-						and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s")
-							== nil
-				end
+        },
 
-				if cmp.visible() then
-					cmp.select_next_item()
-				elseif has_words_before() then
-					cmp.complete()
-				else
-					fallback()
-				end
-			end
+		-- use a release tag to download pre-built binaries
+		-- version = '1.*',
+		-- AND/OR build from source, requires nightly: https://rust-lang.github.io/rustup/concepts/channels.html#working-with-nightly-rust
+		build = 'cargo build --release',
+		-- If you use nix, you can build from source using latest nightly rust with:
+		-- build = 'nix run .#build-plugin',
 
-			local prev_item = function(fallback)
-				if cmp.visible() then
-					cmp.select_prev_item()
-				else
-					fallback()
-				end
-			end
-
-			cmp.setup({
-				-- performance = {
-				-- 	throttle = 100,
-				-- 	debounce = 130
-				-- },
-				snippet = {
-					-- REQUIRED - you must specify a snippet engine
-					expand = function(args)
-						require("luasnip").lsp_expand(args.body) -- For `luasnip` users.
-					end,
-				},
-				mapping = {
-					["<C-u>"] = cmp.mapping(cmp.mapping.scroll_docs(-4), { "i", "c" }),
-					["<C-d>"] = cmp.mapping(cmp.mapping.scroll_docs(4), { "i", "c" }),
-					["<C-Space>"] = cmp.mapping(cmp.mapping.complete(), { "i", "c" }),
-					["<C-e>"] = cmp.mapping({
-						i = cmp.mapping.abort(),
-						c = cmp.mapping.close(),
-					}),
-					["<C-n>"] = cmp.mapping({
-						i = cmp.select_next_item(),
-					}),
-					["<C-p>"] = cmp.mapping({
-						i = cmp.select_prev_item(),
-					}),
-					["<M-l>"] = cmp.mapping(function()
-						local luasnip = require("luasnip")
-
-						if luasnip.expand_or_jumpable() then
-							luasnip.expand_or_jump()
-						else
-							print("no more snippets to jump to")
-						end
-					end, { "i", "s" }),
-					["<M-h>"] = cmp.mapping(function()
-						local luasnip = require("luasnip")
-
-						if luasnip.expand_or_jumpable(-1) then
-							luasnip.jump(-1)
-							luasnip.expand()
-						else
-							print("no more snippets to jump to")
-						end
-					end, { "i", "s", "c" }),
-					["<CR>"] = cmp.mapping.confirm({ select = false, behavior = cmp.ConfirmBehavior.Replace }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
-					["<Tab>"] = cmp.mapping(next_item, { "i", "s", "c" }),
-					["<S-Tab>"] = cmp.mapping(prev_item, { "i", "s", "c" }),
-					["<C-j>"] = cmp.mapping(next_item, { "i", "s", "c" }),
-					["<C-k>"] = cmp.mapping(prev_item, { "i", "s", "c" }),
-				},
-				sources = cmp.config.sources({
-					{ name = "nvim_lsp" },
-					-- { name = "nvim_lsp_signature_help" },
-					{ name = "tmux", all_panes = true },
-                    { name = "path" },
-					{ name = "luasnip" }, -- For luasnip users.
-					{ name = "buffer" },
-				}),
-				formatting = {
-					format = function(entry, vim_item)
-						local kind_icons = require("lspkind").presets.default
-						-- Kind icons
-						vim_item.kind = string.format("%s %s", kind_icons[vim_item.kind], vim_item.kind) -- This concatonates the icons with the name of the item kind
-						-- Source
-						vim_item.menu = ({
-							buffer = "[Buffer]",
-							nvim_lsp = "[LSP]",
-							luasnip = "[LuaSnip]",
-							nvim_lua = "[Lua]",
-							latex_symbols = "[LaTeX]",
-						})[entry.source.name]
-						return vim_item
-					end,
-				},
-				window = {
-					completion = cmp.config.window.bordered(),
-					documentation = cmp.config.window.bordered(),
-				},
-				experimental = {
-					ghost_text = true,
-				},
-			})
-
-			-- Set configuration for specific filetype.
-			cmp.setup.filetype("gitcommit", {
-				sources = cmp.config.sources({
-					{ name = "cmp_git" }, -- You can specify the `cmp_git` source if you were installed it.
-				}, {
-					{ name = "buffer" },
-				}),
-			})
-			-- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
-			cmp.setup.cmdline(":", {
-				sources = cmp.config.sources({
-					{ name = "path" },
-				}, {
-					{ name = "cmdline" },
-				}),
-			})
-
-			cmp.setup.cmdline("@", {
-				sources = cmp.config.sources({
-					{ name = "path" },
-				}),
-			})
-		end,
-	},
-	{
-		"ray-x/lsp_signature.nvim",
-		event = "InsertEnter",
+		---@module 'blink.cmp'
+		---@type blink.cmp.Config
 		opts = {
-			bind = true,
-			handler_opts = {
-				border = "rounded"
-			}
+			-- 'default' (recommended) for mappings similar to built-in completions (C-y to accept)
+			-- 'super-tab' for mappings similar to vscode (tab to accept)
+			-- 'enter' for enter to accept
+			-- 'none' for no mappings
+			--
+			-- All presets have the following mappings:
+			-- C-space: Open menu or open docs if already open
+			-- C-n/C-p or Up/Down: Select next/previous item
+			-- C-e: Hide menu
+			-- C-k: Toggle signature help (if signature.enabled = true)
+			--
+			-- See :h blink-cmp-config-keymap for defining your own keymap
+			keymap = {
+                preset = 'enter',
+				['<C-k>'] = { 'select_prev', 'fallback' },
+				['<C-j>'] = { 'select_next', 'fallback' },
+                ['<C-u>'] = { 'scroll_documentation_up', 'fallback' },
+                ['<C-d>'] = { 'scroll_documentation_down', 'fallback' },
+			    ['<M-l>'] = { 'snippet_forward', 'fallback' },
+			    ['<M-h>'] = { 'snippet_backward', 'fallback' },
+			    ['<C-y>'] = { 'select_and_accept', 'fallback' },
+            },
+
+			appearance = {
+				-- 'mono' (default) for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
+				-- Adjusts spacing to ensure icons are aligned
+				nerd_font_variant = 'mono'
+			},
+
+			-- (Default) Only show the documentation popup when manually triggered
+			completion = {
+				menu = { border = 'single' },
+				documentation = { window = { border = 'single' }, auto_show = true },
+			},
+			signature = { window = { border = 'single' } },
+
+			-- Default list of enabled providers defined so that you can extend it
+			-- elsewhere in your config, without redefining it, due to `opts_extend`
+			sources = {
+				default = { "lazydev", "lsp", "path", "snippets", "buffer" },
+				providers = {
+					lazydev = {
+						name = "LazyDev",
+						module = "lazydev.integrations.blink",
+						-- make lazydev completions top priority (see `:h blink.cmp`)
+						score_offset = 100,
+					},
+				},
+			},
+			-- (Default) Rust fuzzy matcher for typo resistance and significantly better performance
+			-- You may use a lua implementation instead by using `implementation = "lua"` or fallback to the lua implementation,
+			-- when the Rust fuzzy matcher is not available, by using `implementation = "prefer_rust"`
+			--
+			-- See the fuzzy documentation for more information
+			fuzzy = { implementation = "prefer_rust_with_warning" }
 		},
-		hint_prefix = {
-			above = "↙ ", -- when the hint is on the line above the current line
-			current = "← ", -- when the hint is on the same line
-			below = "↖ " -- when the hint is on the line below the current line
-		}
+		opts_extend = { "sources.default" }
 	},
+	-- {
+	-- 	"hrsh7th/nvim-cmp",
+	-- 	dependencies = {
+	-- 		"neovim/nvim-lspconfig",
+	-- 		"hrsh7th/cmp-nvim-lsp",
+	-- 		"hrsh7th/cmp-buffer",
+	-- 		"hrsh7th/cmp-path",
+	-- 		"hrsh7th/cmp-cmdline",
+	-- 		-- "hrsh7th/cmp-nvim-lsp-signature-help",
+	-- 		"andersevenrud/cmp-tmux",
+	-- 		-- snippets
+	-- 		{
+	-- 			"L3MON4D3/LuaSnip",
+	-- 			commit = "52918849e2f2ba0f2c3329598d401ad13d6167ea"
+	-- 		},
+	-- 		"saadparwaiz1/cmp_luasnip",
+	-- 		"rafamadriz/friendly-snippets",
+	-- 	},
+	-- 	config = function()
+	-- 		-- Setup nvim-cmp.
+	-- 		local cmp = require("cmp")
+	-- 		require("luasnip/loaders/from_vscode").lazy_load()
+
+	-- 		local next_item = function(fallback)
+	-- 			local has_words_before = function()
+	-- 				local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+	-- 				return col ~= 0
+	-- 					and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s")
+	-- 						== nil
+	-- 			end
+
+	-- 			if cmp.visible() then
+	-- 				cmp.select_next_item()
+	-- 			elseif has_words_before() then
+	-- 				cmp.complete()
+	-- 			else
+	-- 				fallback()
+	-- 			end
+	-- 		end
+
+	-- 		local prev_item = function(fallback)
+	-- 			if cmp.visible() then
+	-- 				cmp.select_prev_item()
+	-- 			else
+	-- 				fallback()
+	-- 			end
+	-- 		end
+
+	-- 		cmp.setup({
+	-- 			-- performance = {
+	-- 			-- 	throttle = 100,
+	-- 			-- 	debounce = 130
+	-- 			-- },
+	-- 			snippet = {
+	-- 				-- REQUIRED - you must specify a snippet engine
+	-- 				expand = function(args)
+	-- 					require("luasnip").lsp_expand(args.body) -- For `luasnip` users.
+	-- 				end,
+	-- 			},
+	-- 			mapping = {
+	-- 				["<C-u>"] = cmp.mapping(cmp.mapping.scroll_docs(-4), { "i", "c" }),
+	-- 				["<C-d>"] = cmp.mapping(cmp.mapping.scroll_docs(4), { "i", "c" }),
+	-- 				["<C-Space>"] = cmp.mapping(cmp.mapping.complete(), { "i", "c" }),
+	-- 				["<C-e>"] = cmp.mapping({
+	-- 					i = cmp.mapping.abort(),
+	-- 					c = cmp.mapping.close(),
+	-- 				}),
+	-- 				["<C-n>"] = cmp.mapping({
+	-- 					i = cmp.select_next_item(),
+	-- 				}),
+	-- 				["<C-p>"] = cmp.mapping({
+	-- 					i = cmp.select_prev_item(),
+	-- 				}),
+	-- 				["<M-l>"] = cmp.mapping(function()
+	-- 					local luasnip = require("luasnip")
+
+	-- 					if luasnip.expand_or_jumpable() then
+	-- 						luasnip.expand_or_jump()
+	-- 					else
+	-- 						print("no more snippets to jump to")
+	-- 					end
+	-- 				end, { "i", "s" }),
+	-- 				["<M-h>"] = cmp.mapping(function()
+	-- 					local luasnip = require("luasnip")
+
+	-- 					if luasnip.expand_or_jumpable(-1) then
+	-- 						luasnip.jump(-1)
+	-- 						luasnip.expand()
+	-- 					else
+	-- 						print("no more snippets to jump to")
+	-- 					end
+	-- 				end, { "i", "s", "c" }),
+	-- 				["<CR>"] = cmp.mapping.confirm({ select = false, behavior = cmp.ConfirmBehavior.Replace }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+	-- 				["<Tab>"] = cmp.mapping(next_item, { "i", "s", "c" }),
+	-- 				["<S-Tab>"] = cmp.mapping(prev_item, { "i", "s", "c" }),
+	-- 				["<C-j>"] = cmp.mapping(next_item, { "i", "s", "c" }),
+	-- 				["<C-k>"] = cmp.mapping(prev_item, { "i", "s", "c" }),
+	-- 			},
+	-- 			sources = cmp.config.sources({
+	-- 				{ name = "nvim_lsp" },
+	-- 				-- { name = "nvim_lsp_signature_help" },
+	-- 				{ name = "tmux", all_panes = true },
+ --                    { name = "path" },
+	-- 				{ name = "luasnip" }, -- For luasnip users.
+	-- 				{ name = "buffer" },
+	-- 			}),
+	-- 			formatting = {
+	-- 				format = function(entry, vim_item)
+	-- 					local kind_icons = require("lspkind").presets.default
+	-- 					-- Kind icons
+	-- 					vim_item.kind = string.format("%s %s", kind_icons[vim_item.kind], vim_item.kind) -- This concatonates the icons with the name of the item kind
+	-- 					-- Source
+	-- 					vim_item.menu = ({
+	-- 						buffer = "[Buffer]",
+	-- 						nvim_lsp = "[LSP]",
+	-- 						luasnip = "[LuaSnip]",
+	-- 						nvim_lua = "[Lua]",
+	-- 						latex_symbols = "[LaTeX]",
+	-- 					})[entry.source.name]
+	-- 					return vim_item
+	-- 				end,
+	-- 			},
+	-- 			window = {
+	-- 				completion = cmp.config.window.bordered(),
+	-- 				documentation = cmp.config.window.bordered(),
+	-- 			},
+	-- 			experimental = {
+	-- 				ghost_text = true,
+	-- 			},
+	-- 		})
+
+	-- 		-- Set configuration for specific filetype.
+	-- 		cmp.setup.filetype("gitcommit", {
+	-- 			sources = cmp.config.sources({
+	-- 				{ name = "cmp_git" }, -- You can specify the `cmp_git` source if you were installed it.
+	-- 			}, {
+	-- 				{ name = "buffer" },
+	-- 			}),
+	-- 		})
+	-- 		-- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
+	-- 		cmp.setup.cmdline(":", {
+	-- 			sources = cmp.config.sources({
+	-- 				{ name = "path" },
+	-- 			}, {
+	-- 				{ name = "cmdline" },
+	-- 			}),
+	-- 		})
+
+	-- 		cmp.setup.cmdline("@", {
+	-- 			sources = cmp.config.sources({
+	-- 				{ name = "path" },
+	-- 			}),
+	-- 		})
+	-- 	end,
+	-- },
+	-- {
+	-- 	"ray-x/lsp_signature.nvim",
+	-- 	event = "InsertEnter",
+	-- 	opts = {
+	-- 		bind = true,
+	-- 		handler_opts = {
+	-- 			border = "rounded"
+	-- 		}
+	-- 	},
+	-- 	hint_prefix = {
+	-- 		above = "↙ ", -- when the hint is on the line above the current line
+	-- 		current = "← ", -- when the hint is on the same line
+	-- 		below = "↖ " -- when the hint is on the line below the current line
+	-- 	}
+	-- },
 	-- }}}
 
 	-- language server {{{
@@ -191,21 +281,6 @@ return {
 			"jay-babu/mason-null-ls.nvim",
 
 			"jay-babu/mason-nvim-dap.nvim",
-
-			-- neovim plugin development
-			{
-				"folke/lazydev.nvim",
-				ft = "lua", -- only load on lua files
-				opts = {
-					enabled = true,
-					library = {
-						"wezterm-types/types",
-					},
-				},
-                dependencies = {
-                    "justinsgithub/wezterm-types"
-                }
-			},
 
 			"j-hui/fidget.nvim",
 			{
