@@ -73,7 +73,7 @@ M.setup = function()
 						"org.mockito.Mockito.*",
 					},
 				},
-				inlayHints = { parameterNames = { enabled = "all" } };
+				-- inlayHints = { parameterNames = { enabled = "all" } };
 				sources = {
 					organizeImports = {
 						starThreshold = 9999,

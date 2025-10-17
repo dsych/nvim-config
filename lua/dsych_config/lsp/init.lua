@@ -108,7 +108,20 @@ M.language_server_configs = {
 		end
 
 		return settings
-	end
+	end,
+	["gopls"] = function ()
+		return {
+			settings = {
+				gopls = {
+					completeUnimported = true,
+					usePlaceholders = true,
+					analyses = {
+						unusedparams = true,
+					},
+				},
+			}
+		}
+	end,
 }
 
 M.setup = function()
@@ -127,7 +140,9 @@ M.setup = function()
 		"bashls",
 		"yamlls",
 		"cucumber_language_server",
-		"ruff"
+		"ruff",
+		"gopls",
+		"neocmake"
 	}
 
     require("mason").setup()
@@ -166,15 +181,18 @@ M.setup = function()
 		config = lsp_utils.configure_lsp(config)
 		if server_name == "ts_ls" then
 			require"dsych_config.lsp.tsserver".config(config)
-		elseif server_name == "cucumber_language_server" then
-			vim.lsp.enable(server_name)
-			vim.lsp.config(server_name, require"dsych_config.lsp.cucumber"(config))
-		elseif server_name == "ruff" then
-			vim.lsp.enable(server_name)
-			vim.lsp.config(server_name, require"dsych_config.lsp.ruff"(config))
 		else
+			if server_name == "cucumber_language_server" then
+				vim.lsp.config(server_name, require"dsych_config.lsp.cucumber"(config))
+			elseif server_name == "ruff" then
+				vim.lsp.config(server_name, require"dsych_config.lsp.ruff"(config))
+			elseif server_name == "gopls" then
+				vim.lsp.config(server_name, require"dsych_config.lsp.gopls"(config))
+			else
+				vim.lsp.config(server_name, config)
+			end
+
 			vim.lsp.enable(server_name)
-			vim.lsp.config(server_name, config)
 		end
     end
 end

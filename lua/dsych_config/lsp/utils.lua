@@ -16,26 +16,37 @@ end
 local filetype_to_default_formatter = {
 	["typescript"] = "typescript-tools",
 	["java"] = "jdtls",
-	["python"] = "ruff"
+	["python"] = "ruff",
+	["cpp"] = "clangd",
 }
 
 local select_lsp_client = function(callback)
-    local client_names = vim.tbl_map(function (client) return client.name end, vim.lsp.get_clients())
-	local filetype = vim.bo.filetype
+	local cb = function(client_name)
+		if client_name ~= nil then
+			vim.notify(string.format("Formatting with %s", client_name), vim.log.levels.INFO)
+			callback(client_name)
+		else
+			vim.notify("Formatting canceled", vim.log.levels.INFO)
+		end
+	end
 
-    if vim.tbl_count(client_names) < 1 then
-        return
-    elseif vim.tbl_count(client_names) == 1  then
-        callback(client_names[1])
+	local filetype = vim.bo.filetype
+	local clients = vim.lsp.get_clients({
+		bufnr = vim.api.nvim_get_current_buf()
+	})
+
+	if vim.tbl_count(clients) < 1 then
+		cb(nil)
+	elseif vim.tbl_count(clients) == 1 then
+		cb(clients[1].name)
 	elseif filetype_to_default_formatter[filetype] ~= nil then
-		callback(filetype_to_default_formatter[filetype])
-    else
-        vim.ui.select(client_names, {prompt = "Which lsp client:" }, function(choice)
-            if choice ~= nil then
-                callback(choice)
-            end
-        end)
-    end
+		cb(filetype_to_default_formatter[filetype])
+	else
+		local client_names = vim.tbl_map(function(client)
+			return client.name
+		end, clients)
+		vim.ui.select(client_names, { prompt = "Which lsp client:" }, cb)
+	end
 end
 
 M.mk_config = function()

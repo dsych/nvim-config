@@ -233,15 +233,25 @@ return {
 		config = require("dsych_config.lsp.jdtls").setup,
 	},
 
-    {
-        "https://git.amazon.com/pkg/Checkstyle-null-ls",
-        branch = "mainline",
-        name = "checkstyle-null-ls"
-    },
+	{
+		"ray-x/go.nvim",
+		dependencies = { -- optional packages
+			"neovim/nvim-lspconfig",
+			"nvim-treesitter/nvim-treesitter",
+		},
+		config = function()
+			require("go").setup({
+				codelens = false
+			})
+		end,
+		event = { "CmdlineEnter" },
+		ft = { "go", 'gomod' },
+		build = ':lua require("go.install").update_all_sync()' -- if you need to install/update all binaries
+	},
 
 	{
 		"nvimtools/none-ls.nvim",
-		dependencies = { "nvim-lua/plenary.nvim", "checkstyle-null-ls", "lsp-installer", "davidmh/cspell.nvim" },
+		dependencies = { "nvim-lua/plenary.nvim", "lsp-installer", "davidmh/cspell.nvim" },
 		config = function()
 			local generate_default_dictionary = function ()
 				local cspell_json = {
@@ -255,7 +265,6 @@ return {
 
 			local null_ls = require("null-ls")
             local cspell = require('cspell')
-            local checkstyle_diagnostic = require("checkstyle-null-ls").setup("~/.config/nvim/additional/checkstyle/checkstyle-rules.xml", "~/.local/source/jdtls-launcher/checkstyle.jar")
 			local utils = require"dsych_config.utils"
 			local global_dictionary = vim.fn.stdpath"data" .. "/cspell.json"
 			-- generate global config, if missing
@@ -273,6 +282,7 @@ return {
 				null_ls.builtins.formatting.clang_format,
 				null_ls.builtins.formatting.prettier,
 				null_ls.builtins.formatting.shfmt,
+				null_ls.builtins.formatting.fish_indent,
 
 				-- diagnostics
 				null_ls.builtins.diagnostics.write_good,
@@ -285,7 +295,7 @@ return {
 						diagnostic.severity = vim.diagnostic.severity.HINT
 					end,
 				},
-				checkstyle_diagnostic,
+				null_ls.builtins.diagnostics.fish,
 
 				-- code actions
 				cspell.code_actions.with{
@@ -548,8 +558,24 @@ return {
 				ensure_installed = {"javadbg", "javatest", "python"}
 			})
 
+
 			local dap = require"dap"
 			local mason_utils = require"dsych_config.utils.mason"
+
+			require"dap-lldb".setup()
+			require"dap-go".setup{
+				delve = {
+					path = mason_utils.get_package_path_with_fallback("delve", "/dlv"),
+				}
+			}
+
+    --         require"dap-cpp".setup{
+				-- codelldb = {
+				--   -- for mason
+				--   path = mason_utils.get_package_path_with_fallback("codelldb", "/extension/adapter/codelldb"),
+				-- },
+				-- dap_configurations = {}
+    --         }
 
 			dap.configurations.java = {
 				{
@@ -620,6 +646,11 @@ return {
 				callback({ type = 'server', host = config.host or "127.0.0.1", port = config.port or 8086 })
 			end
 
+			-- dap.adapters.delve = {
+			-- 	type = "executable",
+			-- 	command = mason_utils.get_package_path_with_fallback("delve", "/dlv"),
+			-- }
+
 			local apply_vimspector_launch_config = function ()
 				local vimspector_config_path = vim.fs.find({".vimspector.json"}, {upward = true, type = "file"})
 				if vim.tbl_isempty(vimspector_config_path) then
@@ -644,21 +675,25 @@ return {
 
 					launch_config.name = adapter_name
 					launch_config.type = type
-					launch_config.cwd = string.gsub(launch_config.cwd, "workspaceRoot", "workspaceFolder")
+					launch_config.cwd = launch_config.cwd
+						and string.gsub(launch_config.cwd, "workspaceRoot", "workspaceFolder")
+						or nil
 
 					local overwrote = false
-					for i, c in ipairs(dap.configurations[type]) do
-						if c.name == adapter_name then
-							-- if configuration with given value already exists, simply overwrite it
-							dap.configurations[type][i] = launch_config
-							overwrote = true
-							break
-						end
-					end
 
-					if not overwrote then
-						-- if no matching config was found, add a new entry
-						table.insert(dap.configurations[type], launch_config)
+					if dap.configurations[type] then
+						for i, c in ipairs(dap.configurations[type]) do
+							if c.name == adapter_name then
+								-- if configuration with given value already exists, simply overwrite it
+								dap.configurations[type][i] = launch_config
+								overwrote = true
+								break
+							end
+						end
+						if not overwrote then
+							-- if no matching config was found, add a new entry
+							table.insert(dap.configurations[type], launch_config)
+						end
 					end
 				end
 			end
@@ -872,7 +907,10 @@ return {
 				-- if you're on windows
 				-- run = 'powershell ./install.ps1'
 				build = './install.sh'
-			}
+			},
+			"julianolf/nvim-dap-lldb",
+			"leoluz/nvim-dap-go",
+            -- 'dsych/nvim-dap-cpp',
 		}
 	},
 	-- }}}
@@ -1164,7 +1202,7 @@ return {
 				-- does not account for daylight savings
 				local est_hour = tonumber(os.date("%H", os.time(os.date("!*t")) - 4 * 60 * 60))
 
-				return est_hour < 7 or est_hour > 18
+				return est_hour < 7 or est_hour > 17
 			end
 
 		 -- 	vim.cmd[[
@@ -1412,6 +1450,7 @@ return {
         dependencies = {
             'nmac427/guess-indent.nvim',
         },
+		main = "ibl",
 		config = function()
 			require('guess-indent').setup {}
 
@@ -1749,6 +1788,10 @@ return {
             }})
 
 			local map_key = require("dsych_config.utils").map_key
+			if require"blanket".reset then
+				map_key("n", "<leader>cR", require("blanket").reset)
+			end
+
 			map_key("n", "<leader>cr", require("blanket").refresh)
 			-- map_key("n", "<leader>cR", require("blanket").reset)
 			map_key("n", "<leader>cs", require("blanket").stop)

@@ -118,6 +118,11 @@ local function format_date_time()
 end
 
 local function format_currently_playing()
+	-- for the time being, only support macos
+	if string.gmatch(wezterm.target_triple, "darwin")() == nil then
+		return ""
+	end
+
 	local currently_playing, stderr = get_currently_playing_song(50)
 
 	if currently_playing then
@@ -200,6 +205,7 @@ end
 wezterm.on("update-right-status", function(window, pane)
 	local cells = {}
 	table.insert(cells, format_currently_playing())
+
 	for _, battery_status in ipairs(format_battery_status()) do
 		table.insert(cells, battery_status)
 	end
@@ -287,16 +293,15 @@ config.ssh_domains = {
 		-- local_echo_threshold_ms = 100,
 	},
 }
--- config.unix_domains = {
--- 	{
--- 		name = "unix",
--- 		local_echo_threshold_ms = 10,
--- 	},
+config.unix_domains = {
+	{
+		name = "unix",
+	},
 -- 	{
 -- 		name = "proxy-devbox",
 -- 		proxy_command = { "ssh", "-A", "-T", "devbox", "/home/dsych/.local/bin/wezterm", "cli", "proxy" },
 -- 	},
--- }
+}
 
 -- timeout_milliseconds defaults to 1000 and can be omitted
 config.leader = { key = "a", mods = "CTRL", timeout_milliseconds = 1000 }
