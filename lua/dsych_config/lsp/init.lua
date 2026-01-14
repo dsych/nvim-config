@@ -141,7 +141,7 @@ M.setup = function()
 		"yamlls",
 		"cucumber_language_server",
 		"ruff",
-		"gopls",
+		-- "gopls",
 		"neocmake"
 	}
 

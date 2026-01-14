@@ -169,6 +169,19 @@ local on_item_selection = function(item)
     })
 end
 
+local refresh = function(task_file_path)
+    tasks = dofile(task_file_path)
+
+    tasks = vim.tbl_map(function(value)
+        value.output_found_callback = get_output_found_callback(value)
+        value.triggered_output_callback = false
+
+        return value
+    end, tasks)
+
+    total_num_of_tasks = #tasks
+end
+
 M.run_last_task = function()
     if not last_executed_task then
         vim.notify("No tasks executed, yet!")
@@ -188,21 +201,13 @@ M.open_tasks_file = function()
     vim.cmd.edit(path_to_tasks_file)
 end
 
-M.refresh = function(path_to_tasks_file)
-    tasks = dofile(path_to_tasks_file)
-
-    tasks = vim.tbl_map(function(value)
-        value.output_found_callback = get_output_found_callback(value)
-        value.triggered_output_callback = false
-
-        return value
-    end, tasks)
-
-    total_num_of_tasks = #tasks
+M.refresh = function ()
+    refresh(path_to_tasks_file)
 end
 
 M.setup = function()
     utils.map_key("n", "<leader>tT", M.create_tasks_file_template)
+    utils.map_key("n", "<leader>tR", M.refresh)
 
     path_to_tasks_file = find_tasks_file()
     if not path_to_tasks_file then
@@ -211,7 +216,7 @@ M.setup = function()
 
     Path.new(path_to_tasks_file):register_watcher("dsych_tasks", function(file, args)
         if args.events.change then
-            M.refresh(path_to_tasks_file)
+            refresh(path_to_tasks_file)
         elseif args.events.rename then
             path_to_tasks_file = file:realpath()
         end
@@ -223,7 +228,7 @@ M.setup = function()
     utils.map_key("n", "<leader>tl", M.run_last_task)
     utils.map_key("n", "<leader>tc", M.open_tasks_file)
 
-    M.refresh(path_to_tasks_file)
+    refresh(path_to_tasks_file)
 end
 
 M.create_tasks_file_template = function()
@@ -253,7 +258,7 @@ M.create_tasks_file_template = function()
     io.close(fd)
 
     path_to_tasks_file = tasks_file_path
-    M.refresh(path_to_tasks_file)
+    refresh(path_to_tasks_file)
 end
 
 M.show_running_tasks = function()

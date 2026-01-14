@@ -249,6 +249,7 @@ return {
 	-- 	end,
 	-- },
 	-- {
+	-- {
 	-- 	"ray-x/lsp_signature.nvim",
 	-- 	event = "InsertEnter",
 	-- 	opts = {
@@ -371,6 +372,7 @@ return {
 					end,
 				},
 				null_ls.builtins.diagnostics.fish,
+				null_ls.builtins.diagnostics.checkmake,
 
 				-- code actions
 				cspell.code_actions.with{
@@ -680,31 +682,31 @@ return {
 			}
 
 			require"dap-python".setup"debugpy-adapter"
-			dap.adapters.python = function(cb, config)
-				if config.request == 'attach' then
-					---@diagnostic disable-next-line: undefined-field
-					local port = (config.connect or config).port
-					---@diagnostic disable-next-line: undefined-field
-					local host = (config.connect or config).host or '127.0.0.1'
-					cb({
-						type = 'server',
-						port = assert(port, '`connect.port` is required for a python `attach` configuration'),
-						host = host,
-						options = {
-							source_filetype = 'python',
-						}
-					})
-				else
-					cb({
-						type = 'executable',
-						command = "debugpy-adapter",
-						args = {},
-						options = {
-							source_filetype = 'python',
-						}
-					})
-				end
-			end
+			-- dap.adapters.python = function(cb, config)
+			-- 	if config.request == 'attach' then
+			-- 		---@diagnostic disable-next-line: undefined-field
+			-- 		local port = (config.connect or config).port
+			-- 		---@diagnostic disable-next-line: undefined-field
+			-- 		local host = (config.connect or config).host or '127.0.0.1'
+			-- 		cb({
+			-- 			type = 'server',
+			-- 			port = assert(port, '`connect.port` is required for a python `attach` configuration'),
+			-- 			host = host,
+			-- 			options = {
+			-- 				source_filetype = 'python',
+			-- 			}
+			-- 		})
+			-- 	else
+			-- 		cb({
+			-- 			type = 'executable',
+			-- 			command = "debugpy-adapter",
+			-- 			args = {},
+			-- 			options = {
+			-- 				source_filetype = 'python',
+			-- 			}
+			-- 		})
+			-- 	end
+			-- end
 			dap.configurations.python = vim.tbl_map(function(config)
 				config["justMyCode"] = false
 				return config
@@ -991,15 +993,14 @@ return {
 	-- }}}
 
 	-- files search {{{
-    -- { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make', name = "telescope-fzf-native" },
 	{ "pysan3/pathlib.nvim" },
 	{
 		"nvim-telescope/telescope.nvim",
 		dependencies = {
             "nvim-lua/popup.nvim",
             "nvim-lua/plenary.nvim",
-            -- "telescope-fzf-native",
-			"natecraddock/telescope-zf-native.nvim"
+			{ 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' }
+			-- "natecraddock/telescope-zf-native.nvim"
         },
 		config = function()
 			local map_key = require("dsych_config.utils").map_key
@@ -1038,6 +1039,37 @@ return {
 
 			-- resume prev picker with state
 			map_key("n", "<leader>rr", require("telescope.builtin").resume)
+
+			-- insert file paths at cursor position using find_files
+			local function insert_file_picker()
+				local actions = require("telescope.actions")
+				local action_state = require("telescope.actions.state")
+
+				-- Store the buffer and cursor position before opening telescope
+				local origin_bufnr = vim.api.nvim_get_current_buf()
+				local origin_cursor = vim.api.nvim_win_get_cursor(0)
+
+				require("telescope.builtin").find_files({
+					prompt_title = "Insert File Paths",
+					attach_mappings = function(prompt_bufnr, _)
+						actions.select_default:replace(function()
+							local picker = action_state.get_current_picker(prompt_bufnr)
+							local selections = picker:get_multi_selection()
+							if #selections == 0 then
+								selections = { action_state.get_selected_entry() }
+							end
+							actions.close(prompt_bufnr)
+
+							local paths = vim.tbl_map(function(entry) return entry.path or entry[1] end, selections)
+							local text = table.concat(paths, "\n")
+							vim.api.nvim_buf_set_text(origin_bufnr, origin_cursor[1] - 1, origin_cursor[2], origin_cursor[1] - 1, origin_cursor[2], vim.split(text, "\n"))
+						end)
+						return true
+					end,
+				})
+			end
+
+			map_key("n", "<leader>pi", insert_file_picker)
 
 			require("telescope").setup({
 				defaults = {
@@ -1083,15 +1115,20 @@ return {
 					},
 					live_grep = {
                         -- layout_strategy = 'vertical',
-						only_sort_text = true,
+						only_sort_text = false,  -- Changed: this can cause hanging issues
 						glob_pattern = { "!**/build", "!**/test_dir" },
+						-- Add debounce to prevent hanging on fast typing
+						debounce = 100,
+						-- Limit results to prevent overwhelming the interface
+						max_results = 1000,
                         additional_args = function (_)
                             -- follow symlinks
                             return { "-L" }
                         end
 					},
 					grep_string = {
-						only_sort_text = true,
+						only_sort_text = false,  -- Changed: this can cause hanging issues
+						max_results = 1000,
                         -- layout_strategy = 'vertical',
                         additional_args = function (_)
                             -- follow symlinks
@@ -1110,8 +1147,8 @@ return {
 			})
 
 			-- telescope extensions
-			-- require("telescope").load_extension("fzf")
-			require("telescope").load_extension("zf-native")
+			require("telescope").load_extension("fzf")
+			-- require("telescope").load_extension("zf-native")
 		end,
 	},
 	-- }}}
@@ -1736,7 +1773,7 @@ return {
 	{
 		"nvim-treesitter/nvim-treesitter",
 		build = ":TSUpdate",
-		dependencies = { "OXY2DEV/markview.nvim" },
+		dependencies = { "markview" },
 		config = function()
 			require("nvim-treesitter.configs").setup({
 				-- ensure_installed = "all",

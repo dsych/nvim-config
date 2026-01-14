@@ -178,3 +178,13 @@ vim.cmd [[
 -- => Clipboard
 ------------------------------------------------------------
 vim.g.clipboard = "osc52"
+
+------------------------------------------------------------
+-- => Editor config
+------------------------------------------------------------
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = { "python", "markdown", "*" },
+	callback = function()
+		vim.opt_local.textwidth = 0 -- this is annoying in languages where space has semantic meaning
+	end,
+})
