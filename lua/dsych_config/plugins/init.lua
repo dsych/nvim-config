@@ -2213,4 +2213,31 @@ return {
 	},
 	-- }}}
 
+	-- ui tweaks and enhancements {{{
+    {
+      "stevearc/dressing.nvim",
+      dependencies = {
+         "nvim-telescope/telescope.nvim",
+         "pysan3/pathlib.nvim"
+      },
+      config = function ()
+          require"dressing".setup({
+            select = {
+              enabled = true,
+              telescope = require "telescope.themes".get_dropdown({
+                previewer = false,
+                layout_config = {
+                  width = function(_, max_columns, _)
+                    return math.floor(max_columns * 0.65)
+                  end
+                }
+              }),
+            },
+            input = {
+              enabled = false
+            }
+          })
+      end,
+    },
+	-- }}}
 }

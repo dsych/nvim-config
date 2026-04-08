@@ -12,7 +12,15 @@ return {
 
         vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
             pattern = { "*.md" },
-            command = "Markview Enable",
+            callback = function(args)
+                vim.print(args)
+                vim.print(args.file.gmatch(args.file, "(design)")())
+                if not args.file.gmatch(args.file, "(design)")() then
+                    vim.cmd('Markview Enable')
+                else
+                    vim.cmd('Markview Disable')
+                end
+            end,
             group = ag,
         })
 
@@ -22,6 +30,8 @@ return {
                     vim.api.nvim_buf_call(args.buf, function()
                         vim.cmd('Markview Enable')
                     end)
+                else
+                    vim.cmd('Markview Disable')
                 end
             end,
             group = ag,
@@ -42,7 +52,8 @@ return {
                     -- 'Avante',
                     'codecompanion',
                 },
-                ignore_buftypes = {}
+                ignore_buftypes = {},
+                enable_hybrid_mode = false
             }
         })
     end
