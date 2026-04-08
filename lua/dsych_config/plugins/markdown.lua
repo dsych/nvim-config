@@ -13,8 +13,6 @@ return {
         vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
             pattern = { "*.md" },
             callback = function(args)
-                vim.print(args)
-                vim.print(args.file.gmatch(args.file, "(design)")())
                 if not args.file.gmatch(args.file, "(design)")() then
                     vim.cmd('Markview Enable')
                 else
