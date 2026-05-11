@@ -9,6 +9,10 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 direction=${1:?Usage: tmux-smart-nav.sh [U|D|L|R]}
 
+# If pane is zoomed, unzoom first to restore layout geometry
+zoomed=$(tmux display-message -p '#{window_zoomed_flag}')
+[ "$zoomed" = "1" ] && tmux resize-pane -Z
+
 # Get current pane geometry + cursor in one call
 eval "$(tmux display-message -p \
     'cur_id=#{pane_id} cur_left=#{pane_left} cur_top=#{pane_top} cur_w=#{pane_width} cur_h=#{pane_height} cur_x=#{cursor_x} cur_y=#{cursor_y} in_mode=#{pane_in_mode} copy_x=#{copy_cursor_x} copy_y=#{copy_cursor_y}')"
