@@ -28,10 +28,10 @@ prompt_and_run() {
 # 3 fields → displayed as "⚡ Label → display_hint",  executed as: eval <shell_command>
 
 ACTIONS=(
-    "Dev Layout           ;; run-shell               ;; tmux run-shell \"\$HOME/.config/tmux-ssh/tmux-dev-layout.sh\""
+    "Dev Layout           ;; run-shell               ;; tmux run-shell \"\$HOME/.config/tmux/utils/tmux-dev-layout.sh\""
     "Switch Session       ;; switch-client            ;; switch_session"
     "Reload Config        ;; source-file              ;; tmux source-file ~/.tmux.conf"
-    "SSH Connect          ;; connect.sh               ;; tmux run-shell \"\$HOME/.config/tmux-ssh/connect.sh\""
+    "SSH Connect          ;; connect.sh               ;; tmux run-shell \"\$HOME/.config/tmux/utils/connect.sh\""
     "Kill Current Pane    ;; kill-pane"
     "Kill Other Panes     ;; kill-pane -a"
     "Kill Current Window  ;; kill-window"
@@ -48,7 +48,7 @@ ACTIONS=(
     "mwinit               ;; split-window -v 'mwinit -f'"
     "Agent Deck           ;; agent-deck               ;; tmux run-shell -b \"sleep 0.1; tmux new-window 'AGENT_DECK_ALLOW_OUTER_TMUX=1 agent-deck'\""
     "Edit Command Palette  ;; nvim palette             ;; nvim \"\${BASH_SOURCE[0]}\""
-    "Edit tmux.conf        ;; nvim tmux.conf           ;; nvim ~/.tmux.conf"
+    "Edit tmux.conf        ;; nvim tmux.conf           ;; nvim ~/.config/tmux/tmux.conf"
 )
 
 # ── Build fzf list ──────────────────────────────────────────────────
