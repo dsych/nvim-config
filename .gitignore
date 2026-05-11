@@ -4,3 +4,4 @@
 **/ignore_*.lua
 wasabi-toolbag
 hosts.json
+tmux/plugins

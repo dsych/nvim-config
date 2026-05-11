@@ -46,7 +46,7 @@ ACTIONS=(
     "Move Pane Right      ;; swap-pane -D"
     "Detach               ;; detach-client"
     "mwinit               ;; split-window -v 'mwinit -f'"
-    "Agent Deck           ;; agent-deck               ;; AGENT_DECK_ALLOW_OUTER_TMUX=1 agent-deck"
+    "Agent Deck           ;; agent-deck               ;; tmux run-shell -b \"sleep 0.1; tmux new-window 'AGENT_DECK_ALLOW_OUTER_TMUX=1 agent-deck'\""
     "Edit Command Palette  ;; nvim palette             ;; nvim \"\${BASH_SOURCE[0]}\""
     "Edit tmux.conf        ;; nvim tmux.conf           ;; nvim ~/.tmux.conf"
 )
