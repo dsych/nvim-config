@@ -107,11 +107,18 @@ stop_shared_sync() {
     fi
 }
 
+cleanup_ssh_window() {
+    stop_shared_sync
+    # Reset SSH window markers and status style
+    tmux set-option -wu @ssh_target 2>/dev/null || true
+    tmux set-option -gu status-style 2>/dev/null || true
+}
+
 # Start sync (non-blocking — mutagen runs as a daemon)
 start_shared_sync || true
 
-# Ensure mutagen session is terminated when this window closes
-trap 'stop_shared_sync' EXIT
+# Ensure full cleanup when this window closes or SSH exits
+trap 'cleanup_ssh_window' EXIT
 
 # ======================== TMUX WINDOW SETUP ======================== #
 

@@ -7,6 +7,9 @@
 
 set -euo pipefail
 
+# Ensure common tool paths are available (Homebrew on macOS, etc.)
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
 direction="${1:--v}"
 shift || true
 extra_cmd="${*:-}"

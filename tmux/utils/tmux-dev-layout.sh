@@ -11,6 +11,9 @@
 
 set -euo pipefail
 
+# Ensure common tool paths are available (Homebrew on macOS, etc.)
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
 PANE_ID=$(tmux display-message -p '#{pane_id}')
 WINDOW_ID=$(tmux display-message -p '#{window_id}')
 CURRENT_CMD=$(tmux display-message -p '#{pane_current_command}')
