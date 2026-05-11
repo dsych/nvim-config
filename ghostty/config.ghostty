@@ -1,0 +1,8 @@
+font-family = Berkeley Mono
+font-size = 15
+macos-option-as-alt = true
+command = /opt/homebrew/bin/tmux new-session -A -s main
+mouse-hide-while-typing = true
+window-padding-x = 10
+window-padding-y = 10
+fullscreen = true
