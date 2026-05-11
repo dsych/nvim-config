@@ -17,6 +17,7 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 PANE_ID=$(tmux display-message -p '#{pane_id}')
 WINDOW_ID=$(tmux display-message -p '#{window_id}')
 CURRENT_CMD=$(tmux display-message -p '#{pane_current_command}')
+PANE_PATH=$(tmux display-message -p '#{pane_current_path}')
 
 # 1. Kill all other panes in this window
 for pane in $(tmux list-panes -t "$WINDOW_ID" -F '#{pane_id}'); do
@@ -26,11 +27,11 @@ done
 # 2. Build the layout
 # The source pane becomes the top (editor) pane.
 # Split bottom-left (50% height from top pane)
-tmux split-window -v -l 50% -t "$PANE_ID"
+tmux split-window -v -l 50% -c "$PANE_PATH" -t "$PANE_ID"
 BOTTOM_LEFT=$(tmux display-message -p '#{pane_id}')
 
 # Split bottom-right from bottom-left (50% width)
-tmux split-window -h -l 50% -t "$BOTTOM_LEFT"
+tmux split-window -h -l 50% -c "$PANE_PATH" -t "$BOTTOM_LEFT"
 BOTTOM_RIGHT=$(tmux display-message -p '#{pane_id}')
 
 # 3. Tag bottom panes for auto-resize hook
