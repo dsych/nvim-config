@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # tmux-command-palette.sh - Command palette with fzf
 # Custom actions at the top, followed by all tmux commands
+# $1 = pane_id of the caller (popup steals context, so we need this)
+
+CALLER_PANE="${1:-}"
 
 # ── Helpers for complex actions ──────────────────────────────────────
 switch_session() {
@@ -28,12 +31,12 @@ prompt_and_run() {
 # 3 fields → displayed as "⚡ Label → display_hint",  executed as: eval <shell_command>
 
 ACTIONS=(
-    "Dev Layout           ;; run-shell               ;; tmux run-shell \"\$HOME/.config/tmux/utils/tmux-dev-layout.sh\""
+    "Dev Layout           ;; run-shell               ;; tmux run-shell -b \"sleep 0.1; \$HOME/.config/tmux/utils/tmux-dev-layout.sh $CALLER_PANE\""
     "Switch Session       ;; switch-client            ;; switch_session"
     "Reload Config        ;; source-file              ;; tmux source-file ~/.tmux.conf"
     "SSH Connect          ;; connect.sh               ;; tmux run-shell \"\$HOME/.config/tmux/utils/connect.sh\""
-    "Kill Current Pane    ;; kill-pane"
-    "Kill Other Panes     ;; kill-pane -a"
+    "Kill Current Pane    ;; kill-pane -t $CALLER_PANE"
+    "Kill Other Panes     ;; kill-pane -a -t $CALLER_PANE"
     "Kill Current Window  ;; kill-window"
     "Kill Current Session ;; kill-session"
     "New Window           ;; new-window"
@@ -41,11 +44,11 @@ ACTIONS=(
     "Rename Window        ;; rename-window            ;; prompt_and_run 'Window name' tmux rename-window"
     "Rename Session       ;; rename-session           ;; prompt_and_run 'Session name' tmux rename-session"
     "Toggle Mouse         ;; set mouse"
-    "Toggle Pane Zoom     ;; resize-pane -Z"
-    "Move Pane Left       ;; swap-pane -U"
-    "Move Pane Right      ;; swap-pane -D"
+    "Toggle Pane Zoom     ;; resize-pane -Z -t $CALLER_PANE"
+    "Move Pane Left       ;; swap-pane -t $CALLER_PANE -U"
+    "Move Pane Right      ;; swap-pane -t $CALLER_PANE -D"
     "Detach               ;; detach-client"
-    "mwinit               ;; split-window -v 'mwinit -f'"
+    "mwinit               ;; split-window -v -t $CALLER_PANE 'mwinit -f'"
     "Agent Deck           ;; agent-deck               ;; tmux run-shell -b \"sleep 0.1; tmux new-window 'AGENT_DECK_ALLOW_OUTER_TMUX=1 agent-deck'\""
     "Edit Command Palette  ;; nvim palette             ;; nvim \"\${BASH_SOURCE[0]}\""
     "Edit tmux.conf        ;; nvim tmux.conf           ;; nvim ~/.config/tmux/tmux.conf"
