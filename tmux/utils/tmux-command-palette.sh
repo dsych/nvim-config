@@ -47,6 +47,9 @@ ACTIONS=(
     "Toggle Pane Zoom     ;; resize-pane -Z -t $CALLER_PANE"
     "Move Pane Left       ;; swap-pane -t $CALLER_PANE -U"
     "Move Pane Right      ;; swap-pane -t $CALLER_PANE -D"
+    "AWS Region Lookup    ;; region-lookup             ;; \$HOME/.config/tmux/utils/tmux-region-lookup.sh"
+    "Snippets             ;; paste snippet             ;; \$HOME/.config/tmux/utils/tmux-snippet.sh $CALLER_PANE"
+
     "Detach               ;; detach-client"
     "mwinit               ;; split-window -v -t $CALLER_PANE 'mwinit -f'"
     "Agent Deck           ;; agent-deck               ;; tmux run-shell -b \"sleep 0.1; tmux new-window 'AGENT_DECK_ALLOW_OUTER_TMUX=1 agent-deck'\""
