@@ -33,8 +33,8 @@ prompt_and_run() {
 ACTIONS=(
     "Dev Layout           ;; run-shell               ;; tmux run-shell -b \"sleep 0.1; \$HOME/.config/tmux/utils/tmux-dev-layout.sh $CALLER_PANE\""
     "Switch Session       ;; switch-client            ;; switch_session"
-    "Reload Config        ;; source-file              ;; tmux source-file ~/.tmux.conf"
-    "SSH Connect          ;; connect.sh               ;; tmux run-shell \"\$HOME/.config/tmux/utils/connect.sh\""
+    "Reload Config        ;; source-file              ;; tmux source-file ~/.config/tmux/tmux.conf"
+    "SSH Connect          ;; connect.sh               ;; tmux new-window \"\$HOME/.config/tmux/utils/connect.sh\""
     "Kill Current Pane    ;; kill-pane -t $CALLER_PANE"
     "Kill Other Panes     ;; kill-pane -a -t $CALLER_PANE"
     "Kill Current Window  ;; kill-window"
@@ -51,7 +51,7 @@ ACTIONS=(
     "Snippets             ;; paste snippet             ;; \$HOME/.config/tmux/utils/tmux-snippet.sh $CALLER_PANE"
 
     "Detach               ;; detach-client"
-    "mwinit               ;; split-window -v -t $CALLER_PANE 'mwinit -f'"
+    "mwinit               ;; split-window             ;; tmux split-window -v -t $CALLER_PANE 'mwinit -f'"
     "Agent Deck           ;; agent-deck               ;; tmux run-shell -b \"sleep 0.1; tmux new-window 'AGENT_DECK_ALLOW_OUTER_TMUX=1 agent-deck'\""
     "Edit Command Palette  ;; nvim palette             ;; nvim \"\${BASH_SOURCE[0]}\""
     "Edit tmux.conf        ;; nvim tmux.conf           ;; nvim ~/.config/tmux/tmux.conf"

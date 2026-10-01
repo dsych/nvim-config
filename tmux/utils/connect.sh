@@ -1,4 +1,4 @@
-#!/usr/bin/env bash -e
+#!/usr/bin/env bash
 set -euo pipefail
 
 HOSTS_FILE="${TMUX_SSH_HOSTS:-$HOME/.config/tmux/utils/hosts.json}"
@@ -56,7 +56,7 @@ echo "Syncing tmux config to ${host}..."
 # shellcheck disable=SC2086
 ssh $opts "${user}@${host}" "mkdir -p ~/.config/tmux" 2>/dev/null
 # shellcheck disable=SC2086
-rsync -aq -e "ssh $opts" "$HOME/.config/tmux/" "${user}@${host}:~/.config/tmux/" || echo "Warning: failed to sync tmux config"
+rsync -aqL -e "ssh $opts" "$HOME/.config/tmux/" "${user}@${host}:~/.config/tmux/" || echo "Warning: failed to sync tmux config"
 
 # ======================== BIDIRECTIONAL SHARED FOLDER (MUTAGEN) ======================== #
 # Uses mutagen to sync ~/ssh_shared bidirectionally between local and remote.
@@ -111,7 +111,7 @@ cleanup_ssh_window() {
     stop_shared_sync
     # Reset SSH window markers and status style
     tmux set-option -wu @ssh_target 2>/dev/null || true
-    tmux set-option -gu status-style 2>/dev/null || true
+    tmux set-option -g status-style 'bg=default,fg=default' 2>/dev/null || true
 }
 
 # Start sync (non-blocking — mutagen runs as a daemon)

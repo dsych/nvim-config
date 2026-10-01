@@ -8,4 +8,4 @@ text="$1"
 [ -z "$text" ] && exit 0
 
 tmux set-buffer -w -- "$text"
-tmux display-message "Copied: $text"
+tmux display-message -l "Copied: $text"

@@ -14,10 +14,13 @@ set -euo pipefail
 # Ensure common tool paths are available (Homebrew on macOS, etc.)
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
-PANE_ID=$(tmux display-message -p '#{pane_id}')
-WINDOW_ID=$(tmux display-message -p '#{window_id}')
-CURRENT_CMD=$(tmux display-message -p '#{pane_current_command}')
-PANE_PATH=$(tmux display-message -p '#{pane_current_path}')
+# Target the caller's pane explicitly ($1, passed by the binding/palette). An
+# untargeted display-message resolves to the session's *current* window, which
+# may have changed since the key press (e.g. another client switched windows).
+PANE_ID="${1:-$(tmux display-message -p '#{pane_id}')}"
+WINDOW_ID=$(tmux display-message -p -t "$PANE_ID" '#{window_id}')
+CURRENT_CMD=$(tmux display-message -p -t "$PANE_ID" '#{pane_current_command}')
+PANE_PATH=$(tmux display-message -p -t "$PANE_ID" '#{pane_current_path}')
 
 # 1. Kill all other panes in this window
 for pane in $(tmux list-panes -t "$WINDOW_ID" -F '#{pane_id}'); do
@@ -27,12 +30,10 @@ done
 # 2. Build the layout
 # The source pane becomes the top (editor) pane.
 # Split bottom-left (50% height from top pane)
-tmux split-window -v -l 50% -c "$PANE_PATH" -t "$PANE_ID"
-BOTTOM_LEFT=$(tmux display-message -p '#{pane_id}')
+BOTTOM_LEFT=$(tmux split-window -v -l 50% -c "$PANE_PATH" -t "$PANE_ID" -P -F '#{pane_id}')
 
 # Split bottom-right from bottom-left (50% width)
-tmux split-window -h -l 50% -c "$PANE_PATH" -t "$BOTTOM_LEFT"
-BOTTOM_RIGHT=$(tmux display-message -p '#{pane_id}')
+BOTTOM_RIGHT=$(tmux split-window -h -l 50% -c "$PANE_PATH" -t "$BOTTOM_LEFT" -P -F '#{pane_id}')
 
 # 3. Tag bottom panes for auto-resize hook
 tmux set-option -p -t "$BOTTOM_LEFT" @dev-layout-bottom 1

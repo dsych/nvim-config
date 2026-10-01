@@ -57,10 +57,11 @@ battery_macos() {
     charge=$(echo "$line" | grep -oE '[0-9]+%' | tr -d '%')
     [[ -z "$charge" ]] && return 1
 
-    if echo "$line" | grep -qi "charging"; then
-        state="charging"
-    elif echo "$line" | grep -qi "discharging"; then
+    # Test "discharging" first: "charging" is a substring of it
+    if echo "$line" | grep -qi "discharging"; then
         state="discharging"
+    elif echo "$line" | grep -qiE ';[[:space:]]*charging;'; then
+        state="charging"
     else
         state="full"
     fi

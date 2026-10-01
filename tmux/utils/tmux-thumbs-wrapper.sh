@@ -102,7 +102,12 @@ PAT_K8S='(pod|deploy|deployment|svc|service|ingress|configmap|secret|ns|namespac
 PAT_COLORS='#[a-fA-F0-9]{6}'
 PAT_MACS='[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}'
 
-mapfile -t raw_matches < <(
+# Read lines into arrays with while-read loops, not mapfile/declare -A, so this
+# runs on macOS's stock bash 3.2 too. Empty lines are dropped.
+raw_matches=()
+while IFS= read -r m; do
+    [ -n "$m" ] && raw_matches[${#raw_matches[@]}]="$m"
+done < <(
     {
         echo "$content" | grep -oE "$PAT_URLS"
         echo "$content" | grep -oE "$PAT_SSH_GIT"
@@ -123,8 +128,16 @@ mapfile -t raw_matches < <(
     } 2>/dev/null | awk '!seen[$0]++'
 )
 
+if [ ${#raw_matches[@]} -eq 0 ]; then
+    tmux display-message "No patterns found"
+    exit 0
+fi
+
 # Remove matches that are substrings of longer matches
-mapfile -t matches < <(
+matches=()
+while IFS= read -r m; do
+    [ -n "$m" ] && matches[${#matches[@]}]="$m"
+done < <(
     printf '%s\n' "${raw_matches[@]}" | awk '{
         lines[NR] = $0
     }
@@ -157,13 +170,13 @@ else
 fi
 
 # Build hint→match mapping
-declare -A hint_map
+hints=()
 match_file="$work_dir/matches"
 : > "$match_file"
 
 for i in "${!matches[@]}"; do
     h=$(generate_hint "$i" "$hint_len")
-    hint_map["$h"]="${matches[$i]}"
+    hints[$i]="$h"
     printf '%s\t%s\n' "$h" "${matches[$i]}" >> "$match_file"
 done
 
@@ -215,6 +228,7 @@ render() {
         n = 0
         while ((getline m < MATCHES) > 0) {
             split(m, f, "\t")
+            if (f[2] == "") continue   # an empty match would never advance the scan
             n++; hint[n] = f[1]; str[n] = f[2]; len[n] = length(f[2])
         }
         close(MATCHES)
@@ -278,7 +292,13 @@ while [ "${#key}" -lt "$hint_len" ]; do
 done
 
 # Look up hint
-selected="${hint_map[$key]}"
+selected=""
+for i in "${!hints[@]}"; do
+    if [ "${hints[$i]}" = "$key" ]; then
+        selected="${matches[$i]}"
+        break
+    fi
+done
 [ -z "$selected" ] && exit 0
 
 case "$action" in

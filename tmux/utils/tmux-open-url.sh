@@ -15,5 +15,5 @@ elif [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
     xdg-open "$url" >/dev/null 2>&1 &
 else
     echo "$url" > "$HOME/ssh_shared/.open_url"
-    tmux display-message "Opening on local: $url"
+    tmux display-message -l "Opening on local: $url"
 fi

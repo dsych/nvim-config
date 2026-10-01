@@ -32,7 +32,7 @@ while true; do
             if echo "$url" | grep -qE '^https?://'; then
                 open "$url" >/dev/null 2>&1
             else
-                tmux display-message "Not a valid URL: $url"
+                tmux display-message -l "Not a valid URL: $url"
             fi
         fi
     fi
