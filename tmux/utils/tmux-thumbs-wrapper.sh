@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # tmux-thumbs-wrapper.sh - Vimium-style hint picker for tmux
-# Captures pane content (all panes or zoomed pane), highlights patterns with letter hints.
-# Full-window popup overlay. Supports multi-character hints for >26 matches.
+# Captures pane content (all panes or zoomed pane), redraws them with the real
+# window layout, and overlays letter hints on matched patterns.
+# Full-window popup overlay (borderless). Supports multi-character hints for >26 matches.
 # Pane state is passed from the tmux binding (before popup steals context).
 # Usage: tmux-thumbs-wrapper.sh [copy|open] <pane_id> <in_mode> <scroll_pos> <pane_height> <zoomed>
 
@@ -17,6 +18,14 @@ caller_zoomed="${6:-0}"
 
 ALPHABET="asdfghjklqwertyuiopzxcvbnm"
 ALPHA_LEN=${#ALPHABET}
+
+# Prefer gawk (UTF-8 aware: pads/cuts by character, not byte), fall back to awk
+AWK=$(command -v gawk || command -v awk)
+# Character-aware string ops need a UTF-8 locale
+case "${LC_ALL:-${LC_CTYPE:-${LANG:-}}}" in
+    *[Uu][Tt][Ff]-8*|*[Uu][Tt][Ff]8*) ;;
+    *) export LC_ALL=C.UTF-8 ;;
+esac
 
 # Capture a single pane, respecting copy-mode scroll position
 capture_pane() {
@@ -42,23 +51,36 @@ generate_hint() {
     fi
 }
 
-# Capture pane content
+work_dir=$(mktemp -d)
+trap 'rm -rf "$work_dir"' EXIT
+
+# Capture every visible pane of the caller's window along with its geometry so
+# the overlay can be rebuilt with the real window layout (side-by-side panes
+# stay side by side), regardless of which pane triggered the picker.
+window_id=$(tmux display-message -p -t "$caller_pane" '#{window_id}')
+read -r win_w win_h < <(tmux display-message -p -t "$caller_pane" '#{window_width} #{window_height}')
+geom_file="$work_dir/geometry"
+: > "$geom_file"
 content=""
-if [ "$caller_zoomed" = "1" ]; then
-    content=$(capture_pane "$caller_pane" "$caller_in_mode" "$caller_scroll_pos" "$caller_height")
-else
-    while IFS=$'\t' read -r pid; do
-        if [ "$pid" = "$caller_pane" ]; then
-            pane_content=$(capture_pane "$pid" "$caller_in_mode" "$caller_scroll_pos" "$caller_height")
-        else
-            pane_content=$(tmux capture-pane -p -t "$pid" 2>/dev/null)
-        fi
-        if [ -n "$pane_content" ]; then
-            [ -n "$content" ] && content+=$'\n'
-            content+="$pane_content"
-        fi
-    done < <(tmux list-panes -F '#{pane_id}' -t "$(tmux display-message -p -t "$caller_pane" '#{window_id}')")
-fi
+while IFS=$'\t' read -r pid left top width height; do
+    if [ "$caller_zoomed" = "1" ]; then
+        # Only the zoomed pane is visible; it fills the whole window
+        [ "$pid" = "$caller_pane" ] || continue
+        left=0 top=0 width=$win_w height=$win_h
+    fi
+    if [ "$pid" = "$caller_pane" ]; then
+        pane_content=$(capture_pane "$pid" "$caller_in_mode" "$caller_scroll_pos" "$caller_height")
+    else
+        pane_content=$(tmux capture-pane -p -t "$pid" 2>/dev/null)
+    fi
+    pane_file="$work_dir/pane${pid#%}"
+    printf '%s\n' "$pane_content" > "$pane_file"
+    printf '%s\t%s\t%s\t%s\t%s\n' "$left" "$top" "$width" "$height" "$pane_file" >> "$geom_file"
+    if [ -n "$pane_content" ]; then
+        [ -n "$content" ] && content+=$'\n'
+        content+="$pane_content"
+    fi
+done < <(tmux list-panes -t "$window_id" -F '#{pane_id}	#{pane_left}	#{pane_top}	#{pane_width}	#{pane_height}')
 
 [ -z "$content" ] && exit 0
 
@@ -136,8 +158,8 @@ fi
 
 # Build hint→match mapping
 declare -A hint_map
-match_file=$(mktemp)
-trap 'rm -f "$match_file"' EXIT
+match_file="$work_dir/matches"
+: > "$match_file"
 
 for i in "${!matches[@]}"; do
     h=$(generate_hint "$i" "$hint_len")
@@ -145,72 +167,115 @@ for i in "${!matches[@]}"; do
     printf '%s\t%s\n' "$h" "${matches[$i]}" >> "$match_file"
 done
 
-# Annotate content: inject colored hint markers before each match
-# Process longest matches first to prevent shorter matches from highlighting inside longer ones
-annotated=$(awk '
-BEGIN {
-    while ((getline line < "'"$match_file"'") > 0) {
-        split(line, parts, "\t")
-        hint[++n] = parts[1]
-        match_str[n] = parts[2]
-        match_len[n] = length(parts[2])
-    }
-    # Sort by match length descending (bubble sort, small n)
-    for (i = 1; i <= n; i++) {
-        for (j = i + 1; j <= n; j++) {
-            if (match_len[j] > match_len[i]) {
-                tmp = hint[i]; hint[i] = hint[j]; hint[j] = tmp
-                tmp = match_str[i]; match_str[i] = match_str[j]; match_str[j] = tmp
-                tmp = match_len[i]; match_len[i] = match_len[j]; match_len[j] = tmp
+# Popup size: the canvas is clipped to it, keeping the last row for the prompt
+read -r term_rows term_cols < <(stty size < /dev/tty 2>/dev/null)
+canvas_w=$win_w; canvas_h=$win_h
+[ -n "$term_cols" ] && [ "$term_cols" -lt "$canvas_w" ] && canvas_w=$term_cols
+[ -n "$term_rows" ] && [ "$term_rows" -le "$canvas_h" ] && canvas_h=$((term_rows - 1))
+
+# Redraw every pane at its real position in the window (cursor addressing, so
+# wide characters can't push columns around), draw the pane borders, and
+# overlay hints on the first characters of each match. Overlaying instead of
+# inserting keeps every column exactly where it is in the real window.
+render() {
+    "$AWK" -v W="$canvas_w" -v H="$canvas_h" -v GEOM="$geom_file" -v MATCHES="$match_file" '
+    function at(y, x, s) { if (y < H && x < W) printf "\033[%d;%dH%s", y + 1, x + 1, s }
+    function annotate(line,    shadow, ns, i, j, t, from, p, pos, mask, out, cur, l, h, hl) {
+        shadow = line; ns = 0
+        delete seg_pos; delete seg_len; delete seg_hint
+        for (i = 1; i <= n; i++) {
+            from = 1
+            while ((p = index(substr(shadow, from), str[i])) > 0) {
+                pos = from + p - 1
+                ns++; seg_pos[ns] = pos; seg_len[ns] = len[i]; seg_hint[ns] = hint[i]
+                mask = sprintf("%" len[i] "s", ""); gsub(/ /, "\001", mask)
+                shadow = substr(shadow, 1, pos - 1) mask substr(shadow, pos + len[i])
+                from = pos + len[i]
             }
         }
-    }
-}
-{
-    line = $0
-    shadow = $0  # tracks which positions are already highlighted
-    for (i = 1; i <= n; i++) {
-        idx = index(shadow, match_str[i])
-        if (idx > 0) {
-            m = match_str[i]
-            h = hint[i]
-            # Build replacement for display line
-            pre = substr(line, 1, idx - 1)
-            suf = substr(line, idx + length(m))
-            replacement = "\033[1;43;30m" h "\033[0m\033[4;32m" m "\033[0m"
-            line = pre replacement suf
-            # Blank out matched region in shadow so nothing re-matches here
-            blank = ""
-            for (k = 1; k <= length(m); k++) blank = blank "\001"
-            shadow = substr(shadow, 1, idx - 1) blank substr(shadow, idx + length(m))
-            # Adjust line offset: replacement is longer than original
-            offset = length(replacement) - length(m)
-            # Shift shadow to keep in sync with line
-            pad = ""
-            for (k = 1; k <= offset; k++) pad = pad "\001"
-            shadow = substr(shadow, 1, idx - 1 + length(blank)) pad substr(shadow, idx + length(blank))
+        for (i = 1; i <= ns; i++)
+            for (j = i + 1; j <= ns; j++)
+                if (seg_pos[j] < seg_pos[i]) {
+                    t = seg_pos[i];  seg_pos[i]  = seg_pos[j];  seg_pos[j]  = t
+                    t = seg_len[i];  seg_len[i]  = seg_len[j];  seg_len[j]  = t
+                    t = seg_hint[i]; seg_hint[i] = seg_hint[j]; seg_hint[j] = t
+                }
+        out = ""; cur = 1
+        for (i = 1; i <= ns; i++) {
+            pos = seg_pos[i]; l = seg_len[i]; h = seg_hint[i]; hl = length(h)
+            out = out substr(line, cur, pos - cur)
+            if (l > hl) out = out HINT h RESET REST substr(line, pos + hl, l - hl) RESET
+            else        out = out HINT substr(h, 1, l) RESET
+            cur = pos + l
         }
+        return out substr(line, cur)
     }
-    print line
-}' <<< "$content")
+    BEGIN {
+        HINT = "\033[1;43;30m"; REST = "\033[4;32m"; RESET = "\033[0m"
+        n = 0
+        while ((getline m < MATCHES) > 0) {
+            split(m, f, "\t")
+            n++; hint[n] = f[1]; str[n] = f[2]; len[n] = length(f[2])
+        }
+        close(MATCHES)
+        # Longest first so shorter matches never land inside longer ones
+        for (i = 1; i <= n; i++)
+            for (j = i + 1; j <= n; j++)
+                if (len[j] > len[i]) {
+                    t = hint[i]; hint[i] = hint[j]; hint[j] = t
+                    t = str[i];  str[i]  = str[j];  str[j]  = t
+                    t = len[i];  len[i]  = len[j];  len[j]  = t
+                }
 
-# Display annotated content
+        printf "\033[?7l"   # no autowrap: clipped lines must not spill into the next row
+        while ((getline g < GEOM) > 0) {
+            split(g, f, "\t")
+            left = f[1] + 0; top = f[2] + 0; pw = f[3] + 0; ph = f[4] + 0; file = f[5]
+            for (i = 0; i < ph; i++) {
+                if ((getline line < file) <= 0) break
+                if (line != "") at(top + i, left, annotate(line))
+            }
+            close(file)
+            # Border cells: column right of the pane, row below it
+            if (left + pw < W) for (i = 0; i < ph; i++) vb[top + i, left + pw] = 1
+            if (top + ph < H)  for (i = 0; i < pw; i++) hb[top + ph, left + i] = 1
+        }
+        close(GEOM)
+        # Borders, with junctions where they meet, like tmux draws them
+        for (k in hb) {
+            split(k, yx, SUBSEP); y = yx[1] + 0; x = yx[2] + 0
+            up = ((y - 1, x) in vb); dn = ((y + 1, x) in vb)
+            at(y, x, (up && dn) ? "┼" : dn ? "┬" : up ? "┴" : "─")
+        }
+        for (k in vb) {
+            split(k, yx, SUBSEP); y = yx[1] + 0; x = yx[2] + 0
+            if ((y, x) in hb) continue
+            lt = ((y, x - 1) in hb); rt = ((y, x + 1) in hb)
+            at(y, x, (lt && rt) ? "┼" : rt ? "├" : lt ? "┤" : "│")
+        }
+        printf "\033[%d;1H\033[?7h", H + 1
+    }'
+}
+
+# Display annotated window
 clear
-printf '%b\n' "$annotated"
+render
 
 # Status bar
 if [ "$action" = "open" ]; then
-    printf '\n\033[7m Open URL — press %d-char hint or Esc to cancel \033[0m' "$hint_len"
+    printf '\033[7m Open URL — press %d-char hint or Esc to cancel \033[0m' "$hint_len"
 else
-    printf '\n\033[7m Copy — press %d-char hint or Esc to cancel \033[0m' "$hint_len"
+    printf '\033[7m Copy — press %d-char hint or Esc to cancel \033[0m' "$hint_len"
 fi
 
-# Read hint keypress(es)
-read -rsn"$hint_len" key
-
-# Escape key (first byte 0x1b)
-[[ "$key" == $'\x1b'* ]] && exit 0
-[ -z "$key" ] && exit 0
+# Read hint keypress(es) one at a time so Esc cancels immediately, even for
+# 2-char hints
+key=""
+while [ "${#key}" -lt "$hint_len" ]; do
+    read -rsn1 k || exit 0
+    [[ -z "$k" || "$k" == $'\x1b' ]] && exit 0
+    key+="$k"
+done
 
 # Look up hint
 selected="${hint_map[$key]}"
