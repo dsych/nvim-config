@@ -115,9 +115,8 @@ stop_shared_sync() {
 
 cleanup_ssh_window() {
     stop_shared_sync
-    # Reset SSH window markers and status style
+    # Reset SSH window markers (status colour is a format in tmux.conf; leave it)
     tmux set-option -wu @ssh_target 2>/dev/null || true
-    tmux set-option -g status-style 'bg=default,fg=default' 2>/dev/null || true
 }
 
 # Start sync (non-blocking — mutagen runs as a daemon)
@@ -131,7 +130,6 @@ trap 'cleanup_ssh_window' EXIT
 # Tag this window as an SSH target and rename it
 tmux set-option -w @ssh_target "$name"
 tmux rename-window "$name"
-tmux set-option -g status-style 'bg=default,fg=default'
 
 # Connect — no exec, so EXIT trap fires for cleanup
 # shellcheck disable=SC2086
