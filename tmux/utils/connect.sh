@@ -51,12 +51,18 @@ read -r user host opts < <(
         "$HOSTS_FILE"
 )
 
-# Sync tmux config directory to remote before connecting
-echo "Syncing tmux config to ${host}..."
+# Sync tmux config directory to remote before connecting, unless the remote
+# manages its own: a symlinked tmux.conf means it points into a checkout of
+# the config repo there, and rsync would replace the links with copies.
 # shellcheck disable=SC2086
-ssh $opts "${user}@${host}" "mkdir -p ~/.config/tmux" 2>/dev/null
-# shellcheck disable=SC2086
-rsync -aqL -e "ssh $opts" "$HOME/.config/tmux/" "${user}@${host}:~/.config/tmux/" || echo "Warning: failed to sync tmux config"
+remote_cfg=$(ssh $opts "${user}@${host}" 'mkdir -p ~/.config/tmux; test -L ~/.config/tmux/tmux.conf && echo linked || echo plain' 2>/dev/null)
+if [ "$remote_cfg" = "linked" ]; then
+    echo "Remote tmux config is symlinked (managed there); skipping sync"
+else
+    echo "Syncing tmux config to ${host}..."
+    # shellcheck disable=SC2086
+    rsync -aqL -e "ssh $opts" "$HOME/.config/tmux/" "${user}@${host}:~/.config/tmux/" || echo "Warning: failed to sync tmux config"
+fi
 
 # ======================== BIDIRECTIONAL SHARED FOLDER (MUTAGEN) ======================== #
 # Uses mutagen to sync ~/ssh_shared bidirectionally between local and remote.
