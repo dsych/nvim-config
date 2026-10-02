@@ -164,6 +164,8 @@ rect=$(tmux display-message -p -t "$pid" '#{rectangle_toggle}')
 tmux send-keys -t "$pid" -X top-line
 [ "$steps" -gt 0 ] && tmux send-keys -t "$pid" -X -N "$steps" cursor-right
 [ "$rect" = "1" ] && tmux send-keys -t "$pid" -X rectangle-on
+# Move the cursor line (tmux-copy-cursorline.sh) to the new position
+[ "$(tmux show-options -gqv @copy-cursorline)" != "off" ] && tmux send-keys -t "$pid" -X set-mark
 # Select the pane last: focus hooks may resize it, and the cursor must already
 # be on the word by then
 [ "$pid" != "$caller_pane" ] && tmux select-pane -t "$pid"
