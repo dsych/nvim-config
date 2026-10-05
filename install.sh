@@ -67,16 +67,17 @@ function link_config {
     fi
 
     # make sure that there is already no older files backed up previously
-    if [[ -e "$dest_path" ]] && [[ ! -e "$dest_path.old" ]]; then
+    # (-L too: -e is false for a dangling symlink, which would block ln)
+    if [[ -e "$dest_path" || -L "$dest_path" ]] && [[ ! -e "$dest_path.old" && ! -L "$dest_path.old" ]]; then
         printf "INFO: Backing up old $dest_path\n"
         mv "$dest_path" "$dest_path.old"
         # echo "mv \"$dest_path\" \"$dest_path.old\""
     fi
 
-    if [[ ! -e "$dest_path" ]]; then
+    if [[ ! -e "$dest_path" && ! -L "$dest_path" ]]; then
         ln -s "$source_path" "$dest_path"
     else
-        printf "ERROR: Not going to link $source_path because $dest_path already exists"
+        printf "ERROR: Not going to link $source_path because $dest_path already exists\n"
     fi
 }
 
@@ -160,6 +161,17 @@ for path in ${all_configs[@]}; do
     source_path=$(basename $path)
     # dest_path=$(dirname $path)
     link_config "$scriptDir/$source_path" "$path"
+done
+
+# fish functions: link file by file, since ~/.config/fish/functions also holds
+# private, machine-local functions that don't belong in this repo
+fishFunctionsDir=$HOME/.config/fish/functions
+mkdir -p "$fishFunctionsDir"
+for source_path in "$scriptDir"/fish/functions/*.fish; do
+    dest_path="$fishFunctionsDir/$(basename "$source_path")"
+    # already linked (re-run): leave it alone instead of backing it up
+    [[ "$(readlink "$dest_path")" == "$source_path" ]] && continue
+    link_config "$source_path" "$dest_path"
 done
 
 printf "Begin installing dependencies\n"
