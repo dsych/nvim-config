@@ -91,7 +91,8 @@ function draw_window(    g, f, left, top, pw, ph, file, pid, i, line, k, yx, y, 
         left = f[1] + 0; top = f[2] + 0; pw = f[3] + 0; ph = f[4] + 0; file = f[5]; pid = f[6]
         for (i = 0; i < ph; i++) {
             if ((getline line < file) <= 0) break
-            if (line != "") at(top + i, left, annotate(line, pid, i))
+            # Blank rows too: they can carry a hint (line jump)
+            at(top + i, left, annotate(line, pid, i))
         }
         close(file)
         # Border cells: column right of the pane, row below it

@@ -9,12 +9,18 @@
 # the rest 2 (or 3) letters. After the first letter only matching hints stay
 # on screen. Esc cancels, Backspace undoes a letter.
 #
+# With --line the hints go on the start of every line instead (blank rows below
+# the last text in a pane are skipped) and the cursor lands on column 0.
+#
 # Pane state is passed from the tmux binding (before the popup steals context).
-# Usage: tmux-jump.sh <pane_id> <in_mode> <scroll_pos> <pane_height> <zoomed>
+# Usage: tmux-jump.sh [--line] <pane_id> <in_mode> <scroll_pos> <pane_height> <zoomed>
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=tmux-hint-lib.sh
 . "$SCRIPT_DIR/tmux-hint-lib.sh"
+
+mode=word
+[ "${1:-}" = "--line" ] && { mode=line; shift; }
 
 caller_pane="${1:-}"
 caller_in_mode="${2:-0}"
@@ -33,7 +39,8 @@ read -r cur_left cur_top cur_x cur_y < <(tmux display-message -p -t "$caller_pan
     '#{pane_left} #{pane_top} #{?pane_in_mode,#{copy_cursor_x},#{cursor_x}} #{?pane_in_mode,#{copy_cursor_y},#{cursor_y}}')
 [ "$caller_zoomed" = "1" ] && cur_left=0 cur_top=0
 
-# 1. Every word start, as: distance, pane, row, column, cursor-right count.
+# 1. Every word start (or line start), as: distance, pane, row, column,
+#    cursor-right count.
 #
 # The copy-mode cursor is placed with `top-line` (exactly row 0, column 0 of
 # the view) and then N x `cursor-right`. cursor-right steps one character at a
@@ -43,26 +50,38 @@ read -r cur_left cur_top cur_x cur_y < <(tmux display-message -p -t "$caller_pan
 # is exact for wrapped lines too, unlike cursor-down, which keeps a remembered
 # column.
 targets_file="$work_dir/targets"
-"$AWK" -v GEOM="$geom_file" -v CY="$((cur_top + cur_y))" -v CX="$((cur_left + cur_x))" '
+"$AWK" -v GEOM="$geom_file" -v CY="$((cur_top + cur_y))" -v CX="$((cur_left + cur_x))" -v MODE="$mode" '
+function target(row, col) {
+    # Rows are about twice as tall as columns are wide
+    dy = (top + row - CY) * 2; dx = left + col - CX
+    printf "%d\t%s\t%d\t%d\t%d\n", dy * dy + dx * dx, pid, row, col, steps + col
+}
 BEGIN {
     while ((getline g < GEOM) > 0) {
         split(g, f, "\t")
         left = f[1] + 0; top = f[2] + 0; ph = f[4] + 0; file = f[5]; pid = f[6]
+        n = 0; last = -1
+        while (n < ph && (getline line < file) > 0) {
+            rows[n] = line
+            if (line ~ /[^[:space:]]/) last = n
+            n++
+        }
+        close(file)
         steps = 0
-        for (row = 0; row < ph; row++) {
-            if ((getline line < file) <= 0) break
-            rest = line; off = 0
-            while (match(rest, /[[:alnum:]_]+/)) {
-                col = off + RSTART - 1
-                # Rows are about twice as tall as columns are wide
-                dy = (top + row - CY) * 2; dx = left + col - CX
-                printf "%d\t%s\t%d\t%d\t%d\n", dy * dy + dx * dx, pid, row, col, steps + col
-                off += RSTART + RLENGTH - 1
-                rest = substr(rest, RSTART + RLENGTH)
+        for (row = 0; row < n; row++) {
+            line = rows[row]
+            if (MODE == "line") {
+                if (row <= last) target(row, 0)
+            } else {
+                rest = line; off = 0
+                while (match(rest, /[[:alnum:]_]+/)) {
+                    target(row, off + RSTART - 1)
+                    off += RSTART + RLENGTH - 1
+                    rest = substr(rest, RSTART + RLENGTH)
+                }
             }
             steps += length(line) + 1
         }
-        close(file)
     }
 }' | sort -n -k1,1 | "$AWK" -F'\t' -v ALPHA="$ALPHABET" '
 # 2. Prefix-free hints, shortest (home-row first) for the nearest targets
@@ -89,7 +108,7 @@ END {
 }' > "$targets_file"
 
 if [ ! -s "$targets_file" ]; then
-    tmux display-message "No words to jump to"
+    tmux display-message "No ${mode}s to jump to"
     exit 0
 fi
 
@@ -97,11 +116,16 @@ hint_canvas_size
 
 # Draw the window dimmed, with hints (minus the letters already typed) on top
 render() {
-    "$AWK" -v W="$canvas_w" -v H="$canvas_h" -v GEOM="$geom_file" -v TARGETS="$targets_file" -v TYPED="$1" "$HINT_DRAW_AWK"'
+    "$AWK" -v W="$canvas_w" -v H="$canvas_h" -v GEOM="$geom_file" -v TARGETS="$targets_file" -v TYPED="$1" -v MODE="$mode" "$HINT_DRAW_AWK"'
     function annotate(line, pane_id, row,    key, cnt, i, out, cur, pos, h, hl, skip) {
         key = pane_id SUBSEP row
         cnt = nt[key] + 0
         if (cnt == 0) return DIM line RESET
+        # Line mode: one hint at column 0, drawn over the finished row (save
+        # cursor, row, restore, hint). Replacing the first characters instead
+        # would shift the rest of the row when the hint covers a tab or a wide
+        # character.
+        if (MODE == "line") return "\0337" DIM line RESET "\0338" HINT thint[key, 1] RESET
         out = DIM; cur = 1
         for (i = 1; i <= cnt; i++) {
             pos = tcol[key, i] + 1; h = thint[key, i]; hl = length(h)
@@ -133,9 +157,10 @@ render() {
 
 typed=""
 selected=""
+label=Word; [ "$mode" = "line" ] && label=Line
 while :; do
     render "$typed"
-    printf '\033[7m Jump — type hint%s (Esc cancel, Backspace undo) \033[0m' "${typed:+: $typed}"
+    printf '\033[7m %s jump — type hint%s (Esc cancel, Backspace undo) \033[0m' "$label" "${typed:+: $typed}"
     IFS= read -rsn1 k || exit 0
     case "$k" in
         ""|$'\x1b') exit 0 ;;
