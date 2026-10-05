@@ -10,7 +10,7 @@
 # Hints follow session-name order (tmux's own list order), so a session keeps
 # its key as long as the set of sessions doesn't change.
 #
-# Usage (from a key binding): tmux-session-menu.sh <client_name>
+# Usage (from a key binding: prefix s): tmux-session-menu.sh <client_name>
 
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
