@@ -14,6 +14,12 @@
 #
 # Pane state is passed from the tmux binding (before the popup steals context).
 # Usage: tmux-jump.sh [--line] <pane_id> <in_mode> <scroll_pos> <pane_height> <zoomed>
+#
+# The binding runs this script directly (it is the launcher): it opens itself
+# in a popup (--pick) to choose a target, and once the popup is gone applies the
+# jump. Applying must wait for the popup to close: in recent tmux the popup is
+# a pane, and closing it re-focuses the pane that was active when it opened,
+# undoing any select-pane done from inside it.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=tmux-hint-lib.sh
@@ -22,11 +28,57 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mode=word
 [ "${1:-}" = "--line" ] && { mode=line; shift; }
 
+jump_apply() {
+    local pid="$1" row="$2" col="$3" caller="$4" rect
+    # Enter copy mode unless the pane is already in it (view-mode is copy mode too)
+    case "$(tmux display-message -p -t "$pid" '#{pane_mode}')" in
+        copy-mode|view-mode) ;;
+        *) tmux copy-mode -t "$pid" ;;
+    esac
+    # With a rectangle selection, cursor-right runs to the pane edge instead of
+    # the end of the text
+    rect=$(tmux display-message -p -t "$pid" '#{rectangle_toggle}')
+    [ "$rect" = "1" ] && tmux send-keys -t "$pid" -X rectangle-off
+    # top-line is exactly row 0, column 0 of the view. cursor-down then keeps
+    # that column, so the cursor reaches column 0 of the target row whatever
+    # the row lengths (wrapped rows included); cursor-right steps one character
+    # at a time (wide characters and tabs are one step) along the row.
+    tmux send-keys -t "$pid" -X top-line
+    [ "$row" -gt 0 ] && tmux send-keys -t "$pid" -X -N "$row" cursor-down
+    [ "$col" -gt 0 ] && tmux send-keys -t "$pid" -X -N "$col" cursor-right
+    [ "$rect" = "1" ] && tmux send-keys -t "$pid" -X rectangle-on
+    # Move the cursor line (tmux-copy-cursorline.sh) to the new position
+    [ "$(tmux show-options -gqv @copy-cursorline)" != "off" ] && tmux send-keys -t "$pid" -X set-mark
+    # Select the pane last: focus hooks may resize it, and the cursor must
+    # already be on the word by then (copy mode keeps the cursor on the same
+    # text across a resize)
+    [ "$pid" != "$caller" ] && tmux select-pane -t "$pid"
+    return 0
+}
+
+# Launcher (what the binding runs): the picker runs in a popup, and its choice
+# is applied once the popup has closed
+if [ "${1:-}" != "--pick" ]; then
+    result_file=$(mktemp)
+    trap 'rm -f "$result_file"' EXIT
+    self_args=("${BASH_SOURCE[0]}" --pick)
+    [ "$mode" = "line" ] && self_args+=(--line)
+    printf -v popup_cmd '%q ' "${self_args[@]}" "$@" "$result_file"
+    tmux display-popup -B -w 100% -h 100% -E "$popup_cmd"
+    [ -s "$result_file" ] || exit 0
+    IFS=$'\t' read -r pid row col < "$result_file"
+    jump_apply "$pid" "$row" "$col" "${1:-}"
+    exit 0
+fi
+shift   # --pick
+[ "${1:-}" = "--line" ] && { mode=line; shift; }
+
 caller_pane="${1:-}"
 caller_in_mode="${2:-0}"
 caller_scroll_pos="${3:-0}"
 caller_height="${4:-24}"
 caller_zoomed="${5:-0}"
+result_file="${6:-}"
 
 work_dir=$(mktemp -d)
 trap 'rm -rf "$work_dir"' EXIT
@@ -39,22 +91,13 @@ read -r cur_left cur_top cur_x cur_y < <(tmux display-message -p -t "$caller_pan
     '#{pane_left} #{pane_top} #{?pane_in_mode,#{copy_cursor_x},#{cursor_x}} #{?pane_in_mode,#{copy_cursor_y},#{cursor_y}}')
 [ "$caller_zoomed" = "1" ] && cur_left=0 cur_top=0
 
-# 1. Every word start (or line start), as: distance, pane, row, column,
-#    cursor-right count.
-#
-# The copy-mode cursor is placed with `top-line` (exactly row 0, column 0 of
-# the view) and then N x `cursor-right`. cursor-right steps one character at a
-# time (wide characters and tabs are one step) and from the end of a row takes
-# one more step to reach the next row, so N = sum(chars + 1) over the rows
-# above the target plus the target column. Counting from the capture this way
-# is exact for wrapped lines too, unlike cursor-down, which keeps a remembered
-# column.
+# 1. Every word start (or line start), as: distance, pane, row, column.
 targets_file="$work_dir/targets"
 "$AWK" -v GEOM="$geom_file" -v CY="$((cur_top + cur_y))" -v CX="$((cur_left + cur_x))" -v MODE="$mode" '
 function target(row, col) {
     # Rows are about twice as tall as columns are wide
     dy = (top + row - CY) * 2; dx = left + col - CX
-    printf "%d\t%s\t%d\t%d\t%d\n", dy * dy + dx * dx, pid, row, col, steps + col
+    printf "%d\t%s\t%d\t%d\n", dy * dy + dx * dx, pid, row, col
 }
 BEGIN {
     while ((getline g < GEOM) > 0) {
@@ -67,7 +110,6 @@ BEGIN {
             n++
         }
         close(file)
-        steps = 0
         for (row = 0; row < n; row++) {
             line = rows[row]
             if (MODE == "line") {
@@ -80,12 +122,11 @@ BEGIN {
                     rest = substr(rest, RSTART + RLENGTH)
                 }
             }
-            steps += length(line) + 1
         }
     }
 }' | sort -n -k1,1 | "$AWK" -F'\t' -v ALPHA="$ALPHABET" '
 # 2. Prefix-free hints, shortest (home-row first) for the nearest targets
-{ t[NR] = $2 "\t" $3 "\t" $4 "\t" $5 }
+{ t[NR] = $2 "\t" $3 "\t" $4 }
 END {
     N = NR; A = length(ALPHA)
     for (i = 1; i <= A; i++) c[i] = substr(ALPHA, i, 1)
@@ -175,23 +216,7 @@ while :; do
     fi
 done
 
-IFS=$'\t' read -r _ pid row col steps <<< "$selected"
-
-# Enter copy mode unless the pane is already in it (view-mode is copy mode too)
-case "$(tmux display-message -p -t "$pid" '#{pane_mode}')" in
-    copy-mode|view-mode) ;;
-    *) tmux copy-mode -t "$pid" ;;
-esac
-# With a rectangle selection, cursor-right runs to the pane edge instead of the
-# end of the text, which would break the step count
-rect=$(tmux display-message -p -t "$pid" '#{rectangle_toggle}')
-[ "$rect" = "1" ] && tmux send-keys -t "$pid" -X rectangle-off
-tmux send-keys -t "$pid" -X top-line
-[ "$steps" -gt 0 ] && tmux send-keys -t "$pid" -X -N "$steps" cursor-right
-[ "$rect" = "1" ] && tmux send-keys -t "$pid" -X rectangle-on
-# Move the cursor line (tmux-copy-cursorline.sh) to the new position
-[ "$(tmux show-options -gqv @copy-cursorline)" != "off" ] && tmux send-keys -t "$pid" -X set-mark
-# Select the pane last: focus hooks may resize it, and the cursor must already
-# be on the word by then
-[ "$pid" != "$caller_pane" ] && tmux select-pane -t "$pid"
+# Hand the choice to the launcher, which applies it after the popup closes
+IFS=$'\t' read -r _ pid row col <<< "$selected"
+printf '%s\t%s\t%s\n' "$pid" "$row" "$col" > "$result_file"
 exit 0

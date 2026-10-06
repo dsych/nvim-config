@@ -51,6 +51,8 @@ hint_capture_window() {
     : > "$geom_file"
     content=""
     while IFS=$'\t' read -r pid left top width height mode scroll; do
+        # The picker's own popup is a pane in recent tmux: skip it
+        [ "$pid" = "${TMUX_PANE:-}" ] && continue
         if [ "$zoomed" = "1" ]; then
             # Only the zoomed pane is visible; it fills the whole window
             [ "$pid" = "$caller" ] || continue

@@ -2,7 +2,8 @@
 # tmux-session-menu.sh - session picker with a one-key hint per session
 #
 # Opens a tmux menu (display-menu) listing every session. Each session has a
-# single-character key shown on the right; pressing it switches to that
+# single-character key shown in brackets just before the name (tmux also
+# repeats it at the right edge); pressing it switches to that
 # session. Arrows / j k + Enter and the mouse work too, q / Esc cancels.
 # The menu opens on this client's previous session, so Enter alone flips
 # between the two sessions you're working in.
@@ -44,7 +45,8 @@ while IFS=$'\t' read -r id name windows attached; do
         note="  (attached)"
     fi
     [ "$name" = "$previous" ] && start=$i
-    label=$(printf '%s %-18s %2s win%s' "$mark" "$name" "$windows" "$note")
+    # Key hint sits right beside the name so no need to scan to the line end
+    label=$(printf '[%s] %s %-18s %2s win%s' "${key:- }" "$mark" "$name" "$windows" "$note")
     # Menu labels are formats: a literal # must be doubled
     args+=("${label//#/##}" "$key" "switch-client -t '$id'")
     i=$((i + 1))
