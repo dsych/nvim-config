@@ -49,6 +49,8 @@ jump_apply() {
     [ "$rect" = "1" ] && tmux send-keys -t "$pid" -X rectangle-on
     # Move the cursor line (tmux-copy-cursorline.sh) to the new position
     [ "$(tmux show-options -gqv @copy-cursorline)" != "off" ] && tmux send-keys -t "$pid" -X set-mark
+    # Show/hide the URL of a hyperlink under the new position (tmux-link-peek.sh)
+    [ "$(tmux show-options -gqv @link-peek)" != "off" ] && "$SCRIPT_DIR/tmux-link-peek.sh" update "$pid"
     # Select the pane last: focus hooks may resize it, and the cursor must
     # already be on the word by then (copy mode keeps the cursor on the same
     # text across a resize)
@@ -94,7 +96,13 @@ read -r cur_left cur_top cur_x cur_y < <(tmux display-message -p -t "$caller_pan
 # 1. Every word start (or line start), as: distance, pane, row, column.
 targets_file="$work_dir/targets"
 "$AWK" -v GEOM="$geom_file" -v CY="$((cur_top + cur_y))" -v CX="$((cur_left + cur_x))" -v MODE="$mode" '
-function target(row, col) {
+function target(row, col,    i, y, x) {
+    # Skip text of a tiled pane hidden under a floating pane (box included)
+    if (!floating) {
+        y = top + row; x = left + col
+        for (i = 1; i <= nf; i++)
+            if (y >= fy1[i] && y <= fy2[i] && x >= fx1[i] && x <= fx2[i]) return
+    }
     # Rows are about twice as tall as columns are wide
     dy = (top + row - CY) * 2; dx = left + col - CX
     printf "%d\t%s\t%d\t%d\n", dy * dy + dx * dx, pid, row, col
@@ -102,7 +110,13 @@ function target(row, col) {
 BEGIN {
     while ((getline g < GEOM) > 0) {
         split(g, f, "\t")
-        left = f[1] + 0; top = f[2] + 0; ph = f[4] + 0; file = f[5]; pid = f[6]
+        if (f[7] != "1") continue
+        nf++; fx1[nf] = f[1] - 1; fy1[nf] = f[2] - 1; fx2[nf] = f[1] + f[3]; fy2[nf] = f[2] + f[4]
+    }
+    close(GEOM)
+    while ((getline g < GEOM) > 0) {
+        split(g, f, "\t")
+        left = f[1] + 0; top = f[2] + 0; ph = f[4] + 0; file = f[5]; pid = f[6]; floating = (f[7] == "1")
         n = 0; last = -1
         while (n < ph && (getline line < file) > 0) {
             rows[n] = line
