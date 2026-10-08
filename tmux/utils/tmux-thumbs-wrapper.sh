@@ -5,17 +5,42 @@
 # Full-window popup overlay (borderless). Supports multi-character hints for >26 matches.
 # Pane state is passed from the tmux binding (before popup steals context).
 # Usage: tmux-thumbs-wrapper.sh [copy|open] <pane_id> <in_mode> <scroll_pos> <pane_height> <zoomed>
+#
+# The binding runs this script directly (it is the launcher): it captures the
+# panes first, then opens itself in a popup (--pick) that only draws and reads
+# the hint. See hint_save_capture in tmux-hint-lib.sh for why the capture must
+# happen before the popup opens.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=tmux-hint-lib.sh
 . "$SCRIPT_DIR/tmux-hint-lib.sh"
 
-action="${1:-copy}"
-caller_pane="${2:-}"
-caller_in_mode="${3:-0}"
-caller_scroll_pos="${4:-0}"
-caller_height="${5:-24}"
-caller_zoomed="${6:-0}"
+# Launcher: capture, then show the picker in a popup
+if [ "${1:-}" != "--pick" ]; then
+    action="${1:-copy}"
+    work_dir=$(mktemp -d)
+    trap 'rm -rf "$work_dir"' EXIT
+    # A terminal on stdin means we already run in a popup (old binding that
+    # wraps this in display-popup, or run by hand): pick in place, a popup
+    # can't open another one. Otherwise (run-shell) no popup exists yet, so no
+    # pane may be skipped as "the picker's own" (run-shell can inherit an
+    # unrelated TMUX_PANE from the server).
+    in_popup=0; [ -t 0 ] && in_popup=1
+    [ "$in_popup" = 1 ] || unset TMUX_PANE
+    hint_capture_window "${2:-}" "${3:-0}" "${4:-0}" "${5:-24}" "${6:-0}" "$work_dir"
+    [ -z "$content" ] && exit 0
+    hint_save_capture "$work_dir"
+    if [ "$in_popup" = 1 ]; then
+        "${BASH_SOURCE[0]}" --pick "$action" "$work_dir"
+        exit 0
+    fi
+    printf -v popup_cmd '%q ' "${BASH_SOURCE[0]}" --pick "$action" "$work_dir"
+    tmux display-popup -B -w 100% -h 100% -E "$popup_cmd"
+    exit 0
+fi
+
+action="${2:-copy}"
+work_dir="${3:?work dir}"
 
 # Generate hint string for index N
 generate_hint() {
@@ -29,12 +54,8 @@ generate_hint() {
     fi
 }
 
-work_dir=$(mktemp -d)
-trap 'rm -rf "$work_dir"' EXIT
-
-# Capture every visible pane with its geometry, so the overlay is rebuilt with
-# the real window layout regardless of which pane triggered the picker
-hint_capture_window "$caller_pane" "$caller_in_mode" "$caller_scroll_pos" "$caller_height" "$caller_zoomed" "$work_dir"
+# The launcher owns (and removes) the work dir
+hint_load_capture "$work_dir"
 
 [ -z "$content" ] && exit 0
 
@@ -42,6 +63,8 @@ hint_capture_window "$caller_pane" "$caller_in_mode" "$caller_scroll_pos" "$call
 PAT_URLS='https?://[^ )>"'"'"']+'
 PAT_SSH_GIT='ssh://[^ )>"'"'"']+|git@[a-zA-Z0-9._-]+:[^ )>"'"'"']+'
 PAT_TICKETS='(CR|SIM|NKILIB|TT)-[0-9]+|[VP][0-9]{6,}'
+# Prefixed UUID IDs, e.g. T_577e25c8-c6ff-46ed-9f9b-46fc64d150fb
+PAT_PREFIXED_UUIDS='[A-Za-z]+_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
 PAT_ARNS='arn:aws:[a-zA-Z0-9:/_.*-]+'
 PAT_FILE_LINE='[a-zA-Z0-9._/-]+\.[a-zA-Z]{1,10}:[0-9]+(:[0-9]+)?'
 PAT_REL_PATHS='\.{0,2}/[a-zA-Z0-9._/-]{4,}'
@@ -66,6 +89,7 @@ done < <(
         echo "$content" | grep -oE "$PAT_URLS"
         echo "$content" | grep -oE "$PAT_SSH_GIT"
         echo "$content" | grep -oE "$PAT_TICKETS"
+        echo "$content" | grep -oE "$PAT_PREFIXED_UUIDS"
         echo "$content" | grep -oE "$PAT_ARNS"
         echo "$content" | grep -oE "$PAT_FILE_LINE"
         echo "$content" | grep -oE "$PAT_REL_PATHS"

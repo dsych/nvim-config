@@ -15,11 +15,12 @@
 # Pane state is passed from the tmux binding (before the popup steals context).
 # Usage: tmux-jump.sh [--line] <pane_id> <in_mode> <scroll_pos> <pane_height> <zoomed>
 #
-# The binding runs this script directly (it is the launcher): it opens itself
-# in a popup (--pick) to choose a target, and once the popup is gone applies the
-# jump. Applying must wait for the popup to close: in recent tmux the popup is
-# a pane, and closing it re-focuses the pane that was active when it opened,
-# undoing any select-pane done from inside it.
+# The binding runs this script directly (it is the launcher): it captures the
+# panes (before the popup opens; see hint_save_capture in tmux-hint-lib.sh),
+# opens itself in a popup (--pick) to choose a target, and once the popup is
+# gone applies the jump. Applying must wait for the popup to close: in recent
+# tmux the popup is a pane, and closing it re-focuses the pane that was active
+# when it opened, undoing any select-pane done from inside it.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=tmux-hint-lib.sh
@@ -58,40 +59,42 @@ jump_apply() {
     return 0
 }
 
-# Launcher (what the binding runs): the picker runs in a popup, and its choice
-# is applied once the popup has closed
+# Launcher (what the binding runs): capture, run the picker in a popup, and
+# apply its choice once the popup has closed
 if [ "${1:-}" != "--pick" ]; then
-    result_file=$(mktemp)
-    trap 'rm -f "$result_file"' EXIT
+    caller_pane="${1:-}"; caller_zoomed="${5:-0}"
+    work_dir=$(mktemp -d)
+    trap 'rm -rf "$work_dir"' EXIT
+    # No popup exists yet, so no pane may be skipped as "the picker's own"
+    # (run-shell can inherit an unrelated TMUX_PANE from the server)
+    unset TMUX_PANE
+    hint_capture_window "$caller_pane" "${2:-0}" "${3:-0}" "${4:-24}" "$caller_zoomed" "$work_dir"
+    [ -z "$content" ] && exit 0
+    hint_save_capture "$work_dir"
+    # Caller's cursor in window coordinates: hints are handed out nearest first
+    read -r cur_left cur_top cur_x cur_y < <(tmux display-message -p -t "$caller_pane" \
+        '#{pane_left} #{pane_top} #{?pane_in_mode,#{copy_cursor_x},#{cursor_x}} #{?pane_in_mode,#{copy_cursor_y},#{cursor_y}}')
+    [ "$caller_zoomed" = "1" ] && cur_left=0 cur_top=0
+    printf '%s %s %s %s\n' "$cur_left" "$cur_top" "$cur_x" "$cur_y" > "$work_dir/cursor"
+    result_file="$work_dir/result"
     self_args=("${BASH_SOURCE[0]}" --pick)
     [ "$mode" = "line" ] && self_args+=(--line)
-    printf -v popup_cmd '%q ' "${self_args[@]}" "$@" "$result_file"
+    printf -v popup_cmd '%q ' "${self_args[@]}" "$work_dir"
     tmux display-popup -B -w 100% -h 100% -E "$popup_cmd"
     [ -s "$result_file" ] || exit 0
     IFS=$'\t' read -r pid row col < "$result_file"
-    jump_apply "$pid" "$row" "$col" "${1:-}"
+    jump_apply "$pid" "$row" "$col" "$caller_pane"
     exit 0
 fi
 shift   # --pick
 [ "${1:-}" = "--line" ] && { mode=line; shift; }
 
-caller_pane="${1:-}"
-caller_in_mode="${2:-0}"
-caller_scroll_pos="${3:-0}"
-caller_height="${4:-24}"
-caller_zoomed="${5:-0}"
-result_file="${6:-}"
-
-work_dir=$(mktemp -d)
-trap 'rm -rf "$work_dir"' EXIT
-
-hint_capture_window "$caller_pane" "$caller_in_mode" "$caller_scroll_pos" "$caller_height" "$caller_zoomed" "$work_dir"
+# The launcher owns (and removes) the work dir
+work_dir="${1:?work dir}"
+result_file="$work_dir/result"
+hint_load_capture "$work_dir"
 [ -z "$content" ] && exit 0
-
-# Caller's cursor in window coordinates: hints are handed out nearest first
-read -r cur_left cur_top cur_x cur_y < <(tmux display-message -p -t "$caller_pane" \
-    '#{pane_left} #{pane_top} #{?pane_in_mode,#{copy_cursor_x},#{cursor_x}} #{?pane_in_mode,#{copy_cursor_y},#{cursor_y}}')
-[ "$caller_zoomed" = "1" ] && cur_left=0 cur_top=0
+read -r cur_left cur_top cur_x cur_y < "$work_dir/cursor"
 
 # 1. Every word start (or line start), as: distance, pane, row, column.
 targets_file="$work_dir/targets"

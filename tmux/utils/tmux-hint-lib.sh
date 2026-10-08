@@ -11,6 +11,14 @@
 #   hint_canvas_size
 #       Sets canvas_w / canvas_h: the window size clipped to the popup, keeping
 #       the last row for the prompt.
+#   hint_save_capture <work_dir> / hint_load_capture <work_dir>
+#       Persist / restore what hint_capture_window set (geom_file, win_w,
+#       win_h, content), so the launcher can capture before opening the popup
+#       and the popup only draws. Capture BEFORE the popup: in recent tmux a
+#       popup is a floating pane, and opening one over a zoomed pane briefly
+#       unzooms the window, so the panes under it get resized twice. TUIs
+#       redraw on that (pi rewrites its whole screen), and a capture taken from
+#       inside the popup catches them mid-redraw (old scrollback on screen).
 #   HINT_DRAW_AWK
 #       awk source defining the HINT / RESET styles, at(y, x, s) and
 #       draw_window(): draws every pane at
@@ -80,6 +88,17 @@ hint_capture_window() {
     # (scroll_position is empty outside copy mode; read would merge the empty
     # tab-separated field, hence the 0 default above)
     printf '%s' "$floats" >> "$geom_file"
+}
+
+hint_save_capture() {
+    printf '%s %s\n' "$win_w" "$win_h" > "$1/size"
+    printf '%s' "$content" > "$1/content"
+}
+
+hint_load_capture() {
+    geom_file="$1/geometry"
+    read -r win_w win_h < "$1/size"
+    content=$(cat "$1/content")
 }
 
 hint_canvas_size() {
