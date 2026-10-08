@@ -4,7 +4,7 @@
 # Opens a tmux menu (display-menu) listing every session. Each session has a
 # single-character key shown in brackets just before the name (tmux also
 # repeats it at the right edge); pressing it switches to that
-# session. Arrows / j k + Enter and the mouse work too, q / Esc cancels.
+# session. Arrows / Tab + Enter and the mouse work too, q / Esc cancels.
 # The menu opens on this client's previous session, so Enter alone flips
 # between the two sessions you're working in.
 #
@@ -18,8 +18,11 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 client="${1:-}"
 [ -n "$client" ] || exit 0
 
-# Home row first. Not j k g G q: the menu uses them for moving and cancelling.
-KEYS="asdfhlweruiotpyzxcvbnm1234567890"
+# Right-hand home row first, then the left. Item keys take precedence over the
+# menu's own keys (tmux menu.c), so j and k pick sessions instead of moving;
+# arrows / Tab still move. Not g G q: they stay free for jumping to the top /
+# bottom and for cancelling.
+KEYS="jkl;asdfhweruiotpyzxcvbnm1234567890"
 
 # Look the client up: display-message -c only picks where to display, its
 # formats would come from another client. client_last_session is the session
@@ -47,8 +50,10 @@ while IFS=$'\t' read -r id name windows attached; do
     [ "$name" = "$previous" ] && start=$i
     # Key hint sits right beside the name so no need to scan to the line end
     label=$(printf '[%s] %s %-18s %2s win%s' "${key:- }" "$mark" "$name" "$windows" "$note")
-    # Menu labels are formats: a literal # must be doubled
-    args+=("${label//#/##}" "$key" "switch-client -t '$id'")
+    # Menu labels are formats: a literal # must be doubled. A bare ; argument
+    # is tmux's command separator, so the ; key is passed as \;
+    menu_key=$key; [ "$key" = ";" ] && menu_key='\;'
+    args+=("${label//#/##}" "$menu_key" "switch-client -t '$id'")
     i=$((i + 1))
 done < <(tmux list-sessions -F '#{session_id}	#{session_name}	#{session_windows}	#{session_attached}')
 
