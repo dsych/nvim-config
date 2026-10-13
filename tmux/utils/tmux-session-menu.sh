@@ -35,10 +35,22 @@ if [ -z "$previous" ] || [ "$previous" = "$current" ] || ! tmux has-session -t "
         awk -F'\t' -v cur="$current" '$2 != cur' | sort -rn | head -1 | cut -f2-)
 fi
 
+# Measure and render the same snapshot so every row shares column widths.
+# tmux reports display cells, unlike shell string lengths / printf widths,
+# which count bytes or characters and misalign non-ASCII session names.
+sessions=$(tmux list-sessions -F '#{session_id}	#{session_name}	#{session_windows}	#{session_attached}	#{w:session_name}')
+[ -n "$sessions" ] || exit 0
+name_width=18
+windows_width=2
+while IFS=$'\t' read -r id name windows attached width; do
+    (( width > name_width )) && name_width=$width
+    (( ${#windows} > windows_width )) && windows_width=${#windows}
+done <<< "$sessions"
+
 args=()
 i=0
 start=0
-while IFS=$'\t' read -r id name windows attached; do
+while IFS=$'\t' read -r id name windows attached width; do
     key="${KEYS:i:1}"   # past the last key: no hint, still pickable with arrows
     mark=" "
     note=""
@@ -49,13 +61,13 @@ while IFS=$'\t' read -r id name windows attached; do
     fi
     [ "$name" = "$previous" ] && start=$i
     # Key hint sits right beside the name so no need to scan to the line end
-    label=$(printf '[%s] %s %-18s %2s win%s' "${key:- }" "$mark" "$name" "$windows" "$note")
+    label=$(printf '[%s] %s %s%*s %*s win%s' "${key:- }" "$mark" "$name" "$((name_width - width))" "" "$windows_width" "$windows" "$note")
     # Menu labels are formats: a literal # must be doubled. A bare ; argument
     # is tmux's command separator, so the ; key is passed as \;
     menu_key=$key; [ "$key" = ";" ] && menu_key='\;'
     args+=("${label//#/##}" "$menu_key" "switch-client -t '$id'")
     i=$((i + 1))
-done < <(tmux list-sessions -F '#{session_id}	#{session_name}	#{session_windows}	#{session_attached}')
+done <<< "$sessions"
 
 [ "$i" -gt 0 ] || exit 0
 tmux display-menu -c "$client" -T '#[align=centre] Sessions ' -x C -y C -C "$start" "${args[@]}"
