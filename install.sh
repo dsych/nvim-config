@@ -174,10 +174,23 @@ for source_path in "$scriptDir"/fish/functions/*.fish; do
     link_config "$source_path" "$dest_path"
 done
 
-# tmux: link the config and its helper scripts only; plugins/ (TPM's clones)
-# and snippets.json stay local to each machine
+# tmux: link the config and its helper scripts only; plugins/ (TPM's clones),
+# snippets.json and hosts.json (prefix+R's SSH targets) stay local to each machine
 tmuxConfigDir=$HOME/.config/tmux
 mkdir -p "$tmuxConfigDir"
+# hosts.json used to live in utils/, which becomes a link into this repo (where
+# it is git-ignored): keep a copy next to snippets.json, also when utils/ was
+# already moved aside to utils.old by an earlier run
+if [[ ! -e "$tmuxConfigDir/hosts.json" ]]; then
+    for old_utils in "$tmuxConfigDir/utils" "$tmuxConfigDir/utils.old"; do
+        [[ "$(readlink "$old_utils")" == "$scriptDir/tmux/utils" ]] && continue   # the repo's own
+        if [[ -f "$old_utils/hosts.json" ]]; then
+            cp -p "$old_utils/hosts.json" "$tmuxConfigDir/hosts.json"
+            printf "INFO: Copied $old_utils/hosts.json to $tmuxConfigDir/hosts.json\n"
+            break
+        fi
+    done
+fi
 for name in tmux.conf utils; do
     source_path="$scriptDir/tmux/$name"
     dest_path="$tmuxConfigDir/$name"

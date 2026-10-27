@@ -25,8 +25,12 @@
 #        ->  bind-key ... j send-keys -X cursor-down \; <mark>
 #   prompt:  bind-key ... / command-prompt ... { send-keys -X search-forward -- "%%" }
 #        ->  bind-key ... / command-prompt ... { send-keys -X search-forward -- "%%" ; <mark> }
+# Re-binding a key replaces its note (bind -N, what prefix ? shows), so the
+# note is carried over; tmux < 3.7 has no list-keys -F and loses it.
 # Skipped: bindings without `send-keys -X` (count prompts, run-shell, ...),
 # bindings that leave copy mode (*cancel*), jump-to-mark, already wrapped ones.
+# tmux-keys.sh (prefix ?) leaves the added commands out of its list: keep the
+# two in step when changing them.
 
 set -u
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
@@ -47,20 +51,34 @@ trap 'rm -f "$tmp"' EXIT
 
 # Bindings already wrapped by an earlier run (config reload) are skipped; ones
 # wrapped before the peek check existed (they have the mark only) get it added.
+# Each line is "<-N note >TAB<binding>"; the patterns only look at the binding.
+# tmux < 3.7 has no list-keys -F (asked via its usage, a failed try would be
+# logged as an error): plain lines, the notes are lost.
+TAB=$'\t'
+case "$(tmux list-commands list-keys 2>/dev/null)" in
+    *"-F format"*) format="#{?key_note,-N #{q|a:key_note} ,}${TAB}bind-key #{?key_repeat,-r ,}-T #{key_table} #{q|a:key_string} #{key_command}" ;;
+    *)            format="" ;;
+esac
 for table in copy-mode-vi copy-mode; do
-    tmux list-keys -T "$table" 2>/dev/null
+    if [ -n "$format" ]; then
+        tmux list-keys -T "$table" -F "$format" 2>/dev/null
+    else
+        tmux list-keys -T "$table" 2>/dev/null | sed "s/^/$TAB/"
+    fi
 done | awk -v mark="$mark" -v peek="$peek" '
-    function wrap(line, cmds,    n, i, c, brace, out) {
+    function wrap(cmds,    n, i, c, brace, out) {
         n = split(cmds, c, "\n"); brace = (line ~ / \{ .* \}$/)
         out = brace ? substr(line, 1, length(line) - 2) : line
         for (i = 1; i <= n; i++) if (c[i] != "") out = out (brace ? " ; " : " \\; ") c[i]
-        print out (brace ? " }" : "")
+        # out starts with "bind-key ": the note goes after it
+        print "bind-key " note substr(out, 10) (brace ? " }" : "")
     }
-    /tmux-link-peek|jump-to-mark|cancel/ { next }
-    !/send-keys -[A-Za-z]*X/              { next }
-    /if-shell -F .*set-mark/              { if (peek != "") wrap($0, peek); next }
-    /set-mark/                            { next }
-                                          { wrap($0, mark "\n" peek) }
+    { tab = index($0, "\t"); note = substr($0, 1, tab - 1); line = substr($0, tab + 1) }
+    line ~ /tmux-link-peek|jump-to-mark|cancel/ { next }
+    line !~ /send-keys -[A-Za-z]*X/             { next }
+    line ~ /if-shell -F .*set-mark/             { if (peek != "") wrap(peek); next }
+    line ~ /set-mark/                           { next }
+                                                { wrap(mark "\n" peek) }
 ' > "$tmp"
 
 [ -s "$tmp" ] && tmux source-file "$tmp"

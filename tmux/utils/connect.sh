@@ -1,27 +1,41 @@
 #!/usr/bin/env bash
+# connect.sh - prefix+R (local machine only): pick an SSH target (fzf), then
+# connect to it in this window, which closes when ssh exits.
+#
+# The targets are machine-local and not in the config repo (git-ignored):
+# ~/.config/tmux/hosts.json, next to snippets.json, because utils/ is a link
+# into the repo. The old place, utils/hosts.json, is still read. Format:
+#   [{"name": "dev", "username": "me", "remote_address": "dev.example.com",
+#     "additional_ssh_options": "-A"}]
 set -euo pipefail
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
-HOSTS_FILE="${TMUX_SSH_HOSTS:-$HOME/.config/tmux/utils/hosts.json}"
+# This window closes when the script exits: keep it open on a failure so the
+# error can be read (replaced by the ssh cleanup below)
+trap 'status=$?; [[ $status -eq 0 ]] || { printf "\nprefix+R failed (exit %s). Press Enter to close.\n" "$status"; read -r _ || true; }' EXIT
+
+HOSTS_FILE="${TMUX_SSH_HOSTS:-$HOME/.config/tmux/hosts.json}"
+if [[ -z "${TMUX_SSH_HOSTS:-}" && ! -f "$HOSTS_FILE" && -f "$HOME/.config/tmux/utils/hosts.json" ]]; then
+    HOSTS_FILE="$HOME/.config/tmux/utils/hosts.json"
+fi
 SHARED_DIR="${TMUX_SSH_SHARED:-$HOME/ssh_shared}"
 
 if [[ ! -f "$HOSTS_FILE" ]]; then
-    echo "No hosts file found at $HOSTS_FILE" >&2
+    echo "No SSH targets: $HOSTS_FILE doesn't exist (format: see the top of $0)" >&2
     exit 1
 fi
 
 # Build display lines: "name | user@host"
 entries=$(jq -r '.[] | "\(.name) | \(.username)@\(.remote_address)"' "$HOSTS_FILE")
 
-# fzf picker
+# fzf picker; Esc (exit 130) or no match closes this temporary window
 selected=$(echo "$entries" | fzf \
     --prompt="SSH Target> " \
     --header="prefix+R | SSH Connect" \
     --height=100% \
     --reverse \
     --border \
-    --no-info)
-
-# Cancelled — exit closes this temporary window
+    --no-info) || exit 0
 [[ -z "$selected" ]] && exit 0
 
 # Extract name from selection
