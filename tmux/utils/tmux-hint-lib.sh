@@ -5,7 +5,7 @@
 #   hint_capture_window <caller_pane> <in_mode> <scroll_pos> <height> <zoomed> <work_dir>
 #       Captures every visible pane of the caller's window and writes
 #       $work_dir/geometry: one line per pane,
-#       left<TAB>top<TAB>width<TAB>height<TAB>capture_file<TAB>pane_id<TAB>floating
+#       left<TAB>top<TAB>width<TAB>height<TAB>capture_file<TAB>pane_id<TAB>floating<TAB>in_mode
 #       Floating panes come last (they are drawn over the tiled ones).
 #       Sets win_w / win_h (window size) and content (all panes' text).
 #   hint_canvas_size
@@ -41,12 +41,17 @@ esac
 ALPHABET="asdfghjklqwertyuiopzxcvbnm"
 ALPHA_LEN=${#ALPHABET}
 
-# Capture what a pane is showing. In copy mode that is the scrolled view, not
-# the bottom of the history.
+# Capture what a pane is showing. In copy mode that is copy mode's own copy of
+# the pane (-M, tmux 3.6+), at the scrolled position: tmux copies the pane when
+# copy mode starts, so the live pane (what capture-pane reads by default) can
+# hold other text by now (a TUI redrew, new output arrived). Older tmux: the
+# live pane at the same position.
 hint_capture_pane() {
     local pid="$1" in_mode="$2" scroll_pos="$3" height="$4"
-    if [ "$in_mode" = "1" ] && [ "$scroll_pos" -gt 0 ] 2>/dev/null; then
-        tmux capture-pane -p -t "$pid" -S "$(( -scroll_pos ))" -E "$(( -scroll_pos + height - 1 ))" 2>/dev/null
+    if [ "${in_mode:-0}" != "0" ]; then
+        scroll_pos=${scroll_pos:-0}
+        tmux capture-pane -M -p -t "$pid" -S "$(( -scroll_pos ))" -E "$(( -scroll_pos + height - 1 ))" 2>/dev/null ||
+            tmux capture-pane -p -t "$pid" -S "$(( -scroll_pos ))" -E "$(( -scroll_pos + height - 1 ))" 2>/dev/null
     else
         tmux capture-pane -p -t "$pid" 2>/dev/null
     fi
@@ -76,9 +81,9 @@ hint_capture_window() {
         pane_file="$dir/pane${pid#%}"
         printf '%s\n' "$pane_content" > "$pane_file"
         if [ "$floating" = "1" ]; then
-            floats+="$left	$top	$width	$height	$pane_file	$pid	1"$'\n'
+            floats+="$left	$top	$width	$height	$pane_file	$pid	1	${mode:-0}"$'\n'
         else
-            printf '%s\t%s\t%s\t%s\t%s\t%s\t0\n' "$left" "$top" "$width" "$height" "$pane_file" "$pid" >> "$geom_file"
+            printf '%s\t%s\t%s\t%s\t%s\t%s\t0\t%s\n' "$left" "$top" "$width" "$height" "$pane_file" "$pid" "${mode:-0}" >> "$geom_file"
         fi
         if [ -n "$pane_content" ]; then
             [ -n "$content" ] && content+=$'\n'
