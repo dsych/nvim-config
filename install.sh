@@ -174,6 +174,24 @@ for source_path in "$scriptDir"/fish/functions/*.fish; do
     link_config "$source_path" "$dest_path"
 done
 
+# tmux: link the config and its helper scripts only; plugins/ (TPM's clones)
+# and snippets.json stay local to each machine
+tmuxConfigDir=$HOME/.config/tmux
+mkdir -p "$tmuxConfigDir"
+for name in tmux.conf utils; do
+    source_path="$scriptDir/tmux/$name"
+    dest_path="$tmuxConfigDir/$name"
+    # already linked (re-run): leave it alone instead of backing it up
+    [[ "$(readlink "$dest_path")" == "$source_path" ]] && continue
+    link_config "$source_path" "$dest_path"
+done
+# tmux loads ~/.tmux.conf as well (before the one above), so an old one there
+# keeps applying whatever the linked config doesn't override
+if [[ -e "$HOME/.tmux.conf" || -L "$HOME/.tmux.conf" ]]; then
+    printf "WARN: tmux also loads $HOME/.tmux.conf; remove it unless you want both\n"
+fi
+printf "INFO: Reload a running tmux to use the linked config: tmux source-file $tmuxConfigDir/tmux.conf\n"
+
 printf "Begin installing dependencies\n"
 
 run_inside_directory "$HOME/.local/source" install_jdtls
