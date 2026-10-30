@@ -5,6 +5,7 @@
 # Source: https://w.amazon.com/bin/view/Region%28AWS%29
 
 export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Format: AIRPORT|PARTITION|REGION_CODE|PREFIX|PUBLIC_NAME|COUNTRY|ZONES
 REGIONS='IAD|aws|us-east-1|USE1|US East (N. Virginia)|USA|us-east-1[abcdef]
@@ -69,8 +70,8 @@ selected=$(echo "$display" | fzf \
 # Extract region code (3rd column)
 region_code=$(echo "$selected" | awk '{print $3}')
 
-# Copy via tmux load-buffer -w (sends OSC 52 to outer terminal, works from popups)
-echo -n "$region_code" | tmux load-buffer -w -
+# Copy via the shared local/SSH clipboard routing.
+printf '%s' "$region_code" | "$SCRIPT_DIR/tmux-copy-text.sh" || exit 1
 
 # Show confirmation
 echo "Copied: $region_code"

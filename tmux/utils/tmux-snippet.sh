@@ -3,7 +3,9 @@
 set -euo pipefail
 export PATH=/opt/homebrew/bin:/usr/local/bin:$PATH
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CALLER_PANE="${1:-}"
+export TMUX_ACTION_TARGET="$CALLER_PANE"
 SNIPPETS_FILE="$HOME/.config/tmux/snippets.json"
 
 if [[ ! -f "$SNIPPETS_FILE" ]]; then
@@ -28,5 +30,5 @@ selected=$(echo "$names" | fzf \
 content=$(jq -r --arg k "$selected" '.[$k]' "$SNIPPETS_FILE")
 
 # Load into tmux buffer and paste into caller pane
-echo -n "$content" | tmux load-buffer -w -
+printf '%s' "$content" | "$SCRIPT_DIR/tmux-copy-text.sh"
 tmux paste-buffer -p -t "$CALLER_PANE"

@@ -30,6 +30,9 @@ if [ "${1:-}" != "--pick" ]; then
     hint_capture_window "${2:-}" "${3:-0}" "${4:-0}" "${5:-24}" "${6:-0}" "$work_dir"
     [ -z "$content" ] && exit 0
     hint_save_capture "$work_dir"
+    # A popup may have a different pane/session context. Keep routing pinned to
+    # the session from which the hint action was launched, not the popup.
+    tmux display-message -p -t "${2:-}" '#{session_id}' > "$work_dir/action-target"
     if [ "$in_popup" = 1 ]; then
         "${BASH_SOURCE[0]}" --pick "$action" "$work_dir"
         exit 0
@@ -56,6 +59,10 @@ generate_hint() {
 
 # The launcher owns (and removes) the work dir
 hint_load_capture "$work_dir"
+if [ -f "$work_dir/action-target" ]; then
+    IFS= read -r TMUX_ACTION_TARGET < "$work_dir/action-target"
+    export TMUX_ACTION_TARGET
+fi
 
 [ -z "$content" ] && exit 0
 
