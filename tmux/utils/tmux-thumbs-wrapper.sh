@@ -66,9 +66,10 @@ PAT_TICKETS='(CR|SIM|NKILIB|TT)-[0-9]+|[VP][0-9]{6,}'
 # Prefixed UUID IDs, e.g. T_577e25c8-c6ff-46ed-9f9b-46fc64d150fb
 PAT_PREFIXED_UUIDS='[A-Za-z]+_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
 PAT_ARNS='arn:aws:[a-zA-Z0-9:/_.*-]+'
-PAT_FILE_LINE='[a-zA-Z0-9._/-]+\.[a-zA-Z]{1,10}:[0-9]+(:[0-9]+)?'
-PAT_REL_PATHS='\.{0,2}/[a-zA-Z0-9._/-]{4,}'
-PAT_ABS_PATHS='/[a-zA-Z0-9._/-]{4,}'
+PAT_FILE_LINE='~?[a-zA-Z0-9._/-]+\.[a-zA-Z]{1,10}:[0-9]+(:[0-9]+)?'
+# Scan whole path-shaped tokens before deciding whether they are paths: starting
+# at a slash alone loses .pi/ and ~/ prefixes. Include standalone dotfiles too.
+PAT_PATH_TOKENS='[~a-zA-Z0-9._/-]+'
 PAT_EMAILS='[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
 PAT_VERSIONS='v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?'
 PAT_SHAS='[a-f0-9]{7,40}'
@@ -92,8 +93,18 @@ done < <(
         echo "$content" | grep -oE "$PAT_PREFIXED_UUIDS"
         echo "$content" | grep -oE "$PAT_ARNS"
         echo "$content" | grep -oE "$PAT_FILE_LINE"
-        echo "$content" | grep -oE "$PAT_REL_PATHS"
-        echo "$content" | grep -oE "$PAT_ABS_PATHS"
+        printf '%s\n' "$content" | awk -v pat="$PAT_PATH_TOKENS" '
+            {
+                rest = $0
+                while (match(rest, pat)) {
+                    token = substr(rest, RSTART, RLENGTH)
+                    rest = substr(rest, RSTART + RLENGTH)
+                    if (token ~ /\// && token !~ /^(~?\/|\.\.?\/)$/)
+                        print token
+                    else if (token ~ /^\.[^.\/][a-zA-Z0-9._-]*$/)
+                        print token
+                }
+            }'
         echo "$content" | grep -oE "$PAT_EMAILS"
         echo "$content" | grep -oE "$PAT_VERSIONS"
         echo "$content" | grep -oE "$PAT_SHAS"
@@ -128,7 +139,14 @@ done < <(
                     break
                 }
             }
-            if (!is_sub) print lines[i]
+            if (!is_sub) {
+                value = lines[i]
+                # Trim sentence-ending periods only after substring removal:
+                # URL paths (including punctuation) must first be suppressed as
+                # pieces of the full URL. Internal dots and non-URL paths stay.
+                if (value ~ /^https?:\/\//) sub(/\.+$/, "", value)
+                if (!seen[value]++) print value
+            }
         }
     }'
 )
