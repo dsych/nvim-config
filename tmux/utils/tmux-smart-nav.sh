@@ -19,10 +19,20 @@ key=${2:-$default_key}
 pane=${3:-${TMUX_PANE:-}}
 # Pin every query and action to the pane that received the key, not the best
 # client (which can change while a run-shell command is queued).
-IFS='|' read -r cur_id zoomed current_command < <(
-    tmux display-message -p -t "$pane" '#{pane_id}|#{window_zoomed_flag}|#{pane_current_command}')
+IFS='|' read -r cur_id zoomed current_command pane_tty < <(
+    tmux display-message -p -t "$pane" '#{pane_id}|#{window_zoomed_flag}|#{pane_current_command}|#{pane_tty}')
 [ -n "$cur_id" ] || exit 1
-remote=0; [ "$current_command" = ssh ] && remote=1
+remote=0
+if [ "$current_command" = ssh ]; then
+    remote=1
+elif [ -n "$pane_tty" ] && ps -t "${pane_tty#/dev/}" -o pgid=,tpgid=,comm= 2>/dev/null |
+    awk '$2 > 0 && $1 == $2 && ($3 == "ssh" || $3 ~ /\/ssh$/) { found=1 }
+         END { exit !found }'; then
+    # macOS can report the foreground group's leader (fish/bash), not ssh
+    # inside connect.sh. Check for ssh in that foreground group, not just any
+    # descendant: a background SSH job must not make a local shell remote.
+    remote=1
+fi
 if [ "$remote" = 1 ] && [ "$zoomed" = 1 ]; then
     tmux send-keys -t "$cur_id" -- "$key"
     exit $?
