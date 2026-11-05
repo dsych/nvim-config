@@ -1,0 +1,45 @@
+id: 1793840201870-0
+data: {"event": {"id": "00000000-0000-4000-8000-000000000001", "seq": 1, "turn_id": "00000000-0000-4000-8000-000000000002", "timestamp": "2026-11-05T00:56:41.798522", "source": "system", "type": "turn.started", "payload": {"root_node_id": "msg_fd0fd0a9f0a3", "tier": "quick", "branch_uuid": "00000000-0000-4000-8000-000000000003"}, "conversation_uuid": "00000000-0000-4000-8000-000000000004", "branch_uuid": "00000000-0000-4000-8000-000000000003"}}
+
+id: 1793840201870-1
+data: {"event": {"id": "00000000-0000-4000-8000-000000000005", "seq": 2, "turn_id": "00000000-0000-4000-8000-000000000002", "timestamp": "2026-11-05T00:56:41.798564", "source": "assistant", "type": "node.created", "node_id": "msg_fd0fd0a9f0a3", "payload": {"kind": "assistant_message", "status": "running"}, "conversation_uuid": "00000000-0000-4000-8000-000000000004", "branch_uuid": "00000000-0000-4000-8000-000000000003"}}
+
+id: 1793840201870-2
+data: {"event": {"id": "00000000-0000-4000-8000-000000000006", "seq": 3, "turn_id": "00000000-0000-4000-8000-000000000002", "timestamp": "2026-11-05T00:56:41.798594", "source": "system", "type": "node.created", "node_id": "config_959b13b88f", "parent_node_id": "msg_fd0fd0a9f0a3", "payload": {"kind": "activity", "type": "config", "status": "running", "commands": {}, "settings": {"reasoning_effort": "max"}, "errors": []}, "conversation_uuid": "00000000-0000-4000-8000-000000000004", "branch_uuid": "00000000-0000-4000-8000-000000000003"}}
+
+id: 1793840201870-3
+data: {"event": {"id": "00000000-0000-4000-8000-000000000007", "seq": 4, "turn_id": "00000000-0000-4000-8000-000000000002", "timestamp": "2026-11-05T00:56:41.798620", "source": "system", "type": "node.completed", "node_id": "config_959b13b88f", "parent_node_id": "msg_fd0fd0a9f0a3", "payload": {"status": "completed"}, "conversation_uuid": "00000000-0000-4000-8000-000000000004", "branch_uuid": "00000000-0000-4000-8000-000000000003"}}
+
+id: 1793840202741-0
+data: {"title": "Multiplication Calculation: 17 * 23"}
+
+id: 1793840202966-0
+data: {"event": {"id": "00000000-0000-4000-8000-000000000008", "seq": 5, "turn_id": "00000000-0000-4000-8000-000000000002", "timestamp": "2026-11-05T00:56:42.917338", "source": "assistant", "type": "node.created", "node_id": "thinking_e9b97dd459", "parent_node_id": "msg_fd0fd0a9f0a3", "payload": {"kind": "activity", "type": "thinking", "status": "running", "content": "17", "step": 1}, "conversation_uuid": "00000000-0000-4000-8000-000000000004", "branch_uuid": "00000000-0000-4000-8000-000000000003"}}
+
+id: 1793840202966-1
+data: {"event": {"id": "00000000-0000-4000-8000-000000000009", "seq": 6, "turn_id": "00000000-0000-4000-8000-000000000002", "timestamp": "2026-11-05T00:56:42.941429", "source": "assistant", "type": "node.delta", "node_id": "thinking_e9b97dd459", "parent_node_id": "msg_fd0fd0a9f0a3", "payload": {"delta": " \u00d7 23 ="}, "conversation_uuid": "00000000-0000-4000-8000-000000000004", "branch_uuid": "00000000-0000-4000-8000-000000000003"}}
+
+id: 1793840203197-0
+data: {"event": {"id": "00000000-0000-4000-8000-000000000010", "seq": 7, "turn_id": "00000000-0000-4000-8000-000000000002", "timestamp": "2026-11-05T00:56:42.978626", "source": "assistant", "type": "node.delta", "node_id": "thinking_e9b97dd459", "parent_node_id": "msg_fd0fd0a9f0a3", "payload": {"delta": " 391."}, "conversation_uuid": "00000000-0000-4000-8000-000000000004", "branch_uuid": "00000000-0000-4000-8000-000000000003"}}
+
+id: 1793840203197-1
+data: {"event": {"id": "00000000-0000-4000-8000-000000000011", "seq": 8, "turn_id": "00000000-0000-4000-8000-000000000002", "timestamp": "2026-11-05T00:56:42.978666", "source": "assistant", "type": "node.completed", "node_id": "thinking_e9b97dd459", "parent_node_id": "msg_fd0fd0a9f0a3", "payload": {"status": "completed", "content": "17 \u00d7 23 = 391."}, "conversation_uuid": "00000000-0000-4000-8000-000000000004", "branch_uuid": "00000000-0000-4000-8000-000000000003"}}
+
+id: 1793840203197-2
+data: {"event": {"id": "00000000-0000-4000-8000-000000000012", "seq": 9, "turn_id": "00000000-0000-4000-8000-000000000002", "timestamp": "2026-11-05T00:56:42.980140", "source": "assistant", "type": "node.created", "node_id": "text_fa0d06fbf4", "parent_node_id": "msg_fd0fd0a9f0a3", "payload": {"kind": "text", "format": "markdown", "status": "running", "step": 1}, "conversation_uuid": "00000000-0000-4000-8000-000000000004", "branch_uuid": "00000000-0000-4000-8000-000000000003"}}
+
+id: 1793840203197-3
+data: {"event": {"id": "00000000-0000-4000-8000-000000000013", "seq": 10, "turn_id": "00000000-0000-4000-8000-000000000002", "timestamp": "2026-11-05T00:56:42.987141", "source": "assistant", "type": "node.delta", "node_id": "text_fa0d06fbf4", "parent_node_id": "msg_fd0fd0a9f0a3", "payload": {"delta": "391"}, "conversation_uuid": "00000000-0000-4000-8000-000000000004", "branch_uuid": "00000000-0000-4000-8000-000000000003"}}
+
+id: 1793840203197-4
+data: {"event": {"id": "00000000-0000-4000-8000-000000000014", "seq": 11, "turn_id": "00000000-0000-4000-8000-000000000002", "timestamp": "2026-11-05T00:56:42.987180", "source": "assistant", "type": "node.completed", "node_id": "text_fa0d06fbf4", "parent_node_id": "msg_fd0fd0a9f0a3", "payload": {"status": "completed", "content": "391"}, "conversation_uuid": "00000000-0000-4000-8000-000000000004", "branch_uuid": "00000000-0000-4000-8000-000000000003"}}
+
+id: 1793840203197-5
+data: {"event": {"id": "00000000-0000-4000-8000-000000000015", "seq": 12, "turn_id": "00000000-0000-4000-8000-000000000002", "timestamp": "2026-11-05T00:56:43.013854", "source": "assistant", "type": "node.completed", "node_id": "msg_fd0fd0a9f0a3", "payload": {"status": "completed"}, "conversation_uuid": "00000000-0000-4000-8000-000000000004", "branch_uuid": "00000000-0000-4000-8000-000000000003"}}
+
+id: 1793840203197-6
+data: {"event": {"id": "00000000-0000-4000-8000-000000000016", "seq": 13, "turn_id": "00000000-0000-4000-8000-000000000002", "timestamp": "2026-11-05T00:56:43.033503", "source": "system", "type": "turn.completed", "payload": {"root_node_id": "msg_fd0fd0a9f0a3", "usage": {"input_tokens": 2895, "output_tokens": 11, "cache_read_tokens": 2116, "cache_write_tokens": 0, "requests": 1, "duration_ms": 1363, "model_version": "accounts/fireworks/models/deepseek-v4p1-flash-1017", "tokens_per_second": 8.07, "cost_usd": 0.000312}}, "conversation_uuid": "00000000-0000-4000-8000-000000000004", "branch_uuid": "00000000-0000-4000-8000-000000000003"}}
+
+id: 1793840203300-0
+data: {"is_final": true, "billing": {"limit": "none", "can_proceed": true, "usage": {"included_cost_usd": 1.5, "included_cost_limit_usd": 100}}}
+

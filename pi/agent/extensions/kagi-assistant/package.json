@@ -1,0 +1,7 @@
+{
+  "name": "kagi-assistant-pi-extension",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "pi extension: Kagi Assistant models as a pi provider, with text-protocol tool calls, real per-turn pricing and a per-conversation spend cap"
+}
