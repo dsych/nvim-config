@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Refuse before changing any configuration. tmux.conf/utils may be symlinks,
+# but their parent must be a real directory: otherwise installation can write
+# through it into another checkout or shared directory. -L catches dangling
+# links too, where -e/-d would not.
+if [[ -L "$HOME/.config/tmux" ]]; then
+    printf 'ERROR: Refusing to install: %s is a symlink; replace it with a real directory first.\n' "$HOME/.config/tmux" >&2
+    exit 1
+fi
+
 function check_num_of_args {
     expected=$1
     actual=$2
@@ -172,6 +181,40 @@ for source_path in "$scriptDir"/fish/functions/*.fish; do
     # already linked (re-run): leave it alone instead of backing it up
     [[ "$(readlink "$dest_path")" == "$source_path" ]] && continue
     link_config "$source_path" "$dest_path"
+done
+
+# pi extensions: link individual files or extension directories, not the agent
+# directory (which also holds machine-local settings and credentials).
+piExtensionsDir="$HOME/.pi/agent/extensions"
+piExtensionBackups="$HOME/.pi/agent/extension-backups"
+mkdir -p "$piExtensionsDir" || exit 1
+
+function backup_pi_extension {
+    local destination="$1"
+    local backup="$piExtensionBackups/$(basename "$destination").old"
+    if [[ -e "$backup" || -L "$backup" ]]; then
+        printf 'ERROR: Cannot install %s: backup %s already exists.\n' "$destination" "$backup" >&2
+        return 1
+    fi
+    # Backups cannot live in extensions/: a backed-up directory containing
+    # index.ts would itself be discovered and load a duplicate extension.
+    mkdir -p "$piExtensionBackups" || return 1
+    mv "$destination" "$backup" || return 1
+}
+
+# Retire the previous flat entry point, including a dangling old source link.
+legacyCtxInspect="$piExtensionsDir/ctx-inspect.ts"
+if [[ -d "$scriptDir/pi/agent/extensions/ctx-inspect" ]] && [[ -e "$legacyCtxInspect" || -L "$legacyCtxInspect" ]]; then
+    backup_pi_extension "$legacyCtxInspect" || exit 1
+fi
+for source_path in "$scriptDir"/pi/agent/extensions/*; do
+    [[ -e "$source_path" ]] || continue
+    dest_path="$piExtensionsDir/$(basename "$source_path")"
+    [[ "$(readlink "$dest_path")" == "$source_path" ]] && continue
+    if [[ -e "$dest_path" || -L "$dest_path" ]]; then
+        backup_pi_extension "$dest_path" || exit 1
+    fi
+    ln -s "$source_path" "$dest_path" || exit 1
 done
 
 # tmux: link the config and its helper scripts only; plugins/ (TPM's clones),
