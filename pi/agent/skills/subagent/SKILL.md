@@ -264,14 +264,3 @@ echo "exit=$EXIT"
 - In implementation mode the subagent edits real files in the working tree; `result.md` is
   its summary of those changes, not the changes themselves.
 - The subagent has all global skills available, but not `context-mode`.
-
-## Authentication
-
-The subagent authenticates the same way the spawning process does: the symlinked
-`auth.json` plus the **AWS credential chain inherited from the spawning shell's
-environment**. For the `amazon-bedrock` provider, export the credentials before spawning
-so the subagent inherits them:
-
-```bash
-export AWS_PROFILE=personal_bedrock AWS_EC2_METADATA_DISABLED=true
-```
