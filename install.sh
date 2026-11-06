@@ -183,39 +183,49 @@ for source_path in "$scriptDir"/fish/functions/*.fish; do
     link_config "$source_path" "$dest_path"
 done
 
-# pi extensions: link individual files or extension directories, not the agent
+# pi extensions and skills: link individual files or directories, not the agent
 # directory (which also holds machine-local settings and credentials).
 piExtensionsDir="$HOME/.pi/agent/extensions"
 piExtensionBackups="$HOME/.pi/agent/extension-backups"
-mkdir -p "$piExtensionsDir" || exit 1
+piSkillsDir="$HOME/.pi/agent/skills"
+piSkillBackups="$HOME/.pi/agent/skill-backups"
+mkdir -p "$piExtensionsDir" "$piSkillsDir" || exit 1
 
-function backup_pi_extension {
+function backup_pi_entry {
     local destination="$1"
-    local backup="$piExtensionBackups/$(basename "$destination").old"
+    local backups="$2"
+    local backup="$backups/$(basename "$destination").old"
     if [[ -e "$backup" || -L "$backup" ]]; then
         printf 'ERROR: Cannot install %s: backup %s already exists.\n' "$destination" "$backup" >&2
         return 1
     fi
-    # Backups cannot live in extensions/: a backed-up directory containing
-    # index.ts would itself be discovered and load a duplicate extension.
-    mkdir -p "$piExtensionBackups" || return 1
+    # Backups cannot live next to the original: a backed-up directory containing
+    # index.ts or SKILL.md would itself be discovered and load a duplicate.
+    mkdir -p "$backups" || return 1
     mv "$destination" "$backup" || return 1
+}
+
+# link_pi_entries <source dir> <destination dir> <backup dir>
+function link_pi_entries {
+    local source_path dest_path
+    for source_path in "$1"/*; do
+        [[ -e "$source_path" ]] || continue
+        dest_path="$2/$(basename "$source_path")"
+        [[ "$(readlink "$dest_path")" == "$source_path" ]] && continue
+        if [[ -e "$dest_path" || -L "$dest_path" ]]; then
+            backup_pi_entry "$dest_path" "$3" || return 1
+        fi
+        ln -s "$source_path" "$dest_path" || return 1
+    done
 }
 
 # Retire the previous flat entry point, including a dangling old source link.
 legacyCtxInspect="$piExtensionsDir/ctx-inspect.ts"
 if [[ -d "$scriptDir/pi/agent/extensions/ctx-inspect" ]] && [[ -e "$legacyCtxInspect" || -L "$legacyCtxInspect" ]]; then
-    backup_pi_extension "$legacyCtxInspect" || exit 1
+    backup_pi_entry "$legacyCtxInspect" "$piExtensionBackups" || exit 1
 fi
-for source_path in "$scriptDir"/pi/agent/extensions/*; do
-    [[ -e "$source_path" ]] || continue
-    dest_path="$piExtensionsDir/$(basename "$source_path")"
-    [[ "$(readlink "$dest_path")" == "$source_path" ]] && continue
-    if [[ -e "$dest_path" || -L "$dest_path" ]]; then
-        backup_pi_extension "$dest_path" || exit 1
-    fi
-    ln -s "$source_path" "$dest_path" || exit 1
-done
+link_pi_entries "$scriptDir/pi/agent/extensions" "$piExtensionsDir" "$piExtensionBackups" || exit 1
+link_pi_entries "$scriptDir/pi/agent/skills" "$piSkillsDir" "$piSkillBackups" || exit 1
 
 # tmux: link the config and its helper scripts only; plugins/ (TPM's clones),
 # snippets.json and hosts.json (prefix+R's SSH targets) stay local to each machine

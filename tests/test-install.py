@@ -45,9 +45,13 @@ class InstallTest(unittest.TestCase):
         (self.repo / 'tmux/tmux.conf').write_text('set -g mouse on\n')
         (self.repo / 'fish/functions/example.fish').write_text('function example; end\n')
         shutil.copytree(ROOT / 'pi/agent/extensions/ctx-inspect', self.repo / 'pi/agent/extensions/ctx-inspect')
+        self.skill_src = self.repo / 'pi/agent/skills/example-skill'
+        self.skill_src.mkdir(parents=True)
+        (self.skill_src / 'SKILL.md').write_text('---\nname: example-skill\ndescription: fixture\n---\n')
         self.config = self.home / '.config'
         self.config.mkdir()
         self.extensions = self.home / '.pi/agent/extensions'
+        self.skills = self.home / '.pi/agent/skills'
         self.tool_log = self.root / 'dependency-calls'
         self.bin = self.root / 'bin'
         self.bin.mkdir()
@@ -178,6 +182,30 @@ class InstallTest(unittest.TestCase):
         self.assertEqual(dest.read_text(), 'existing flat extension\n')
         self.assertEqual(backup.read_text(), 'older backup\n')
         self.assertFalse((self.extensions / 'ctx-inspect').exists())
+
+    def test_pi_skills_link_and_keep_other_skills(self):
+        self.skills.mkdir(parents=True)
+        private = self.skills / 'private-skill'
+        private.mkdir()
+        (private / 'SKILL.md').write_text('private\n')
+        self.run_install()
+        self.assertEqual((self.skills / 'example-skill').resolve(), self.skill_src)
+        self.assertEqual((private / 'SKILL.md').read_text(), 'private\n')
+        before = snapshot(self.skills)
+        self.run_install()
+        self.assertEqual(snapshot(self.skills), before)
+        self.assertFalse((self.home / '.pi/agent/skill-backups').exists())
+
+    def test_pi_skill_backup_is_outside_auto_discovery(self):
+        old_link = self.skills / 'example-skill'
+        self.skills.mkdir(parents=True)
+        old_target = self.root / 'moved-away/example-skill'
+        old_link.symlink_to(old_target, target_is_directory=True)
+        self.run_install()
+        self.assertEqual(old_link.resolve(), self.skill_src)
+        backup = self.home / '.pi/agent/skill-backups/example-skill.old'
+        self.assertEqual(os.readlink(backup), str(old_target))
+        self.assertEqual(sorted(p.name for p in self.skills.iterdir()), ['example-skill'])
 
     def test_tmux_hosts_migrate_from_existing_utils_directory(self):
         tmux = self.config / 'tmux'

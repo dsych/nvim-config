@@ -6,6 +6,11 @@ It does not install or replace the `npm:context-mode` package.
 `agent/extensions/kagi-assistant/` adds Kagi Assistant models as a pi provider; see
 its [README](agent/extensions/kagi-assistant/README.md).
 
+Generic agent skills live under `agent/skills/`; the installer links each skill
+directory into `~/.pi/agent/skills` and backs conflicting entries up under
+`~/.pi/agent/skill-backups`, outside discovery. Skills tied to internal tooling
+stay in Dsych-config.
+
 Run the repository's `install.sh` to link each extension into
 `~/.pi/agent/extensions`. The installer leaves other extensions, settings,
 keybindings, credentials and sessions alone. It links the `ctx-inspect/`
