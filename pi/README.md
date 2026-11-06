@@ -6,6 +6,11 @@ It does not install or replace the `npm:context-mode` package.
 `agent/extensions/kagi-assistant/` adds Kagi Assistant models as a pi provider; see
 its [README](agent/extensions/kagi-assistant/README.md).
 
+`agent/extensions/tmux-attention/index.ts` marks pi's tmux pane when pi asks you
+something or a run ends while you aren't looking, and while a run is in progress;
+the tmux session picker and window list show the marks (see `tmux/tmux.conf`).
+It was moved from `Dsych-config/pi`.
+
 Generic agent skills live under `agent/skills/`; the installer links each skill
 directory into `~/.pi/agent/skills` and backs conflicting entries up under
 `~/.pi/agent/skill-backups`, outside discovery. Skills tied to internal tooling

@@ -10,6 +10,11 @@ import { execFile } from "node:child_process";
  * Only what you haven't seen: if a focused terminal shows pi's window at that moment, nothing is
  * marked, and tmux clears a mark when you arrive at the window (a pane-focus-in hook in tmux.conf).
  *
+ * Separately, it tells tmux where work is happening, shown as ~ next to windows and sessions:
+ *   @pi-working          when the current run started (epoch seconds); set while a run is
+ *                        active, whether or not you're looking. Not set while pi is blocked on a
+ *                        dialog: that's ? (waiting for you), not work.
+ *
  * The state lives in user options on pi's own pane ($TMUX_PANE, which tmux sets for every process
  * in a pane), read by the picker:
  *   @pi-attention        "ask" or "done"; unset while nothing waits for you
@@ -51,31 +56,46 @@ export function tmuxAttention(run: TmuxRunner = runTmux, env: NodeJS.ProcessEnv 
     const unset = (option: string) => `set-option -p -t ${pane} -u ${option}`;
 
     let active = false;
-    const clear = () => active && tmux("set-option", "-p", "-t", pane, "-u", "@pi-attention");
+    let running = false;     // between agent_start and agent_settled
+    let prompting = false;   // a blocking dialog is open
+    let runSince = "";
+    const now = () => String(Math.floor(Date.now() / 1000));
+    const opt = (...args: string[]) => ["set-option", "-p", "-t", pane, ...args];
+    // The working mark as one command (joined with ; into the same tmux call as the attention
+    // change, so the status line never shows an in-between state)
+    const working = (): string[] =>
+      running && !prompting ? opt("@pi-working", runSince) : opt("-u", "@pi-working");
+    const clear = () => active && tmux(...opt("-u", "@pi-attention"), ";", ...working());
     // Mark unless you're looking (then also drop an older mark): decided by tmux, in one command
     const mark = (state: "ask" | "done") =>
       active &&
       tmux(
+        ...working(), ";",
         "if-shell", "-F", "-t", pane, LOOKING,
         unset("@pi-attention"),
-        `${set("@pi-attention", state)} ; ${set("@pi-attention-since", String(Math.floor(Date.now() / 1000)))}`,
+        `${set("@pi-attention", state)} ; ${set("@pi-attention-since", now())}`,
       );
 
     pi.on("session_start", async (_event, ctx) => {
       active = ctx.mode === "tui";
-      if (active) await tmux("set-option", "-p", "-t", pane, "-u", "@pi-attention", ";",
-        "set-option", "-p", "-t", pane, "@pi-attention-pid", String(process.pid));
+      running = prompting = false;
+      if (active) await tmux(...opt("-u", "@pi-attention"), ";", ...opt("-u", "@pi-working"), ";",
+        ...opt("@pi-attention-pid", String(process.pid)));
     });
-    pi.on("agent_start", () => { clear(); });
-    pi.on("ui_prompt_start", () => { mark("ask"); });
-    pi.on("ui_prompt_end", () => { clear(); });
-    pi.on("agent_settled", () => { mark("done"); });
+    pi.on("agent_start", () => {
+      if (!running) runSince = now();   // a retry or continuation keeps the run's start time
+      running = true;
+      clear();
+    });
+    pi.on("ui_prompt_start", () => { prompting = true; mark("ask"); });
+    pi.on("ui_prompt_end", () => { prompting = false; clear(); });
+    pi.on("agent_settled", () => { running = false; mark("done"); });
     pi.on("session_shutdown", async () => {
       if (!active) return;
       active = false;
-      await tmux("set-option", "-p", "-t", pane, "-u", "@pi-attention", ";",
-        "set-option", "-p", "-t", pane, "-u", "@pi-attention-since", ";",
-        "set-option", "-p", "-t", pane, "-u", "@pi-attention-pid");
+      running = prompting = false;
+      await tmux(...opt("-u", "@pi-attention"), ";", ...opt("-u", "@pi-attention-since"), ";",
+        ...opt("-u", "@pi-working"), ";", ...opt("-u", "@pi-attention-pid"));
     });
   };
 }

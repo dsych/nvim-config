@@ -20,6 +20,11 @@
 # The column only appears while some session has a mark. A mark whose pi is
 # gone (killed without cleaning up) is skipped and removed.
 #
+# Work in progress: a pane where pi is running carries @pi-working (the run's
+# start time). Such a session gets ~ in the same column, after any ? or @,
+# plus the count when several agents run. It doesn't change where picking
+# the session goes.
+#
 # Usage (from a key binding: prefix s): tmux-session-menu.sh <client_name>
 
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
@@ -47,8 +52,10 @@ fi
 # Measure and render the same snapshot so every row shares column widths.
 # tmux reports display cells, unlike shell string lengths / printf widths,
 # which count bytes or characters and misalign non-ASCII session names.
-# The last field lists the session's marked panes: state:since:pid:pane ...
-sessions=$(tmux list-sessions -F '#{session_id}	#{session_name}	#{session_windows}	#{session_attached}	#{w:session_name}	#{W:#{P:#{?#{@pi-attention},#{@pi-attention}:#{@pi-attention-since}:#{@pi-attention-pid}:#{pane_id} ,}}}')
+# The last field lists the session's marked panes, ask|done:since:pid:pane,
+# and working ones, work:since:pid:pane. One field: read collapses empty
+# tab-separated fields, so a second, possibly empty, one would shift.
+sessions=$(tmux list-sessions -F '#{session_id}	#{session_name}	#{session_windows}	#{session_attached}	#{w:session_name}	#{W:#{P:#{?#{@pi-attention},#{@pi-attention}:#{@pi-attention-since}:#{@pi-attention-pid}:#{pane_id} ,}#{?#{@pi-working},work:#{@pi-working}:#{@pi-attention-pid}:#{pane_id} ,}}}')
 [ -n "$sessions" ] || exit 0
 name_width=18
 windows_width=2
@@ -59,10 +66,11 @@ row=0
 while IFS=$'\t' read -r id name windows attached width agents; do
     (( width > name_width )) && name_width=$width
     (( ${#windows} > windows_width )) && windows_width=${#windows}
-    count=0 best="" best_since=0 target=""
+    count=0 workers=0 best="" best_since=0 target=""
     for agent in $agents; do
         IFS=: read -r state since pid pane <<< "$agent"
         if ! kill -0 "$pid" 2>/dev/null; then stale+=("$pane"); continue; fi
+        [ "$state" = work ] && { workers=$((workers + 1)); continue; }
         count=$((count + 1))
         # asking outranks done; the oldest of the same kind
         if [ -z "$best" ] || { [ "$state" = ask ] && [ "$best" != ask ]; } ||
@@ -70,17 +78,28 @@ while IFS=$'\t' read -r id name windows attached width agents; do
             best=$state best_since=$since target=$pane
         fi
     done
+    mark=""
     if (( count > 0 )); then
         mark="@"; [ "$best" = ask ] && mark="?"
         (( count > 1 )) && mark+=$count
-        marks[row]=$mark targets[row]=$target
+        targets[row]=$target
+    fi
+    if (( workers > 0 )); then
+        [ -n "$mark" ] && mark+=" "
+        mark+="~"
+        (( workers > 1 )) && mark+=$workers
+    fi
+    if [ -n "$mark" ]; then
+        marks[row]=$mark
         (( ${#mark} > mark_width )) && mark_width=${#mark}
     fi
     row=$((row + 1))
 done <<< "$sessions"
 if (( ${#stale[@]} > 0 )); then
     clean=()
-    for pane in "${stale[@]}"; do clean+=(set-option -p -t "$pane" -u @pi-attention \;); done
+    for pane in "${stale[@]}"; do
+        clean+=(set-option -p -t "$pane" -u @pi-attention \; set-option -p -t "$pane" -u @pi-working \;)
+    done
     tmux "${clean[@]}" 2>/dev/null
 fi
 
