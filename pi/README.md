@@ -11,6 +11,16 @@ something or a run ends while you aren't looking, and while a run is in progress
 the tmux session picker and window list show the marks (see `tmux/tmux.conf`).
 It was moved from `Dsych-config/pi`.
 
+`agent/extensions/compaction-thinking/index.ts` lowers the thinking level for a
+compaction only, then puts the previous level back, whether the compaction
+succeeds, fails, is aborted or is cancelled:
+
+- Claude Opus or Fable at "max" compact at "high".
+- llama.cpp models (pi's built-in `llama.cpp` provider, or the `llama-cpp`
+  provider from huggingface/pi-llama) compact with thinking off.
+
+Other models and levels are left alone.
+
 Generic agent skills live under `agent/skills/`; the installer links each skill
 directory into `~/.pi/agent/skills` and backs conflicting entries up under
 `~/.pi/agent/skill-backups`, outside discovery. Skills tied to internal tooling
