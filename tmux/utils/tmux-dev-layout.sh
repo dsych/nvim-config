@@ -6,7 +6,7 @@
 #   ┌──────────────────────────┐
 #   │       nvim . (editor)    │  50% height, full width
 #   ├────────────┬─────────────┤
-#   │  w_arch    │   shell     │  50% height, 50/50 width
+#   │  pi        │   shell     │  50% height, 50/50 width
 #   └────────────┴─────────────┘
 
 set -euo pipefail
@@ -44,8 +44,8 @@ if [ "$CURRENT_CMD" = "fish" ] || [ "$CURRENT_CMD" = "bash" ] || [ "$CURRENT_CMD
     tmux send-keys -t "$PANE_ID" 'nvim .' Enter
 fi
 
-# 5. Bottom-left: launch w_arch if available
-tmux send-keys -t "$BOTTOM_LEFT" 'type -q w_arch 2>/dev/null && w_arch || echo "error: w_arch alias not found"' Enter
+# 5. Bottom-left: launch pi
+tmux send-keys -t "$BOTTOM_LEFT" 'pi' Enter
 
 # 6. Bottom-right: just a shell (already is one)
 
