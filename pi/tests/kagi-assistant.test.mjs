@@ -351,6 +351,12 @@ test("parse: stray quote in the name and a parameter written as its own tag", ()
   assert.deepEqual(r.calls, [{ name: "read", arguments: { path: "kagi-core.mjs", offset: "320" } }]);
 });
 
+test("parse: a parameter opened as its own tag and closed with </parameter> (seen live)", () => {
+  const r = parseToolCalls("<function=read>\n<path>hello.txt</parameter>\n</function>", TOOLS);
+  assert.deepEqual(r.calls, [{ name: "read", arguments: { path: "hello.txt" } }]);
+  assert.equal(r.visibleText, "");
+});
+
 test("parse: parameters without a function element infer the only matching tool", () => {
   assert.deepEqual(calls(block("<parameter=command>node -e 1</parameter>")), [{ name: "bash", arguments: { command: "node -e 1" } }]);
   const r = parseToolCalls(block("<parameter=unknown>1</parameter>"), TOOLS);
@@ -484,6 +490,40 @@ test("delivery: an edited, rewound or compacted history starts a new conversatio
   const compacted = deliver(later, state);
   assert.equal(compacted.mode, "start");
   assert.match(compacted.content, /<conversation_history>\n<user_message>\nsummary of earlier work[\s\S]*<assistant_message>\nok\n<\/assistant_message>\n<\/conversation_history>\n<user_message>\ncontinue/);
+});
+
+// A message an extension's `context` hook adds to one request (context-mode does this once per
+// run): pi passes it without a timestamp, and the next request no longer contains it.
+const requestLocal = (text) => ({ role: "user", content: text });
+
+test("delivery: a request-local message follows the prompt instead of pushing it into the history", () => {
+  const p = deliver([system, user("read hello.txt"), requestLocal("context note")], null);
+  assert.equal(p.mode, "start");
+  assert.ok(!p.content.includes("<conversation_history>"), p.content);
+  assert.match(p.content, /<\/harness_init>\n<user_message>\nread hello\.txt\n<\/user_message>\n<user_message>\ncontext note\n<\/user_message>$/);
+  assert.equal(p.deliveredCount, 1);
+});
+
+test("delivery: a request-local message that is gone on the next call does not restart the conversation", () => {
+  const first = [system, user("read hello.txt")];
+  let state = stateAfterSend(null, deliver([...first, requestLocal("note 1")], null), started("t1"));
+  const afterTool = [...first, kagiReply("t1", [toolCallPart("read", { path: "hello.txt" })]), result("read", "alpha")];
+  const p = deliver(afterTool, state);
+  assert.deepEqual([p.mode, p.reason], ["respond", "delta"]);
+  assert.equal(p.content, "<tool_result call=read>\nalpha\n</tool_result>");
+  state = stateAfterSend(state, p, started("t2"));
+  // The next prompt brings a new request-local message; both are relayed, in order.
+  const answer = { ...kagiReply("t2", [{ type: "text", text: "It says alpha." }]), stopReason: "stop" };
+  const next = deliver([...afterTool, answer, user("thanks"), requestLocal("note 2")], state);
+  assert.deepEqual([next.mode, next.reason], ["respond", "delta"]);
+  assert.equal(next.content, "<user_message>\nthanks\n</user_message>\n<user_message>\nnote 2\n</user_message>");
+  assert.equal(next.deliveredCount, 5);
+});
+
+test("delivery: a retry whose only new message is request-local asks the model to continue", () => {
+  const first = [system, user("hi")];
+  const state = stateAfterSend(null, deliver(first, null), started("t1"));
+  assert.equal(deliver([...first, requestLocal("note")], state).content, CONTINUE_MESSAGE);
 });
 
 test("delivery: a retry with nothing new asks the model to continue", () => {

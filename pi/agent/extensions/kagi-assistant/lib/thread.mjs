@@ -2,8 +2,9 @@
  * What the Kagi thread has received, and what to send next. No pi imports.
  *
  * pi sends the whole context on every call; a Kagi conversation is stateful.
- * Per pi session we store the number and hash of the conversation messages the
+ * Per pi session we store the number and hash of the transcript messages the
  * thread has received, plus hashes of the system prompt and tools last sent.
+ * Request-local messages added by other extensions are relayed but not counted.
  */
 import { createHash } from "node:crypto";
 import { CONTINUE_MESSAGE, messageText, renderDelta, renderFresh } from "./protocol.mjs";
@@ -42,6 +43,31 @@ export function conversationMessages(messages) {
   return (messages ?? []).filter((m) => m.role === "user" || m.role === "assistant" || m.role === "toolResult");
 }
 
+/**
+ * A user message that an extension's `context` hook added to this request only
+ * (context-mode appends one to the first request of every run). pi gives every
+ * transcript message a timestamp; such additions have none, and the next request
+ * no longer contains them (verified on pi 1.0.3 and 1.5.2).
+ */
+export function isRequestLocal(m) {
+  return m?.role === "user" && !Number.isFinite(m.timestamp);
+}
+
+function findLastIndex(list, predicate) {
+  for (let i = list.length - 1; i >= 0; i--) if (predicate(list[i])) return i;
+  return -1;
+}
+
+/** Index in `all` just after its `count`-th transcript (not request-local) message. */
+function indexAfterTranscript(all, count) {
+  if (count <= 0) return 0;
+  let seen = 0;
+  for (let i = 0; i < all.length; i++) {
+    if (!isRequestLocal(all[i]) && ++seen === count) return i + 1;
+  }
+  return all.length;
+}
+
 function hasRenderableContent(m) {
   return (m.content ?? []).some((b) => (b.type === "text" && b.text?.trim()) || b.type === "toolCall");
 }
@@ -68,14 +94,14 @@ export function loadThreadState(config, sessionId) {
  * {mode: "start"|"respond", reason, content, deliveredCount, deliveredHash, systemHash, toolsHash}.
  */
 export function planDelivery({ messages, systemPrompt, tools, state }) {
-  const conv = conversationMessages(messages);
-  let lastUser = -1;
-  for (let i = conv.length - 1; i >= 0; i--) {
-    if (conv[i].role === "user") {
-      lastUser = i;
-      break;
-    }
-  }
+  // `all` is what this request shows the model; `conv` drops request-local
+  // additions and is what the delivered prefix (count and hash) is measured on.
+  const all = conversationMessages(messages);
+  const conv = all.filter((m) => !isRequestLocal(m));
+  // The new part starts at the last user message of the transcript, so a
+  // request-local addition after it does not push the prompt into the history.
+  let lastUser = findLastIndex(all, (m) => m.role === "user" && !isRequestLocal(m));
+  if (lastUser === -1) lastUser = findLastIndex(all, (m) => m.role === "user");
   if (lastUser === -1) return { mode: "error", error: "No user message in the context; nothing to send to Kagi Assistant." };
   const common = {
     deliveredCount: conv.length,
@@ -86,7 +112,7 @@ export function planDelivery({ messages, systemPrompt, tools, state }) {
   const fresh = (reason) => ({
     mode: "start",
     reason,
-    content: renderFresh({ systemPrompt, tools, history: conv.slice(0, lastUser), pending: conv.slice(lastUser) }),
+    content: renderFresh({ systemPrompt, tools, history: all.slice(0, lastUser), pending: all.slice(lastUser) }),
     ...common,
   });
   if (!state) return fresh("new");
@@ -94,13 +120,15 @@ export function planDelivery({ messages, systemPrompt, tools, state }) {
     return fresh("history-changed");
   }
   const own = new Set(state.turns ?? []);
-  const pending = conv
-    .slice(state.deliveredCount)
+  // Request-local additions inside the delivered part are not resent.
+  const pending = all
+    .slice(indexAfterTranscript(all, state.deliveredCount))
     .filter((m) => !(m.role === "assistant" && m.responseId && own.has(m.responseId)))
     .filter((m) => m.role !== "assistant" || hasRenderableContent(m));
   const systemChanged = common.systemHash !== state.systemHash;
   const toolsChanged = common.toolsHash !== state.toolsHash;
-  if (!pending.length && !systemChanged && !toolsChanged) {
+  // Nothing new in the transcript (request-local additions do not count): a retry.
+  if (!pending.some((m) => !isRequestLocal(m)) && !systemChanged && !toolsChanged) {
     return { mode: "respond", reason: "retry", content: CONTINUE_MESSAGE, ...common };
   }
   return {

@@ -42,7 +42,9 @@ Token lookup order: `$KAGI_SESSION_TOKEN`, the token saved by `/kagi-login`
 - **Continuity.** One pi session uses one Kagi conversation, resumed after restarts. An
   edit, rewind, compaction or tree navigation starts a new Kagi conversation that
   receives the whole transcript. Kagi deletes API conversations after 24 hours; the next
-  message then starts a new one the same way.
+  message then starts a new one the same way. A message that another extension adds to
+  a single request, such as context-mode's routing note, is relayed after your prompt
+  and does not start a new conversation.
 - **Aborts.** Pressing Esc cancels the turn on Kagi as well. Kagi reports no cost for
   cancelled turns.
 
@@ -60,12 +62,25 @@ Live runs on 2026-11-05 (edit a file with the edit tool, then run it with bash):
 A correction is one extra message asking the model to use the declared tools; it happens
 when a reply attempts a call that cannot run, or uses Kagi's own sandbox file tools.
 
+Live runs on 2026-11-10 (read a file with the read tool, then answer), with
+deepseek-v4-1-flash:
+
+| pi | Setup | Completed | Corrections | Cost |
+|---|---|---|---|---|
+| 1.0.3 | pi's default tools | yes | 0 | $0.0016 |
+| 1.5.2 | pi's default tools | yes | 0 | $0.0009 |
+| 1.0.3 | 30 tools, 35,000-character system prompt, context-mode | yes | 0 | $0.0115 |
+| 1.5.2 | 30 tools, 35,000-character system prompt, context-mode | yes | 1 | $0.0162 |
+
 ## Known limitations
 
 - Images are replaced by a note; the extension sends text only.
 - Kagi adds about 2,900 prompt tokens to every turn.
 - Kagi's built-in tools (`read_file`, `list_directory`, …) cannot be disabled. Some
-  models try them first; they see Kagi's empty sandbox, not your files.
+  models try them first; they see Kagi's empty sandbox, not your files. A large prompt
+  makes this costly: in the 1.5.2 run above (30 tools, 35,000-character system prompt),
+  DeepSeek spent a whole turn on them, 8 model requests costing about $0.015, before the
+  correction recovered.
 - A model switch inside a session keeps the Kagi conversation. This was verified for
   DeepSeek → Claude only.
 
@@ -78,6 +93,6 @@ PI_PACKAGE_ROOT=/path/to/@earendil-works/pi-coding-agent \
 ```
 
 The first suite covers parsing, delivery and storage without pi. The second drives the
-provider through pi's stream types against a scripted Kagi server. Neither uses the
-network. `KAGI_DEBUG=1` logs request metadata to
+provider through pi's stream types against a scripted Kagi server; it passes on pi 1.0.3
+and 1.5.2. Neither uses the network. `KAGI_DEBUG=1` logs request metadata to
 `~/.pi/agent/kagi-assistant-debug.jsonl` (mode 0600).

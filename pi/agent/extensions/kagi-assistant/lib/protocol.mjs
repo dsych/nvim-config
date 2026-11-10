@@ -297,6 +297,10 @@ function closesValue(text, tags, i) {
   return true;
 }
 
+function escapeRegExp(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function inferTool(argNames, tools) {
   const candidates = (tools ?? []).filter((t) => {
     const props = t.parameters?.properties ?? {};
@@ -431,14 +435,16 @@ export function parseToolCalls(text, tools) {
         args[p.key] = coerceParameterValue(schema, stripParamValue(p.raw));
       }
       let name = c.name;
-      // Known parameters written as <key>value</key> (seen from minimax).
+      // Known parameters written as <key>value</key> (seen from minimax) or
+      // <key>value</parameter> (seen from deepseek).
       const tool = toolMap.get(name ?? "");
       if (tool) {
         let body = src.slice(c.bodyStart, c.end);
         for (const [a, z] of c.consumed) body = body.replace(src.slice(a, z), "");
         for (const key of Object.keys(tool.parameters?.properties ?? {})) {
           if (key in args) continue;
-          const m = new RegExp(`<${key}>([\\s\\S]*?)</${key}>`).exec(body);
+          const k = escapeRegExp(key);
+          const m = new RegExp(`<${k}>([\\s\\S]*?)</(?:${k}|parameter)\\s*>`).exec(body);
           if (m) {
             args[key] = coerceParameterValue(tool.parameters.properties[key], stripParamValue(m[1]));
             warnings.push(`parameter ${key} of ${name} written as <${key}> tag`);

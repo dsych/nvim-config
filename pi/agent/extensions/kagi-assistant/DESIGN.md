@@ -59,7 +59,8 @@ the syntax in fenced examples when asked about it.
 The parser therefore:
 
 - accepts both call syntaxes, prose around blocks, missing or mistyped closing tags,
-  several blocks, stray quotes, and known parameters written as `<KEY>…</KEY>`;
+  several blocks, stray quotes, and known parameters written as `<KEY>…</KEY>` or, as
+  DeepSeek did live on 2026-11-10, `<KEY>…</parameter>`;
 - ends a value only at a `</parameter>` followed by more markup, so a value may contain
   the protocol itself;
 - infers the tool when parameters appear without a function element and exactly one
@@ -90,7 +91,7 @@ with them and then wrote a valid call in the same turn; cancelling them made it 
 ## Conversation delivery
 
 pi sends the whole context on every call; a Kagi conversation is stateful. Per pi
-session the extension stores how many conversation messages the Kagi conversation has
+session the extension stores how many transcript messages the Kagi conversation has
 received and a hash of that prefix, plus hashes of the system prompt and tools last sent.
 
 On each call:
@@ -105,6 +106,21 @@ On each call:
 
 State is saved as soon as Kagi accepts a message, because the conversation contains it
 whether or not the reply succeeds. An expired conversation falls back to step 1.
+
+### Request-local messages (live)
+
+Another extension's `context` hook can add a message to one request only. context-mode
+appends a routing note to the first request of every run; pi passes it as a user message
+without a timestamp, and the request after the tool call no longer contains it (checked
+on pi 1.0.3 and 1.5.2). Counting the note in the prefix made every tool round trip look
+like an edited history (step 1), so each one started a new Kagi conversation with the full
+transcript: 126,000 characters with a 30-tool setup. The note also became the newest user
+message, so the user's prompt was sent as replayed history.
+
+A user message without a timestamp is therefore request-local. It is relayed where it
+appears, after the prompt it follows, but it is not part of the stored prefix, and a
+request whose only new message is request-local counts as a retry. An extension that
+gives such a message a timestamp still causes a new conversation.
 
 ## Unfinished turns and the spend cap
 

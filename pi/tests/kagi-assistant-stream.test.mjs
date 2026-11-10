@@ -395,3 +395,27 @@ test("empty thinking nodes (hidden reasoning) do not become empty blocks", async
   const { message } = await call([user("think quietly")], { sessionId: "s14" });
   assert.deepEqual(message.content.map((c) => c.type), ["text"]);
 });
+
+test("a request-local message from another extension keeps the Kagi conversation", async () => {
+  // context-mode's `context` hook appends a note to the first request of a run; pi passes it
+  // without a timestamp, and the request after the tool call no longer contains it.
+  server.reset();
+  notifications.length = 0;
+  const prompt = user("read hello.txt");
+  const note = { role: "user", content: "context-mode active." };
+  server.replies.push({ text: "<function_calls>\n<function=read>\n<parameter=path>hello.txt</parameter>\n</function>\n</function_calls>" });
+  const first = await call([prompt, note], { sessionId: "s15" });
+  assert.equal(first.message.stopReason, "toolUse");
+  const [start] = sent(/conversations$/);
+  assert.ok(!start.body.content.includes("<conversation_history>"));
+  assert.match(start.body.content, /<user_message>\nread hello\.txt\n<\/user_message>\n<user_message>\ncontext-mode active\.\n<\/user_message>$/);
+
+  server.replies.push({ text: "It says alpha." });
+  const call1 = first.message.content.find((c) => c.type === "toolCall");
+  const toolResult = { role: "toolResult", toolCallId: call1.id, toolName: "read", content: [{ type: "text", text: "alpha" }], isError: false, timestamp: Date.now() };
+  const second = await call([prompt, first.message, toolResult], { sessionId: "s15" });
+  assert.equal(second.message.content.at(-1).text, "It says alpha.");
+  assert.equal(sent(/conversations$/).length, 1);
+  assert.equal(sent(/respond$/)[0].body.content, "<tool_result call=read>\nalpha\n</tool_result>");
+  assert.ok(!notifications.some(([, m]) => /history changed/.test(m)), JSON.stringify(notifications));
+});
